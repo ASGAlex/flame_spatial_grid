@@ -1,3 +1,4 @@
+import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,7 @@ class Clusterizer extends ChangeNotifier {
   Clusterizer(
       {required this.blockSize,
       required this.trackedComponent,
+      this.cellBuilder,
       int? activeRadius,
       int? unloadRadius}) {
     this.activeRadius = (activeRadius ?? 1);
@@ -39,6 +41,7 @@ class Clusterizer extends ChangeNotifier {
 
   final cells = <Rect, Cell>{};
   Cell? _currentCell;
+  CellBuilder? cellBuilder;
 
   final Size blockSize;
   final PositionComponent trackedComponent;

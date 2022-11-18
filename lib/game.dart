@@ -1,4 +1,5 @@
 import 'package:cluisterizer_test/clusterizer/cell.dart';
+import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -159,14 +160,29 @@ class MyWorld extends World {
   late final Clusterizer clusterizer;
 
   @override
-  onLoad() {
+  onLoad() async {
+    final spriteBrick = await Sprite.load(
+      'retro_tiles.png',
+      srcPosition: Vector2.all(0),
+      srcSize: Vector2.all(tileSize),
+    );
+    final builder = CellBuilder(
+      parentComponent: this,
+      builder: (cell, parentComponent) async {
+        final brick = Brick(
+            position: cell.rect.center.toVector2(),
+            priority: 1,
+            sprite: spriteBrick);
+        parentComponent.add(brick);
+      },
+    );
     clusterizer = Clusterizer(
         blockSize: const Size.square(100),
         trackedComponent: player,
+        cellBuilder: builder,
         activeRadius: 2);
     add(player);
     add(ClusterizerDebugRenderer(clusterizer));
-    return null;
   }
 }
 
@@ -343,10 +359,10 @@ class Brick extends SpriteComponent
     with CollisionCallbacks, GameCollideable, UpdateOnce {
   Brick({
     required super.position,
-    required super.size,
     required super.priority,
     required super.sprite,
   }) {
+    size = Vector2.all(tileSize);
     initCenter();
     initCollision();
   }

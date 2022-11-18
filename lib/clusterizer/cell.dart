@@ -12,6 +12,7 @@ enum CellState { active, inactive, suspended }
 class Cell {
   Cell({required this.clusterizer, required this.rect}) {
     clusterizer.cells[rect] = this;
+    clusterizer.cellBuilder?.build(this);
     clusterizer.addListener(_onCellStateUpdated);
     // print(clusterizer.cells.length);
   }
