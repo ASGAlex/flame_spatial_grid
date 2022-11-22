@@ -4,6 +4,7 @@ import 'package:flame/extensions.dart';
 import 'package:flutter/foundation.dart';
 
 import 'cell.dart';
+import 'clusterized_component.dart';
 
 class Clusterizer extends ChangeNotifier {
   Clusterizer(
@@ -26,17 +27,18 @@ class Clusterizer extends ChangeNotifier {
     cell.bottom;
 
     _currentCell = cell;
-    trackedComponent.transform.addListener(_onTrackedComponentTransform);
+    trackedComponent.currentCell = cell;
+    // trackedComponent.transform.addListener(_onTrackedComponentTransform);
   }
 
-  @override
+  // @override
   dispose() {
-    trackedComponent.transform.removeListener(_onTrackedComponentTransform);
+    // trackedComponent.transform.removeListener(_onTrackedComponentTransform);
     for (var cell in cells.values) {
       cell.dispose();
     }
     cells.clear();
-    super.dispose();
+    // super.dispose();
   }
 
   final cells = <Rect, Cell>{};
@@ -44,58 +46,28 @@ class Clusterizer extends ChangeNotifier {
   CellBuilder? cellBuilder;
 
   final Size blockSize;
-  final PositionComponent trackedComponent;
+  final ClusterizedComponent trackedComponent;
 
   var activeRadius = 1;
   var unloadRadius = 3;
 
-  void _onTrackedComponentTransform() {
-    final lookAtPoint = trackedComponent.toRect().center.toVector2();
-    final current = _currentCell;
-    if (current == null) throw 'current cell cant be null!';
-    if (current.rect.containsPoint(lookAtPoint) != true) {
-      Cell? newCell;
-      //look close neighbours
-      for (var cell in current.neighbours) {
-        if (cell.rect.containsPoint(lookAtPoint)) {
-          newCell = cell;
-          break;
-        }
-      }
-      //if nothing - search among all cells
-      if (newCell == null) {
-        for (var cell in cells.entries) {
-          if (cell.value.rect.containsPoint(lookAtPoint)) {
-            newCell = cell.value;
-            break;
-          }
-        }
-      }
-      //should be impossible
-      if (newCell == null) {
-        throw 'error finding new cell';
-      }
-      newCell.left;
-      newCell.right;
-      newCell.top;
-      newCell.bottom;
-      _currentCell = newCell;
-      for (var cell in cells.values) {
-        cell.state = CellState.suspended;
-      }
-
-      final cellsToInactivate = _findCellsInRadius(unloadRadius);
-      for (var cell in cellsToInactivate) {
-        cell.state = CellState.inactive;
-      }
-
-      final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
-      for (var cell in cellsToActivate) {
-        cell.state = CellState.active;
-      }
-      _currentCell?.state = CellState.active;
-      notifyListeners();
+  void setActiveCell(Cell newActiveCell) {
+    _currentCell = newActiveCell;
+    for (var cell in cells.values) {
+      cell.state = CellState.suspended;
     }
+
+    final cellsToInactivate = _findCellsInRadius(unloadRadius);
+    for (var cell in cellsToInactivate) {
+      cell.state = CellState.inactive;
+    }
+
+    final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
+    for (var cell in cellsToActivate) {
+      cell.state = CellState.active;
+    }
+    newActiveCell.state = CellState.active;
+    notifyListeners();
   }
 
   Set<Cell> _findCellsInRadius(int radius, {bool create = false}) {

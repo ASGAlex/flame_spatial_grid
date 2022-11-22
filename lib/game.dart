@@ -11,6 +11,8 @@ import 'package:flame/layers.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
+import 'clusterizer/clusterized_component.dart';
+
 const tileSize = 8.0;
 
 class QuadTreeExample extends FlameGame with KeyboardEvents, ScrollDetector {
@@ -70,6 +72,7 @@ Press T button to toggle player to collide with other objects.
     // staticLayer.reRender();
 
     cameraComponent = CameraComponent(world: world);
+    // cameraComponent.viewfinder.zoom = 0.3;
     player = world.player;
     add(world);
     add(cameraComponent);
@@ -173,7 +176,7 @@ class MyWorld extends World {
             position: cell.rect.center.toVector2(),
             priority: 1,
             sprite: spriteBrick);
-        parentComponent.add(brick);
+        return [brick];
       },
     );
     clusterizer = Clusterizer(
@@ -251,7 +254,7 @@ class ClusterizerDebugRenderer extends PositionComponent with HasPaint<String> {
 //#region Player
 
 class Player extends SpriteComponent
-    with CollisionCallbacks, HasGameRef<QuadTreeExample> {
+    with CollisionCallbacks, HasGameRef<QuadTreeExample>, ClusterizedComponent {
   Player({
     required super.position,
     required super.size,
@@ -356,7 +359,7 @@ class Bullet extends PositionComponent with CollisionCallbacks, HasPaint {
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, GameCollideable, UpdateOnce {
+    with CollisionCallbacks, GameCollideable, UpdateOnce, ClusterizedComponent {
   Brick({
     required super.position,
     required super.priority,

@@ -1,12 +1,18 @@
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 
+import 'cell.dart';
+
 mixin ClusterizedComponent on PositionComponent {
   bool isVisible = true;
 
   bool _isSuspended = false;
 
   bool get isSuspended => _isSuspended;
+
+  Cell? currentCell;
+
+  bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
   set isSuspended(bool suspend) {
     if (_isSuspended != suspend) {
@@ -51,6 +57,84 @@ mixin ClusterizedComponent on PositionComponent {
   void renderTree(Canvas canvas) {
     if (isVisible) {
       super.renderTree(canvas);
+    }
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    transform.addListener(_onTransform);
+  }
+
+  @override
+  void onRemove() {
+    transform.removeListener(_onTransform);
+    super.onRemove();
+  }
+
+  void _onTransform() {
+    final lookAtPoint = toRect().center.toVector2();
+    final current = currentCell;
+    if (current == null) throw 'current cell cant be null!';
+    final clusterizer = current.clusterizer;
+    if (current.rect.containsPoint(lookAtPoint) != true) {
+      Cell? newCell;
+      //look close neighbours
+      for (var cell in current.neighbours) {
+        if (cell.rect.containsPoint(lookAtPoint)) {
+          newCell = cell;
+          break;
+        }
+      }
+      //if nothing - search among all cells
+      if (newCell == null) {
+        for (var cell in clusterizer.cells.entries) {
+          if (cell.value.rect.containsPoint(lookAtPoint)) {
+            newCell = cell.value;
+            break;
+          }
+        }
+      }
+      //if nothing again - try to locate new cell's position from component's
+      //coordinates
+      if (newCell == null) {
+        final diff = lookAtPoint - current.rect.center.toVector2();
+        final stepSize = current.rect.width;
+        final pos = current.rect.center.toVector2();
+        var xSign = diff.x > 0 ? 1 : -1;
+        var ySign = diff.y > 0 ? 1 : -1;
+        var newTemporaryCell = current;
+        while ((lookAtPoint.x - pos.x).abs() >= stepSize / 3) {
+          if (xSign > 0) {
+            newTemporaryCell = newTemporaryCell.right;
+          } else {
+            newTemporaryCell = newTemporaryCell.left;
+          }
+          pos.x = newTemporaryCell.rect.center.dx;
+        }
+        while ((lookAtPoint.y - pos.y).abs() >= stepSize / 3) {
+          if (ySign > 0) {
+            newTemporaryCell = newTemporaryCell.bottom;
+          } else {
+            newTemporaryCell = newTemporaryCell.top;
+          }
+          pos.y = newTemporaryCell.rect.center.dy;
+        }
+        if (newTemporaryCell.rect.contains(lookAtPoint.toOffset())) {
+          newCell = newTemporaryCell;
+        } else {
+          throw 'teleportation error';
+        }
+      }
+
+      newCell.left;
+      newCell.right;
+      newCell.top;
+      newCell.bottom;
+      currentCell = newCell;
+      if (isTracked) {
+        clusterizer.setActiveCell(newCell);
+      }
     }
   }
 }
