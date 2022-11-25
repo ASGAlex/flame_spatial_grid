@@ -28,17 +28,15 @@ class Clusterizer extends ChangeNotifier {
 
     _currentCell = cell;
     trackedComponent.currentCell = cell;
-    // trackedComponent.transform.addListener(_onTrackedComponentTransform);
   }
 
-  // @override
+  @override
   dispose() {
-    // trackedComponent.transform.removeListener(_onTrackedComponentTransform);
+    super.dispose();
     for (var cell in cells.values) {
       cell.dispose();
     }
     cells.clear();
-    // super.dispose();
   }
 
   final cells = <Rect, Cell>{};

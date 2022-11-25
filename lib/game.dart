@@ -1,6 +1,4 @@
-import 'package:cluisterizer_test/clusterizer/cell.dart';
 import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
-import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -12,10 +10,12 @@ import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
 import 'clusterizer/clusterized_component.dart';
+import 'clusterizer/collisions/has_clusterized_collision_detection.dart';
 
 const tileSize = 8.0;
 
-class QuadTreeExample extends FlameGame with KeyboardEvents, ScrollDetector {
+class QuadTreeExample extends FlameGame
+    with HasClusterizedCollisionDetection, KeyboardEvents, ScrollDetector {
   QuadTreeExample();
 
   static const description = '''
@@ -71,9 +71,31 @@ Press T button to toggle player to collide with other objects.
     //
     // staticLayer.reRender();
 
+    final spriteBrick = await Sprite.load(
+      'retro_tiles.png',
+      srcPosition: Vector2.all(0),
+      srcSize: Vector2.all(tileSize),
+    );
+
+    player = world.player;
+    initializeCollisionDetection(
+        debug: true,
+        activeRadius: 2,
+        blockSize: 100,
+        trackedComponent: player,
+        parentComponent: world,
+        cellBuilder: CellBuilder(
+          parentComponent: world,
+          builder: (cell, parentComponent) async {
+            final brick = Brick(
+                position: cell.rect.center.toVector2(),
+                priority: 1,
+                sprite: spriteBrick);
+            return [brick];
+          },
+        ));
     cameraComponent = CameraComponent(world: world);
     // cameraComponent.viewfinder.zoom = 0.3;
-    player = world.player;
     add(world);
     add(cameraComponent);
     cameraComponent.follow(player);
@@ -160,94 +182,9 @@ class MyWorld extends World {
       size: Vector2.all(tileSize),
       priority: 2);
 
-  late final Clusterizer clusterizer;
-
   @override
   onLoad() async {
-    final spriteBrick = await Sprite.load(
-      'retro_tiles.png',
-      srcPosition: Vector2.all(0),
-      srcSize: Vector2.all(tileSize),
-    );
-    final builder = CellBuilder(
-      parentComponent: this,
-      builder: (cell, parentComponent) async {
-        final brick = Brick(
-            position: cell.rect.center.toVector2(),
-            priority: 1,
-            sprite: spriteBrick);
-        return [brick];
-      },
-    );
-    clusterizer = Clusterizer(
-        blockSize: const Size.square(100),
-        trackedComponent: player,
-        cellBuilder: builder,
-        activeRadius: 2);
     add(player);
-    add(ClusterizerDebugRenderer(clusterizer));
-  }
-}
-
-class ClusterizerDebugRenderer extends PositionComponent with HasPaint<String> {
-  ClusterizerDebugRenderer(this.clusterizer);
-
-  final Clusterizer clusterizer;
-
-  @override
-  onLoad() {
-    final paintFill = Paint();
-    paintFill.style = PaintingStyle.fill;
-    paintFill.color = Colors.lightGreen;
-    setPaint('fill', paintFill);
-
-    final paintFillInactive = Paint();
-    paintFillInactive.style = PaintingStyle.fill;
-    paintFillInactive.color = Colors.blueGrey;
-    setPaint('inactive', paintFillInactive);
-
-    final paintFillUnloaded = Paint();
-    paintFillUnloaded.style = PaintingStyle.fill;
-    paintFillUnloaded.color = Colors.black54;
-    setPaint('unloaded', paintFillUnloaded);
-
-    final paintBorder = Paint();
-    paintBorder.style = PaintingStyle.stroke;
-    paintBorder.color = Colors.redAccent;
-    paintBorder.strokeWidth = 1;
-    setPaint('border', paintBorder);
-
-    return null;
-  }
-
-  @override
-  void render(Canvas canvas) {
-    TextPaint textPaint = TextPaint(
-      style: TextStyle(
-        fontSize: 5.0,
-      ),
-    );
-    final fill = getPaint('fill');
-    final inactive = getPaint('inactive');
-    final unloaded = getPaint('unloaded');
-    final border = getPaint('border');
-    for (final element in clusterizer.cells.entries) {
-      if (element.value.state == CellState.active) {
-        canvas.drawRect(element.key, fill);
-      } else if (element.value.state == CellState.inactive) {
-        canvas.drawRect(element.key, inactive);
-      } else {
-        canvas.drawRect(element.key, unloaded);
-      }
-      canvas.drawRect(element.key, border);
-
-      // textPaint.render(canvas, element.value.state.toString(),
-      //     element.key.center.toVector2());
-      // textPaint.render(
-      //     canvas,
-      //     "(${element.key.left},${element.key.top} - ${element.key.right}, ${element.key.bottom})",
-      //     element.key.center.toVector2());
-    }
   }
 }
 
@@ -456,36 +393,4 @@ extension Vector2Ext on Vector2 {
   }
 }
 
-class QuadTreeDebugComponent extends PositionComponent with HasPaint {
-  QuadTreeDebugComponent(QuadTreeCollisionDetection cd) {
-    dbg = QuadTreeNodeDebugInfo.init(cd);
-    paint.color = Colors.blue;
-    paint.style = PaintingStyle.stroke;
-    priority = 10;
-  }
-
-  late final QuadTreeNodeDebugInfo dbg;
-
-  @override
-  void render(Canvas canvas) {
-    final nodes = dbg.nodes;
-
-    for (final node in nodes) {
-      canvas.drawRect(node.rect, paint);
-      final nodeElements = node.ownElements;
-      Paint? boxPaint;
-      if (!node.noChildren && nodeElements.isNotEmpty) {
-        boxPaint = Paint();
-        boxPaint.style = PaintingStyle.stroke;
-        boxPaint.color = Colors.lightGreenAccent;
-        boxPaint.strokeWidth = 1;
-      }
-      for (final box in nodeElements) {
-        if (boxPaint != null) {
-          canvas.drawRect(box.aabb.toRect(), boxPaint);
-        }
-      }
-    }
-  }
-}
 //#endregion

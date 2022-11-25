@@ -1,21 +1,34 @@
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
+import 'package:flutter/widgets.dart';
+import 'package:meta/meta.dart';
 
 import 'cell.dart';
 
 mixin ClusterizedComponent on PositionComponent {
+  // TODO: pass into ShapeHitbox
+  static final componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};
+
   bool isVisible = true;
 
-  bool _isSuspended = false;
+  final suspendNotifier = ValueNotifier<bool>(false);
 
-  bool get isSuspended => _isSuspended;
+  bool toggleCollisionOnSuspendChange = true;
+
+  bool get isSuspended => suspendNotifier.value;
 
   Cell? currentCell;
 
   bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
+  final defaultHitbox = RectangleHitbox()
+    ..collisionType = CollisionType.inactive;
+
+  double _dtElapsedWhileSuspended = 0;
+
   set isSuspended(bool suspend) {
-    if (_isSuspended != suspend) {
+    if (suspendNotifier.value != suspend) {
       if (suspend) {
         onSuspend();
       } else {
@@ -23,10 +36,18 @@ mixin ClusterizedComponent on PositionComponent {
         _dtElapsedWhileSuspended = 0;
       }
     }
-    _isSuspended = suspend;
+    suspendNotifier.value = suspend;
   }
 
-  double _dtElapsedWhileSuspended = 0;
+  @override
+  onMount() {
+    add(defaultHitbox);
+  }
+
+  @override
+  void onRemove() {
+    remove(defaultHitbox);
+  }
 
   @override
   void updateTree(double dt) {
@@ -60,19 +81,20 @@ mixin ClusterizedComponent on PositionComponent {
     }
   }
 
-  @override
-  void onMount() {
-    super.onMount();
-    transform.addListener(_onTransform);
-  }
+  // @override
+  // void onMount() {
+  //   super.onMount();
+  //   transform.addListener(_onTransform);
+  // }
+  //
+  // @override
+  // void onRemove() {
+  //   transform.removeListener(_onTransform);
+  //   super.onRemove();
+  // }
 
-  @override
-  void onRemove() {
-    transform.removeListener(_onTransform);
-    super.onRemove();
-  }
-
-  void _onTransform() {
+  @internal
+  void updateTransform() {
     final lookAtPoint = toRect().center.toVector2();
     final current = currentCell;
     if (current == null) throw 'current cell cant be null!';
@@ -136,5 +158,22 @@ mixin ClusterizedComponent on PositionComponent {
         clusterizer.setActiveCell(newCell);
       }
     }
+  }
+}
+
+// TODO: pass into ShapeHitbox
+extension ClusterizedShapeHitbox on ShapeHitbox {
+  ClusterizedComponent? get clusterizedParent {
+    final component = ClusterizedComponent.componentHitboxes[this];
+    if (component == null) {
+      try {
+        return ancestors().firstWhere(
+          (c) => c is ClusterizedComponent,
+        ) as ClusterizedComponent;
+      } catch (e) {
+        return null;
+      }
+    }
+    return component;
   }
 }

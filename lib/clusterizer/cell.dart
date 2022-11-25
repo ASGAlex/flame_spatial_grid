@@ -298,5 +298,7 @@ class Cell {
 
   dispose() {
     clusterizer.removeListener(_onCellStateUpdated);
+    components.clear();
+    rawLeft = rawRight = rawTop = rawBottom = null;
   }
 }

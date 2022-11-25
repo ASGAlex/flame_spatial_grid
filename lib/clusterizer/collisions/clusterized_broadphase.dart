@@ -12,13 +12,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     super.items,
     required this.broadphaseCheck,
     required this.minimumDistanceCheck,
-  }) : tree = QuadTree<T>(
-          mainBoxSize: mainBoxSize,
-          maxObjects: maxObjects,
-          maxDepth: maxDepth,
-        );
-
-  final QuadTree tree;
+  });
 
   final activeCollisions = HashSet<T>();
 
@@ -33,6 +27,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   @override
   HashSet<CollisionProspect<T>> query() {
+    return _potentials;
     _potentials.clear();
     _potentialsTmp.clear();
 
@@ -40,12 +35,11 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       final asShapeItem = activeItem as ShapeHitbox;
 
       if (asShapeItem.isRemoving || asShapeItem.parent == null) {
-        tree.remove(activeItem);
         continue;
       }
 
       final itemCenter = activeItem.aabb.center;
-      final potentiallyCollide = tree.query(activeItem);
+      final potentiallyCollide = {}; //tree.query(activeItem);
       for (final potential in potentiallyCollide.entries.first.value) {
         if (potential.collisionType == CollisionType.inactive) {
           continue;
@@ -92,13 +86,10 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   void updateTransform(T item) {
-    tree.remove(item, keepOldPosition: true);
     _cacheCenterOfHitbox(item as ShapeHitbox);
-    tree.add(item);
   }
 
   void add(T hitbox) {
-    tree.add(hitbox);
     if (hitbox.collisionType == CollisionType.active) {
       activeCollisions.add(hitbox);
     }
@@ -106,7 +97,6 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   void remove(T item) {
-    tree.remove(item);
     _cachedCenters.remove(item);
     if (item.collisionType == CollisionType.active) {
       activeCollisions.remove(item);
@@ -114,7 +104,6 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   void clear() {
-    tree.clear();
     activeCollisions.clear();
     _broadphaseCheckCache.clear();
     _cachedCenters.clear();
