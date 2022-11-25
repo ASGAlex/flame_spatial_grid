@@ -39,9 +39,15 @@ class ClusterizedCollisionDetection
 
     final clusterizedComponent = item.clusterizedParent;
     if (clusterizedComponent != null) {
+      item.defaultCollisionType; //init defaults with current value;
       // ignore: prefer_function_declarations_over_variables
       final listenerClusterizerSuspend = () {
         if (clusterizedComponent.toggleCollisionOnSuspendChange) {
+          if (clusterizedComponent.isSuspended) {
+            item.collisionType = CollisionType.inactive;
+          } else {
+            item.collisionType = item.defaultCollisionType;
+          }
           listenerCollisionType();
         }
       };

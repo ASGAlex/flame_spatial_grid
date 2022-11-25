@@ -13,8 +13,11 @@ mixin ClusterizedComponent on PositionComponent {
   // TODO: pass into ShapeHitbox
   static final _cachedCenters = <ShapeHitbox, Vector2>{};
 
+  static final _defaultCollisionType = <ShapeHitbox, CollisionType>{};
+
   bool isVisible = true;
 
+  @internal
   final suspendNotifier = ValueNotifier<bool>(false);
 
   bool toggleCollisionOnSuspendChange = true;
@@ -164,8 +167,8 @@ mixin ClusterizedComponent on PositionComponent {
   }
 }
 
-// TODO: pass into ShapeHitbox
 extension ClusterizedShapeHitbox on ShapeHitbox {
+  // TODO: pass into ShapeHitbox
   Vector2 get center {
     var cache = ClusterizedComponent._cachedCenters[this];
     if (cache == null) {
@@ -175,6 +178,7 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
     return cache!;
   }
 
+  // TODO: pass into ShapeHitbox
   ClusterizedComponent? get clusterizedParent {
     final component = ClusterizedComponent._componentHitboxes[this];
     if (component == null) {
@@ -187,5 +191,14 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
       }
     }
     return component;
+  }
+
+  CollisionType get defaultCollisionType {
+    var cache = ClusterizedComponent._defaultCollisionType[this];
+    if (cache == null) {
+      ClusterizedComponent._defaultCollisionType[this] = collisionType;
+      cache = ClusterizedComponent._defaultCollisionType[this];
+    }
+    return cache!;
   }
 }
