@@ -7,9 +7,9 @@ typedef CellBuilderFunction = Future<List<ClusterizedComponent>> Function(
     Cell cell, Component parentComponent);
 
 class CellBuilder {
-  CellBuilder({required this.builder, required this.parentComponent});
+  CellBuilder({required this.builder, Component? parentComponent});
 
-  final Component parentComponent;
+  late Component parentComponent;
   final CellBuilderFunction builder;
 
   Future build(Cell cell) async {

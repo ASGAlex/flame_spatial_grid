@@ -85,7 +85,6 @@ Press T button to toggle player to collide with other objects.
         trackedComponent: player,
         parentComponent: world,
         cellBuilder: CellBuilder(
-          parentComponent: world,
           builder: (cell, parentComponent) async {
             final brick = Brick(
                 position: cell.rect.center.toVector2(),

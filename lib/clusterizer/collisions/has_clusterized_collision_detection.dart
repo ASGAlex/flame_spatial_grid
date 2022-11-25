@@ -52,7 +52,8 @@ mixin HasClusterizedCollisionDetection on FlameGame
       required int activeRadius,
       required ClusterizedComponent trackedComponent,
       required CellBuilder cellBuilder}) {
-    this.parentComponent = parentComponent ?? this;
+    cellBuilder.parentComponent =
+        this.parentComponent = parentComponent ?? this;
     _clusterizer = Clusterizer(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
