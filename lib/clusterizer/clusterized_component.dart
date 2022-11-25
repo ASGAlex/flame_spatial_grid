@@ -8,7 +8,10 @@ import 'cell.dart';
 
 mixin ClusterizedComponent on PositionComponent {
   // TODO: pass into ShapeHitbox
-  static final componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};
+  static final _componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};
+
+  // TODO: pass into ShapeHitbox
+  static final _cachedCenters = <ShapeHitbox, Vector2>{};
 
   bool isVisible = true;
 
@@ -95,7 +98,7 @@ mixin ClusterizedComponent on PositionComponent {
 
   @internal
   void updateTransform() {
-    final lookAtPoint = toRect().center.toVector2();
+    final lookAtPoint = defaultHitbox.center;
     final current = currentCell;
     if (current == null) throw 'current cell cant be null!';
     final clusterizer = current.clusterizer;
@@ -163,8 +166,17 @@ mixin ClusterizedComponent on PositionComponent {
 
 // TODO: pass into ShapeHitbox
 extension ClusterizedShapeHitbox on ShapeHitbox {
+  Vector2 get center {
+    var cache = ClusterizedComponent._cachedCenters[this];
+    if (cache == null) {
+      ClusterizedComponent._cachedCenters[this] = aabb.center;
+      cache = ClusterizedComponent._cachedCenters[this];
+    }
+    return cache!;
+  }
+
   ClusterizedComponent? get clusterizedParent {
-    final component = ClusterizedComponent.componentHitboxes[this];
+    final component = ClusterizedComponent._componentHitboxes[this];
     if (component == null) {
       try {
         return ancestors().firstWhere(
