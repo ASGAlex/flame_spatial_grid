@@ -14,7 +14,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
     implements HasCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   late ClusterizedCollisionDetection _collisionDetection;
   late final Clusterizer _clusterizer;
-  late Component parentComponent;
+  late Component rootComponent;
   ClusterizerDebugComponent? _clusterizerDebug;
   bool _isClusterizerDebugEnabled = false;
 
@@ -26,7 +26,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
     CollisionDetection<ShapeHitbox, ClusterizedBroadphase<ShapeHitbox>> cd,
   ) {
     if (cd is! ClusterizedCollisionDetection) {
-      throw 'Must be QuadTreeCollisionDetection!';
+      throw 'Must be ClusterizedCollisionDetection!';
     }
     _collisionDetection = cd;
   }
@@ -47,22 +47,25 @@ mixin HasClusterizedCollisionDetection on FlameGame
   void initializeCollisionDetection(
       {double? minimumDistance,
       bool? debug,
-      Component? parentComponent,
+      Component? rootComponent,
       required double blockSize,
       required int activeRadius,
       required ClusterizedComponent trackedComponent,
       required CellBuilder cellBuilder}) {
-    cellBuilder.parentComponent =
-        this.parentComponent = parentComponent ?? this;
+    cellBuilder.rootComponent = this.rootComponent = rootComponent ?? this;
+
     _clusterizer = Clusterizer(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
         cellBuilder: cellBuilder,
         activeRadius: activeRadius);
+
     _collisionDetection = ClusterizedCollisionDetection(
+      clusterizer: _clusterizer,
       onComponentTypeCheck: onComponentTypeCheck,
       minimumDistanceCheck: minimumDistanceCheck,
     );
+
     this.minimumDistance = minimumDistance;
     isClusterizerDebugEnabled = debug ?? false;
   }
@@ -73,7 +76,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
     _isClusterizerDebugEnabled = debug;
     if (_isClusterizerDebugEnabled) {
       _clusterizerDebug ??= ClusterizerDebugComponent(_clusterizer);
-      parentComponent.add(_clusterizerDebug!);
+      rootComponent.add(_clusterizerDebug!);
     } else {
       _clusterizerDebug?.removeFromParent();
     }

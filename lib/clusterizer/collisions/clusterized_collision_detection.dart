@@ -1,4 +1,6 @@
+import 'package:cluisterizer_test/clusterizer/cell.dart';
 import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
+import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flutter/foundation.dart';
 
@@ -8,9 +10,11 @@ class ClusterizedCollisionDetection
     extends StandardCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   ClusterizedCollisionDetection(
       {required ExternalBroadphaseCheck onComponentTypeCheck,
-      required ExternalMinDistanceCheck minimumDistanceCheck})
+      required ExternalMinDistanceCheck minimumDistanceCheck,
+      required this.clusterizer})
       : super(
             broadphase: ClusterizedBroadphase<ShapeHitbox>(
+          clusterizer: clusterizer,
           broadphaseCheck: onComponentTypeCheck,
           minimumDistanceCheck: minimumDistanceCheck,
         ));
@@ -18,45 +22,97 @@ class ClusterizedCollisionDetection
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
   final _listenerClusterizedSuspend = <ShapeHitbox, VoidCallback>{};
   final _scheduledUpdate = <ShapeHitbox>{};
+  final Clusterizer clusterizer;
 
   @override
-  void add(ShapeHitbox item) {
-    super.add(item);
+  void add(ShapeHitbox hitbox) {
+    super.add(hitbox);
 
-    item.onAabbChanged = () => _scheduledUpdate.add(item);
-    // ignore: prefer_function_declarations_over_variables
-    final listenerCollisionType = () {
-      if (item.isMounted) {
-        if (item.collisionType == CollisionType.active) {
-          broadphase.activeCollisions.add(item);
-        } else {
-          broadphase.activeCollisions.remove(item);
-        }
-      }
-    };
-    item.collisionTypeNotifier.addListener(listenerCollisionType);
-    _listenerCollisionType[item] = listenerCollisionType;
-
-    final clusterizedComponent = item.clusterizedParent;
+    hitbox.onAabbChanged = () => _scheduledUpdate.add(hitbox);
+    final clusterizedComponent = hitbox.clusterizedParent;
     if (clusterizedComponent != null) {
-      item.defaultCollisionType; //init defaults with current value;
+      // ignore: prefer_function_declarations_over_variables
+      final listenerCollisionType = () {
+        if (hitbox.isMounted) {
+          _onClusterizedCollisionTypeChange(clusterizedComponent, hitbox);
+        }
+      };
+
+      hitbox.collisionTypeNotifier.addListener(listenerCollisionType);
+      _listenerCollisionType[hitbox] = listenerCollisionType;
+
+      _onClusterizedCollisionTypeChange(clusterizedComponent, hitbox);
+
+      hitbox.defaultCollisionType; //init defaults with current value;
+
       // ignore: prefer_function_declarations_over_variables
       final listenerClusterizerSuspend = () {
-        if (clusterizedComponent.toggleCollisionOnSuspendChange) {
-          if (clusterizedComponent.isSuspended) {
-            item.collisionType = CollisionType.inactive;
-          } else {
-            item.collisionType = item.defaultCollisionType;
-          }
-          listenerCollisionType();
-        }
+        _onComponentSuspend(clusterizedComponent, hitbox);
       };
       clusterizedComponent.suspendNotifier
           .addListener(listenerClusterizerSuspend);
-      _listenerClusterizedSuspend[item] = listenerClusterizerSuspend;
+      _listenerClusterizedSuspend[hitbox] = listenerClusterizerSuspend;
+    } else {
+      // ignore: prefer_function_declarations_over_variables
+      final listenerCollisionType = () {
+        if (hitbox.isMounted) {
+          if (hitbox.collisionType == CollisionType.active) {
+            broadphase.activeCollisions.add(hitbox);
+          } else {
+            broadphase.activeCollisions.remove(hitbox);
+          }
+        }
+      };
+      hitbox.collisionTypeNotifier.addListener(listenerCollisionType);
+      _listenerCollisionType[hitbox] = listenerCollisionType;
     }
+  }
 
-    broadphase.add(item);
+  void _onComponentSuspend(ClusterizedComponent component, ShapeHitbox hitbox) {
+    if (component.toggleCollisionOnSuspendChange) {
+      if (component.isSuspended) {
+        hitbox.collisionType = CollisionType.inactive;
+      } else {
+        hitbox.collisionType = hitbox.defaultCollisionType;
+      }
+      _onClusterizedCollisionTypeChange(component, hitbox);
+    }
+  }
+
+  void _onClusterizedCollisionTypeChange(
+      ClusterizedComponent component, ShapeHitbox hitbox) {
+    switch (hitbox.collisionType) {
+      case CollisionType.active:
+        broadphase.activeCollisions.add(hitbox);
+        _removeHitboxFromPassives(component, hitbox);
+        break;
+      case CollisionType.passive:
+        broadphase.activeCollisions.remove(hitbox);
+        _addHotboxToPassives(component, hitbox);
+        break;
+      case CollisionType.inactive:
+        broadphase.activeCollisions.remove(hitbox);
+        _removeHitboxFromPassives(component, hitbox);
+        break;
+    }
+  }
+
+  void _addHotboxToPassives(
+      ClusterizedComponent component, ShapeHitbox hitbox) {
+    final cell = component.currentCell;
+    if (cell != null && cell.state != CellState.suspended) {
+      var list = broadphase.passiveCollisionsByCell[cell];
+      list ??= broadphase.passiveCollisionsByCell[cell] = [];
+      list.add(hitbox);
+    }
+  }
+
+  void _removeHitboxFromPassives(
+      ClusterizedComponent component, ShapeHitbox hitbox) {
+    final cell = component.currentCell;
+    if (cell != null) {
+      broadphase.passiveCollisionsByCell[cell]?.remove(hitbox);
+    }
   }
 
   @override
@@ -65,26 +121,27 @@ class ClusterizedCollisionDetection
   }
 
   @override
-  void remove(ShapeHitbox item) {
-    item.onAabbChanged = null;
-    final listenerCollisionType = _listenerCollisionType[item];
+  void remove(ShapeHitbox hitbox) {
+    hitbox.onAabbChanged = null;
+    final listenerCollisionType = _listenerCollisionType[hitbox];
     if (listenerCollisionType != null) {
-      item.collisionTypeNotifier.removeListener(listenerCollisionType);
-      _listenerCollisionType.remove(item);
+      hitbox.collisionTypeNotifier.removeListener(listenerCollisionType);
+      _listenerCollisionType.remove(hitbox);
     }
 
-    final clusterizedComponent = item.clusterizedParent;
+    final clusterizedComponent = hitbox.clusterizedParent;
     if (clusterizedComponent != null) {
-      final listenerClusterizerSuspend = _listenerCollisionType[item];
+      final listenerClusterizerSuspend = _listenerCollisionType[hitbox];
       if (listenerClusterizerSuspend != null) {
         clusterizedComponent.suspendNotifier
             .removeListener(listenerClusterizerSuspend);
-        _listenerClusterizedSuspend.remove(item);
+        _listenerClusterizedSuspend.remove(hitbox);
       }
+      _removeHitboxFromPassives(clusterizedComponent, hitbox);
+      broadphase.activeCollisions.remove(hitbox);
     }
 
-    broadphase.remove(item);
-    super.remove(item);
+    super.remove(hitbox);
   }
 
   @override
@@ -96,7 +153,22 @@ class ClusterizedCollisionDetection
   void _updateTransform(ShapeHitbox item) {
     final clusterizedComponent = item.clusterizedParent;
     if (clusterizedComponent == null) return;
-    clusterizedComponent.updateTransform();
+    final previousCell = clusterizedComponent.currentCell;
+    final cellChanged = clusterizedComponent.updateTransform();
+    //suspend hitbox, if was moved to suspended cell.
+    if (cellChanged && !clusterizedComponent.isTracked) {
+      final onCellSuspend = _listenerClusterizedSuspend[item];
+      if (onCellSuspend != null) {
+        onCellSuspend();
+      }
+      if (item.collisionType == CollisionType.inactive &&
+          previousCell != null) {
+        final list = broadphase.passiveCollisionsByCell[previousCell];
+        if (list != null) {
+          list.remove(item);
+        }
+      }
+    }
   }
 
   @override

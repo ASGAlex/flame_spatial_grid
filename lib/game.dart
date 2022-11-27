@@ -78,14 +78,19 @@ Press T button to toggle player to collide with other objects.
     );
 
     player = world.player;
+    var firstBrick = true;
     initializeCollisionDetection(
         debug: true,
         activeRadius: 2,
         blockSize: 100,
         trackedComponent: player,
-        parentComponent: world,
+        rootComponent: world,
         cellBuilder: CellBuilder(
           builder: (cell, parentComponent) async {
+            if (firstBrick) {
+              firstBrick = false;
+              return [];
+            }
             final brick = Brick(
                 position: cell.rect.center.toVector2(),
                 priority: 1,
@@ -112,7 +117,7 @@ Press T button to toggle player to collide with other objects.
   var _fireBullet = false;
 
   final staticLayer = StaticLayer();
-  static const stepSize = 10.0;
+  static const stepSize = 5.0;
 
   @override
   KeyEventResult onKeyEvent(
@@ -140,11 +145,11 @@ Press T button to toggle player to collide with other objects.
         _fireBullet = true;
       }
       if (key == LogicalKeyboardKey.keyT) {
-        final collisionType = player.hitbox.collisionType;
+        final collisionType = player.defaultHitbox.collisionType;
         if (collisionType == CollisionType.active) {
-          player.hitbox.collisionType = CollisionType.inactive;
+          player.defaultHitbox.collisionType = CollisionType.inactive;
         } else if (collisionType == CollisionType.inactive) {
-          player.hitbox.collisionType = CollisionType.active;
+          player.defaultHitbox.collisionType = CollisionType.active;
         }
       }
       if (key == LogicalKeyboardKey.keyO) {
@@ -177,7 +182,7 @@ class MyWorld extends World {
   static const bricksCount = 8000;
 
   final Player player = Player(
-      position: Vector2.all(mapSize * tileSize / 2),
+      position: Vector2.all(mapSize * tileSize / 2 + 6),
       size: Vector2.all(tileSize),
       priority: 2);
 
@@ -203,11 +208,12 @@ class Player extends SpriteComponent
     ).then((value) {
       sprite = value;
     });
-
-    add(hitbox);
+    defaultHitbox.collisionType =
+        defaultHitbox.defaultCollisionType = CollisionType.active;
+    // add(hitbox);
   }
 
-  final hitbox = RectangleHitbox();
+  // final hitbox = RectangleHitbox();
   bool canMoveLeft = true;
   bool canMoveRight = true;
   bool canMoveTop = true;
@@ -218,8 +224,7 @@ class Player extends SpriteComponent
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
-    final myCenter =
-        Vector2(position.x + tileSize / 2, position.y + tileSize / 2);
+    final myCenter = defaultHitbox.aabbCenter;
     if (other is GameCollideable) {
       final diffX = myCenter.x - other.cachedCenter.x;
       if (diffX < 0) {
@@ -250,12 +255,14 @@ class Player extends SpriteComponent
   }
 }
 
-class Bullet extends PositionComponent with CollisionCallbacks, HasPaint {
+class Bullet extends PositionComponent
+    with CollisionCallbacks, HasPaint, ClusterizedComponent {
   Bullet({required super.position, required this.displacement}) {
     paint.color = Colors.deepOrange;
     priority = 10;
     size = Vector2.all(1);
-    add(RectangleHitbox());
+    defaultHitbox.collisionType =
+        defaultHitbox.defaultCollisionType = CollisionType.active;
   }
 
   final Vector2 displacement;
@@ -295,14 +302,13 @@ class Bullet extends PositionComponent with CollisionCallbacks, HasPaint {
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, GameCollideable, UpdateOnce, ClusterizedComponent {
+    with CollisionCallbacks, ClusterizedComponent, GameCollideable, UpdateOnce {
   Brick({
     required super.position,
     required super.priority,
     required super.sprite,
   }) {
     size = Vector2.all(tileSize);
-    initCenter();
     initCollision();
   }
 
@@ -317,29 +323,24 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteComponent
-    with CollisionCallbacks, GameCollideable, UpdateOnce {
+    with CollisionCallbacks, ClusterizedComponent, GameCollideable, UpdateOnce {
   Water({
     required super.position,
     required super.size,
     required super.priority,
     required super.sprite,
   }) {
-    initCenter();
     initCollision();
   }
 }
 
-mixin GameCollideable on PositionComponent {
+mixin GameCollideable on ClusterizedComponent {
   void initCollision() {
-    add(RectangleHitbox()..collisionType = CollisionType.passive);
+    defaultHitbox.collisionType =
+        defaultHitbox.defaultCollisionType = CollisionType.passive;
   }
 
-  void initCenter() {
-    cachedCenter =
-        Vector2(position.x + tileSize / 2, position.y + tileSize / 2);
-  }
-
-  late final Vector2 cachedCenter;
+  Vector2 get cachedCenter => defaultHitbox.aabbCenter;
 }
 
 //#endregion

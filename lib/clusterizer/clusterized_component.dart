@@ -1,3 +1,4 @@
+import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -7,7 +8,6 @@ import 'package:meta/meta.dart';
 import 'cell.dart';
 
 mixin ClusterizedComponent on PositionComponent {
-  // TODO: pass into ShapeHitbox
   static final _componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};
 
   // TODO: pass into ShapeHitbox
@@ -25,6 +25,8 @@ mixin ClusterizedComponent on PositionComponent {
   bool get isSuspended => suspendNotifier.value;
 
   Cell? currentCell;
+
+  Clusterizer? clusterizer;
 
   bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
@@ -100,8 +102,9 @@ mixin ClusterizedComponent on PositionComponent {
   // }
 
   @internal
-  void updateTransform() {
-    final lookAtPoint = defaultHitbox.center;
+  bool updateTransform() {
+    _cachedCenters.remove(defaultHitbox);
+    final lookAtPoint = defaultHitbox.aabbCenter;
     final current = currentCell;
     if (current == null) throw 'current cell cant be null!';
     final clusterizer = current.clusterizer;
@@ -132,7 +135,7 @@ mixin ClusterizedComponent on PositionComponent {
         var xSign = diff.x > 0 ? 1 : -1;
         var ySign = diff.y > 0 ? 1 : -1;
         var newTemporaryCell = current;
-        while ((lookAtPoint.x - pos.x).abs() >= stepSize / 3) {
+        while ((lookAtPoint.x - pos.x).abs() >= stepSize) {
           if (xSign > 0) {
             newTemporaryCell = newTemporaryCell.right;
           } else {
@@ -140,7 +143,7 @@ mixin ClusterizedComponent on PositionComponent {
           }
           pos.x = newTemporaryCell.rect.center.dx;
         }
-        while ((lookAtPoint.y - pos.y).abs() >= stepSize / 3) {
+        while ((lookAtPoint.y - pos.y).abs() >= stepSize) {
           if (ySign > 0) {
             newTemporaryCell = newTemporaryCell.bottom;
           } else {
@@ -151,7 +154,15 @@ mixin ClusterizedComponent on PositionComponent {
         if (newTemporaryCell.rect.contains(lookAtPoint.toOffset())) {
           newCell = newTemporaryCell;
         } else {
-          throw 'teleportation error';
+          for (var element in newTemporaryCell.neighbours) {
+            if (element.rect.contains(lookAtPoint.toOffset())) {
+              newCell = element;
+              break;
+            }
+          }
+          if (newCell == null) {
+            throw 'teleportation error';
+          }
         }
       }
 
@@ -163,13 +174,30 @@ mixin ClusterizedComponent on PositionComponent {
       if (isTracked) {
         clusterizer.setActiveCell(newCell);
       }
+      return true; //cell changed;
     }
+    return false; //cell not changed;
+  }
+  //
+  // Cell _locateCellByPosition() {
+  //   final pos = defaultHitbox.aabbCenter;
+  // }
+}
+
+extension ClusterizedRectangleHitbox on RectangleHitbox {
+  Vector2 get aabbCenter {
+    var cache = ClusterizedComponent._cachedCenters[this];
+    if (cache == null) {
+      ClusterizedComponent._cachedCenters[this] = aabb.center;
+      cache = ClusterizedComponent._cachedCenters[this];
+    }
+    return cache!;
   }
 }
 
 extension ClusterizedShapeHitbox on ShapeHitbox {
-  // TODO: pass into ShapeHitbox
-  Vector2 get center {
+  // TODO: pass into ShapeHitbox?
+  Vector2 get aabbCenter {
     var cache = ClusterizedComponent._cachedCenters[this];
     if (cache == null) {
       ClusterizedComponent._cachedCenters[this] = aabb.center;
@@ -178,7 +206,6 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
     return cache!;
   }
 
-  // TODO: pass into ShapeHitbox
   ClusterizedComponent? get clusterizedParent {
     final component = ClusterizedComponent._componentHitboxes[this];
     if (component == null) {
@@ -191,6 +218,10 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
       }
     }
     return component;
+  }
+
+  set defaultCollisionType(CollisionType defaultCollisionType) {
+    ClusterizedComponent._defaultCollisionType[this] = defaultCollisionType;
   }
 
   CollisionType get defaultCollisionType {

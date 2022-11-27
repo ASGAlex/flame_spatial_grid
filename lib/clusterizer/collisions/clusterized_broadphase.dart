@@ -1,7 +1,10 @@
 import 'dart:collection';
 
+import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
 import 'package:flame/collisions.dart';
-import 'package:flame/extensions.dart';
+
+import '../cell.dart';
+import '../clusterizer.dart';
 
 /// Performs Quad Tree broadphase check.
 ///
@@ -10,24 +13,26 @@ import 'package:flame/extensions.dart';
 class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   ClusterizedBroadphase({
     super.items,
+    required this.clusterizer,
     required this.broadphaseCheck,
     required this.minimumDistanceCheck,
   });
 
+  final Clusterizer clusterizer;
+
   final activeCollisions = HashSet<T>();
+  final passiveCollisionsByCell = <Cell, List<T>>{};
 
   ExternalBroadphaseCheck broadphaseCheck;
   ExternalMinDistanceCheck minimumDistanceCheck;
   final _broadphaseCheckCache = <T, Map<T, bool>>{};
-
-  final _cachedCenters = <ShapeHitbox, Vector2>{};
 
   final _potentials = HashSet<CollisionProspect<T>>();
   final _potentialsTmp = <List<ShapeHitbox>>[];
 
   @override
   HashSet<CollisionProspect<T>> query() {
-    return _potentials;
+    // return _potentials;
     _potentials.clear();
     _potentialsTmp.clear();
 
@@ -38,9 +43,19 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      final itemCenter = activeItem.aabb.center;
-      final potentiallyCollide = {}; //tree.query(activeItem);
-      for (final potential in potentiallyCollide.entries.first.value) {
+      final itemCenter = asShapeItem.center;
+      final cellsToCheck =
+          asShapeItem.clusterizedParent?.currentCell?.neighboursAndMe;
+
+      final potentiallyCollide = <T>[];
+      if (cellsToCheck == null) continue;
+      for (final cell in cellsToCheck) {
+        final items = passiveCollisionsByCell[cell];
+        if (items != null && items.isNotEmpty) {
+          potentiallyCollide.addAll(items);
+        }
+      }
+      for (final potential in potentiallyCollide) {
         if (potential.collisionType == CollisionType.inactive) {
           continue;
         }
@@ -58,13 +73,13 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
         final distanceCloseEnough = minimumDistanceCheck.call(
           itemCenter,
-          _cacheCenterOfHitbox(asShapePotential),
+          asShapePotential.aabbCenter,
         );
         if (distanceCloseEnough == false) {
           continue;
         }
 
-        _potentialsTmp.add([asShapeItem, potential]);
+        _potentialsTmp.add([asShapeItem, asShapePotential]);
       }
     }
 
@@ -85,38 +100,8 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return _potentials;
   }
 
-  void updateTransform(T item) {
-    _cacheCenterOfHitbox(item as ShapeHitbox);
-  }
-
-  void add(T hitbox) {
-    if (hitbox.collisionType == CollisionType.active) {
-      activeCollisions.add(hitbox);
-    }
-    _cacheCenterOfHitbox(hitbox as ShapeHitbox);
-  }
-
-  void remove(T item) {
-    _cachedCenters.remove(item);
-    if (item.collisionType == CollisionType.active) {
-      activeCollisions.remove(item);
-    }
-  }
-
   void clear() {
     activeCollisions.clear();
     _broadphaseCheckCache.clear();
-    _cachedCenters.clear();
-  }
-
-  /// Caches hitbox center because calculating on-the-fly is too expensive
-  /// whereas many of game objects could not change theirs position or size
-  Vector2 _cacheCenterOfHitbox(ShapeHitbox hitbox) {
-    var cache = _cachedCenters[hitbox];
-    if (cache == null) {
-      _cachedCenters[hitbox] = hitbox.aabb.center;
-      cache = _cachedCenters[hitbox];
-    }
-    return cache!;
   }
 }
