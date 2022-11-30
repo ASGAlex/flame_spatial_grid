@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -15,7 +17,12 @@ import 'clusterizer/collisions/has_clusterized_collision_detection.dart';
 const tileSize = 8.0;
 
 class QuadTreeExample extends FlameGame
-    with HasClusterizedCollisionDetection, KeyboardEvents, ScrollDetector {
+    with
+        HasClusterizedCollisionDetection,
+        KeyboardEvents,
+        ScrollDetector,
+        ScaleDetector,
+        HasTappableComponents {
   QuadTreeExample();
 
   static const description = '''
@@ -81,7 +88,7 @@ Press T button to toggle player to collide with other objects.
     var firstBrick = true;
     initializeCollisionDetection(
         debug: true,
-        activeRadius: 2,
+        activeRadius: 5,
         blockSize: 100,
         trackedComponent: player,
         rootComponent: world,
@@ -91,15 +98,23 @@ Press T button to toggle player to collide with other objects.
               firstBrick = false;
               return [];
             }
-            final brick = Brick(
-                position: cell.rect.center.toVector2(),
-                priority: 1,
-                sprite: spriteBrick);
-            return [brick];
+            final bricks = <Brick>[];
+            for (var i = 0; i < 15; i++) {
+              final random = Random();
+              final diffX =
+                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+              final diffY =
+                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+              final position =
+                  cell.rect.center.toVector2().translate(diffX, diffY);
+              bricks.add(
+                  Brick(position: position, priority: 1, sprite: spriteBrick));
+            }
+            return bricks;
           },
         ));
     cameraComponent = CameraComponent(world: world);
-    cameraComponent.viewfinder.zoom = 0.2;
+    cameraComponent.viewfinder.zoom = 1.5;
     add(world);
     add(cameraComponent);
     cameraComponent.follow(player);
@@ -117,7 +132,7 @@ Press T button to toggle player to collide with other objects.
   var _fireBullet = false;
 
   final staticLayer = StaticLayer();
-  static const stepSize = 160.0;
+  static const stepSize = 5.0;
 
   @override
   KeyEventResult onKeyEvent(
@@ -166,6 +181,7 @@ Press T button to toggle player to collide with other objects.
       _fireBullet = false;
     }
 
+    print(player.position);
     return KeyEventResult.handled;
   }
 
@@ -175,9 +191,16 @@ Press T button to toggle player to collide with other objects.
     zoom += info.scrollDelta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
   }
+
+  @override
+  void onScaleUpdate(ScaleUpdateInfo info) {
+    var zoom = cameraComponent.viewfinder.zoom;
+    zoom += info.delta.game.y.sign * 0.08;
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
+  }
 }
 
-class MyWorld extends World {
+class MyWorld extends World with TapCallbacks {
   static const mapSize = 300;
   static const bricksCount = 8000;
 
@@ -189,6 +212,11 @@ class MyWorld extends World {
   @override
   onLoad() async {
     add(player);
+  }
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    player.position = event.localPosition;
   }
 }
 
