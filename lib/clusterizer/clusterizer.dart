@@ -1,12 +1,11 @@
 import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flutter/foundation.dart';
 
 import 'cell.dart';
 import 'clusterized_component.dart';
 
-class Clusterizer extends ChangeNotifier {
+class Clusterizer {
   Clusterizer(
       {required this.blockSize,
       required this.trackedComponent,
@@ -32,7 +31,6 @@ class Clusterizer extends ChangeNotifier {
 
   @override
   dispose() {
-    super.dispose();
     for (var cell in cells.values) {
       cell.dispose();
     }
@@ -65,7 +63,6 @@ class Clusterizer extends ChangeNotifier {
       cell.state = CellState.active;
     }
     newActiveCell.state = CellState.active;
-    notifyListeners();
   }
 
   Set<Cell> _findCellsInRadius(int radius, {bool create = false}) {
@@ -225,10 +222,72 @@ class Clusterizer extends ChangeNotifier {
     return cells;
   }
 
-  Cell? findCellByPosition(Vector2 position) {
-    for (final cell in cells.entries) {
-      if (cell.value.rect.containsPoint(position)) return cell.value;
+  Cell? findExistingCellByPosition(Vector2 position) {
+    final nearest = findNearestCellToPosition(position);
+    if (nearest?.rect.containsPoint(position) == true) {
+      return nearest;
     }
     return null;
+  }
+
+  Cell? findNearestCellToPosition(Vector2 position) {
+    double shortestDistance = double.maxFinite;
+    Cell? nearestCell;
+    for (final cell in cells.entries) {
+      final distance = cell.value.center.distanceToSquared(position);
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        nearestCell = cell.value;
+      }
+    }
+    return nearestCell;
+  }
+
+  Cell? createNewCellAtPosition(Vector2 position) {
+    final nearest = findNearestCellToPosition(position);
+    if (nearest == null) throw "There are no cells probably?";
+
+    var startPoint = nearest.center;
+    final diff = position - startPoint;
+    final xSign = diff.x > 0 ? 1 : -1;
+    final ySign = diff.y > 0 ? 1 : -1;
+    var moveByX = diff.x.abs();
+    var moveByY = diff.y.abs();
+
+    while (moveByX >= blockSize.width / 2) {
+      moveByX -= blockSize.width;
+      if (xSign > 0) {
+        startPoint.x += blockSize.width;
+      } else {
+        startPoint.x -= blockSize.width;
+      }
+    }
+    while (moveByY >= blockSize.height / 2) {
+      moveByY -= blockSize.height;
+      if (ySign > 0) {
+        startPoint.y += blockSize.height;
+      } else {
+        startPoint.y -= blockSize.height;
+      }
+    }
+
+    final rect = Rect.fromCenter(
+        center: startPoint.toOffset(),
+        width: blockSize.width,
+        height: blockSize.height);
+    if (!rect.containsPoint(position)) {
+      print(rect);
+      print(position);
+      print(startPoint);
+      //throw 'Error creating new cell';
+    }
+
+    final cell = Cell(clusterizer: this, rect: rect);
+    cell.left;
+    cell.right;
+    cell.top;
+    cell.bottom;
+
+    return cell;
   }
 }

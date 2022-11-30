@@ -31,6 +31,7 @@ class ClusterizedCollisionDetection
     hitbox.onAabbChanged = () => _scheduledUpdate.add(hitbox);
     final clusterizedComponent = hitbox.clusterizedParent;
     if (clusterizedComponent != null) {
+      clusterizedComponent.clusterizer = clusterizer;
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
         if (hitbox.isMounted) {

@@ -99,7 +99,7 @@ Press T button to toggle player to collide with other objects.
           },
         ));
     cameraComponent = CameraComponent(world: world);
-    // cameraComponent.viewfinder.zoom = 0.3;
+    cameraComponent.viewfinder.zoom = 0.2;
     add(world);
     add(cameraComponent);
     cameraComponent.follow(player);
@@ -117,7 +117,7 @@ Press T button to toggle player to collide with other objects.
   var _fireBullet = false;
 
   final staticLayer = StaticLayer();
-  static const stepSize = 5.0;
+  static const stepSize = 160.0;
 
   @override
   KeyEventResult onKeyEvent(

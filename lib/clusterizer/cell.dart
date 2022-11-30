@@ -11,17 +11,17 @@ enum CellState { active, inactive, suspended }
 
 class Cell {
   Cell({required this.clusterizer, required this.rect}) {
+    center = rect.center.toVector2();
     clusterizer.cells[rect] = this;
     clusterizer.cellBuilder?.build(this);
-    clusterizer.addListener(_onCellStateUpdated);
     // print(clusterizer.cells.length);
   }
 
   final Clusterizer clusterizer;
   final Rect rect;
+  late final Vector2 center;
   final components = HashSet<ClusterizedComponent>();
   CellState state = CellState.active;
-  CellState _previousState = CellState.active;
 
   Cell? rawLeft;
   Cell? rawRight;
@@ -285,19 +285,7 @@ class Cell {
 
   List<Cell> get neighboursAndMe => neighbours..add(this);
 
-  void _onCellStateUpdated() {
-    if (state != _previousState) {
-      for (var component in components) {
-        component.isVisible = (state == CellState.active ? true : false);
-        component.isSuspended = (state == CellState.suspended ? true : false);
-      }
-    }
-
-    _previousState = state;
-  }
-
   dispose() {
-    clusterizer.removeListener(_onCellStateUpdated);
     components.clear();
     rawLeft = rawRight = rawTop = rawBottom = null;
   }

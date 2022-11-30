@@ -26,7 +26,7 @@ mixin ClusterizedComponent on PositionComponent {
 
   Cell? currentCell;
 
-  Clusterizer? clusterizer;
+  late final Clusterizer clusterizer;
 
   bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
@@ -59,6 +59,7 @@ mixin ClusterizedComponent on PositionComponent {
 
   @override
   void updateTree(double dt) {
+    isSuspended = (currentCell?.state == CellState.suspended ? true : false);
     if (isSuspended) {
       _dtElapsedWhileSuspended += dt;
       updateSuspendedTree(_dtElapsedWhileSuspended);
@@ -84,6 +85,7 @@ mixin ClusterizedComponent on PositionComponent {
 
   @override
   void renderTree(Canvas canvas) {
+    isVisible = (currentCell?.state == CellState.active ? true : false);
     if (isVisible) {
       super.renderTree(canvas);
     }
@@ -107,7 +109,7 @@ mixin ClusterizedComponent on PositionComponent {
     final lookAtPoint = defaultHitbox.aabbCenter;
     final current = currentCell;
     if (current == null) throw 'current cell cant be null!';
-    final clusterizer = current.clusterizer;
+    if (clusterizer == null) throw 'clusterizer cant be null!';
     if (current.rect.containsPoint(lookAtPoint) != true) {
       Cell? newCell;
       //look close neighbours
@@ -129,40 +131,10 @@ mixin ClusterizedComponent on PositionComponent {
       //if nothing again - try to locate new cell's position from component's
       //coordinates
       if (newCell == null) {
-        final diff = lookAtPoint - current.rect.center.toVector2();
-        final stepSize = current.rect.width;
-        final pos = current.rect.center.toVector2();
-        var xSign = diff.x > 0 ? 1 : -1;
-        var ySign = diff.y > 0 ? 1 : -1;
-        var newTemporaryCell = current;
-        while ((lookAtPoint.x - pos.x).abs() >= stepSize) {
-          if (xSign > 0) {
-            newTemporaryCell = newTemporaryCell.right;
-          } else {
-            newTemporaryCell = newTemporaryCell.left;
-          }
-          pos.x = newTemporaryCell.rect.center.dx;
-        }
-        while ((lookAtPoint.y - pos.y).abs() >= stepSize) {
-          if (ySign > 0) {
-            newTemporaryCell = newTemporaryCell.bottom;
-          } else {
-            newTemporaryCell = newTemporaryCell.top;
-          }
-          pos.y = newTemporaryCell.rect.center.dy;
-        }
-        if (newTemporaryCell.rect.contains(lookAtPoint.toOffset())) {
-          newCell = newTemporaryCell;
-        } else {
-          for (var element in newTemporaryCell.neighbours) {
-            if (element.rect.contains(lookAtPoint.toOffset())) {
-              newCell = element;
-              break;
-            }
-          }
-          if (newCell == null) {
-            throw 'teleportation error';
-          }
+        newCell = clusterizer.createNewCellAtPosition(lookAtPoint);
+
+        if (newCell == null) {
+          throw 'teleportation error';
         }
       }
 
@@ -178,10 +150,6 @@ mixin ClusterizedComponent on PositionComponent {
     }
     return false; //cell not changed;
   }
-  //
-  // Cell _locateCellByPosition() {
-  //   final pos = defaultHitbox.aabbCenter;
-  // }
 }
 
 extension ClusterizedRectangleHitbox on RectangleHitbox {
