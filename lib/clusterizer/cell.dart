@@ -13,8 +13,13 @@ class Cell {
   Cell({required this.clusterizer, required this.rect}) {
     center = rect.center.toVector2();
     clusterizer.cells[rect] = this;
+
+    rawLeft = _checkCell(_CellCreationContext.left);
+    rawRight = _checkCell(_CellCreationContext.right);
+    rawTop = _checkCell(_CellCreationContext.top);
+    rawBottom = _checkCell(_CellCreationContext.bottom);
+
     clusterizer.cellBuilder?.build(this);
-    // print(clusterizer.cells.length);
   }
 
   final Clusterizer clusterizer;
@@ -30,6 +35,15 @@ class Cell {
 
   final _cachedRects = <_CellCreationContext, Rect>{};
 
+  Cell? get leftChecked => rawLeft ??= _checkCell(_CellCreationContext.left);
+
+  Cell? get rightChecked => rawRight ??= _checkCell(_CellCreationContext.right);
+
+  Cell? get topChecked => rawTop ??= _checkCell(_CellCreationContext.top);
+
+  Cell? get bottomChecked =>
+      rawBottom ??= _checkCell(_CellCreationContext.bottom);
+
   Cell get left => rawLeft ??= _createCell(_CellCreationContext.left);
 
   Cell get right => rawRight ??= _createCell(_CellCreationContext.right);
@@ -38,60 +52,12 @@ class Cell {
 
   Cell get bottom => rawBottom ??= _createCell(_CellCreationContext.bottom);
 
-  Cell _createCell(_CellCreationContext direction, [bool recursive = true]) {
-    var newCell = _checkCell(direction);
-    newCell ??= Cell(
-        clusterizer: clusterizer, rect: _createRectForDirection(direction));
+  Cell _createCell(_CellCreationContext direction) =>
+      _checkCell(direction) ??
+      Cell(clusterizer: clusterizer, rect: _createRectForDirection(direction));
 
-    switch (direction) {
-      case _CellCreationContext.left:
-        if (recursive) {
-          newCell._createCell(_CellCreationContext.top, false);
-          newCell._createCell(_CellCreationContext.bottom, false);
-        } else {
-          newCell.rawTop ??= newCell._checkCell(_CellCreationContext.top);
-          newCell.rawBottom ??= newCell._checkCell(_CellCreationContext.bottom);
-        }
-        newCell.rawLeft ??= newCell._checkCell(_CellCreationContext.left);
-        newCell.rawRight = this;
-        break;
-      case _CellCreationContext.top:
-        if (recursive) {
-          newCell._createCell(_CellCreationContext.left, false);
-          newCell._createCell(_CellCreationContext.right, false);
-        } else {
-          newCell.rawLeft ??= newCell._checkCell(_CellCreationContext.left);
-          newCell.rawRight ??= newCell._checkCell(_CellCreationContext.right);
-        }
-        newCell.rawTop ??= newCell._checkCell(_CellCreationContext.top);
-        newCell.rawBottom = this;
-        break;
-      case _CellCreationContext.right:
-        if (recursive) {
-          newCell._createCell(_CellCreationContext.top, false);
-          newCell._createCell(_CellCreationContext.bottom, false);
-        } else {
-          newCell.rawTop ??= newCell._checkCell(_CellCreationContext.top);
-          newCell.rawBottom ??= newCell._checkCell(_CellCreationContext.bottom);
-        }
-        newCell.rawRight ??= newCell._checkCell(_CellCreationContext.right);
-        newCell.rawLeft = this;
-        break;
-      case _CellCreationContext.bottom:
-        if (recursive) {
-          newCell._createCell(_CellCreationContext.left, false);
-          newCell._createCell(_CellCreationContext.right, false);
-        } else {
-          newCell.rawLeft ??= newCell._checkCell(_CellCreationContext.left);
-          newCell.rawRight ??= newCell._checkCell(_CellCreationContext.right);
-        }
-        newCell.rawBottom ??= newCell._checkCell(_CellCreationContext.bottom);
-        newCell.rawTop = this;
-        break;
-    }
-
-    return newCell;
-  }
+  Cell? _checkCell(_CellCreationContext direction) =>
+      clusterizer.cells[_createRectForDirection(direction)];
 
   Rect _createRectForDirection(_CellCreationContext creationContext) {
     var newRect = _cachedRects[creationContext];
@@ -116,9 +82,6 @@ class Cell {
     }
     return newRect;
   }
-
-  Cell? _checkCell(_CellCreationContext direction) =>
-      clusterizer.cells[_createRectForDirection(direction)];
 
   List<Cell> get neighbours {
     final list = <Cell>[];

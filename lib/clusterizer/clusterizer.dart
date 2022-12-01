@@ -20,10 +20,6 @@ class Clusterizer {
             center: trackedComponent.position.toOffset(),
             width: blockSize.width,
             height: blockSize.height));
-    cell.left;
-    cell.right;
-    cell.top;
-    cell.bottom;
 
     setActiveCell(cell);
     trackedComponent.currentCell = cell;
@@ -75,7 +71,7 @@ class Clusterizer {
       if (create) {
         tmpDirection = tmpDirection.left;
       } else {
-        final rawLeft = tmpDirection.rawLeft;
+        final rawLeft = tmpDirection.leftChecked;
         if (rawLeft == null) break;
         tmpDirection = rawLeft;
       }
@@ -86,7 +82,7 @@ class Clusterizer {
         if (create) {
           topDirection = topDirection.top;
         } else {
-          final rawTop = topDirection.rawTop;
+          final rawTop = topDirection.topChecked;
           if (rawTop == null) break;
           topDirection = rawTop;
         }
@@ -100,7 +96,7 @@ class Clusterizer {
         if (create) {
           bottomDirection = bottomDirection.bottom;
         } else {
-          final rawBottom = bottomDirection.rawBottom;
+          final rawBottom = bottomDirection.bottomChecked;
           if (rawBottom == null) break;
           bottomDirection = rawBottom;
         }
@@ -113,7 +109,7 @@ class Clusterizer {
       if (create) {
         tmpDirection = tmpDirection.right;
       } else {
-        final rawRight = tmpDirection.rawRight;
+        final rawRight = tmpDirection.rightChecked;
         if (rawRight == null) break;
         tmpDirection = rawRight;
       }
@@ -124,7 +120,7 @@ class Clusterizer {
         if (create) {
           topDirection = topDirection.top;
         } else {
-          final rawTop = topDirection.rawTop;
+          final rawTop = topDirection.topChecked;
           if (rawTop == null) break;
           topDirection = rawTop;
         }
@@ -138,7 +134,7 @@ class Clusterizer {
         if (create) {
           bottomDirection = bottomDirection.bottom;
         } else {
-          final rawBottom = bottomDirection.rawBottom;
+          final rawBottom = bottomDirection.bottomChecked;
           if (rawBottom == null) break;
           bottomDirection = rawBottom;
         }
@@ -151,7 +147,7 @@ class Clusterizer {
       if (create) {
         tmpDirection = tmpDirection.top;
       } else {
-        final rawTop = tmpDirection.rawTop;
+        final rawTop = tmpDirection.topChecked;
         if (rawTop == null) break;
         tmpDirection = rawTop;
       }
@@ -162,7 +158,7 @@ class Clusterizer {
         if (create) {
           leftDirection = leftDirection.left;
         } else {
-          final rawLeft = leftDirection.rawLeft;
+          final rawLeft = leftDirection.leftChecked;
           if (rawLeft == null) break;
           leftDirection = rawLeft;
         }
@@ -174,7 +170,7 @@ class Clusterizer {
         if (create) {
           rightDirection = rightDirection.right;
         } else {
-          final rawRight = rightDirection.rawRight;
+          final rawRight = rightDirection.rightChecked;
           if (rawRight == null) break;
           rightDirection = rawRight;
         }
@@ -187,7 +183,7 @@ class Clusterizer {
       if (create) {
         tmpDirection = tmpDirection.bottom;
       } else {
-        final rawBottom = tmpDirection.rawBottom;
+        final rawBottom = tmpDirection.bottomChecked;
         if (rawBottom == null) break;
         tmpDirection = rawBottom;
       }
@@ -198,7 +194,7 @@ class Clusterizer {
         if (create) {
           leftDirection = leftDirection.left;
         } else {
-          final rawLeft = leftDirection.rawLeft;
+          final rawLeft = leftDirection.leftChecked;
           if (rawLeft == null) break;
           leftDirection = rawLeft;
         }
@@ -212,7 +208,7 @@ class Clusterizer {
         if (create) {
           rightDirection = rightDirection.right;
         } else {
-          final rawRight = rightDirection.rawRight;
+          final rawRight = rightDirection.rightChecked;
           if (rawRight == null) break;
           rightDirection = rawRight;
         }

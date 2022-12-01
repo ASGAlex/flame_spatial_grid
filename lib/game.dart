@@ -103,9 +103,9 @@ Press T button to toggle player to collide with other objects.
             for (var i = 0; i < 3; i++) {
               final random = Random();
               final diffX =
-                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
               final diffY =
-                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
               final position =
                   cell.rect.center.toVector2().translate(diffX, diffY);
               bricks.add(
@@ -182,7 +182,7 @@ Press T button to toggle player to collide with other objects.
       _fireBullet = false;
     }
 
-    print(player.position);
+    // print(player.position);
     return KeyEventResult.handled;
   }
 
