@@ -13,7 +13,7 @@ import 'clusterized_collision_detection.dart';
 mixin HasClusterizedCollisionDetection on FlameGame
     implements HasCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   late ClusterizedCollisionDetection _collisionDetection;
-  late final Clusterizer _clusterizer;
+  late final Clusterizer clusterizer;
   late Component rootComponent;
   ClusterizerDebugComponent? _clusterizerDebug;
   bool _isClusterizerDebugEnabled = false;
@@ -54,14 +54,14 @@ mixin HasClusterizedCollisionDetection on FlameGame
       required CellBuilder cellBuilder}) {
     cellBuilder.rootComponent = this.rootComponent = rootComponent ?? this;
 
-    _clusterizer = Clusterizer(
+    clusterizer = Clusterizer(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
         cellBuilder: cellBuilder,
         activeRadius: activeRadius);
 
     _collisionDetection = ClusterizedCollisionDetection(
-      clusterizer: _clusterizer,
+      clusterizer: clusterizer,
       onComponentTypeCheck: onComponentTypeCheck,
       minimumDistanceCheck: minimumDistanceCheck,
     );
@@ -75,7 +75,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
 
     _isClusterizerDebugEnabled = debug;
     if (_isClusterizerDebugEnabled) {
-      _clusterizerDebug ??= ClusterizerDebugComponent(_clusterizer);
+      _clusterizerDebug ??= ClusterizerDebugComponent(clusterizer);
       rootComponent.add(_clusterizerDebug!);
     } else {
       _clusterizerDebug?.removeFromParent();
@@ -86,7 +86,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
   void onRemove() {
     isClusterizerDebugEnabled = false;
     _clusterizerDebug = null;
-    _clusterizer.dispose();
+    clusterizer.dispose();
     super.onRemove();
   }
 

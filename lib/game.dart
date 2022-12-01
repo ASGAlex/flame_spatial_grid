@@ -11,6 +11,7 @@ import 'package:flame/layers.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
+import 'clusterizer/cell.dart';
 import 'clusterizer/clusterized_component.dart';
 import 'clusterizer/collisions/has_clusterized_collision_detection.dart';
 
@@ -99,7 +100,7 @@ Press T button to toggle player to collide with other objects.
               return [];
             }
             final bricks = <Brick>[];
-            for (var i = 0; i < 15; i++) {
+            for (var i = 0; i < 3; i++) {
               final random = Random();
               final diffX =
                   random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
@@ -200,7 +201,7 @@ Press T button to toggle player to collide with other objects.
   }
 }
 
-class MyWorld extends World with TapCallbacks {
+class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
   static const mapSize = 300;
   static const bricksCount = 8000;
 
@@ -216,7 +217,29 @@ class MyWorld extends World with TapCallbacks {
 
   @override
   void onTapDown(TapDownEvent event) {
-    player.position = event.localPosition;
+    final tapPosition = event.localPosition;
+    final cellsUnderCursor = <Cell>[];
+    gameRef.clusterizer.cells.forEach((rect, cell) {
+      if (cell.rect.containsPoint(tapPosition)) {
+        cellsUnderCursor.add(cell);
+        // print('State:  + ${cell.state}');
+        // print('Rect: $rect');
+        // print('Components count: ${cell.components.length}');
+      }
+    });
+
+    final list = componentsAtPoint(tapPosition);
+    for (var component in list) {
+      if (component is! ClusterizedComponent) continue;
+      final cell = component.currentCell;
+      if (cell != null) {
+        print('State:  + ${cell.state}');
+        print('Rect: ${cell.rect}');
+        print('Components count: ${cell.components.length}');
+      }
+    }
+
+    // player.position = event.localPosition;
   }
 }
 

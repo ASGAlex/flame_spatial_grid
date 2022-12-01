@@ -25,7 +25,7 @@ class Clusterizer {
     cell.top;
     cell.bottom;
 
-    _currentCell = cell;
+    setActiveCell(cell);
     trackedComponent.currentCell = cell;
   }
 
