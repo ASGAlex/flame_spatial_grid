@@ -314,6 +314,7 @@ class Bullet extends PositionComponent
         boundingBox.defaultCollisionType = CollisionType.active;
   }
 
+  var lifetime = 10.0;
   final Vector2 displacement;
 
   @override
@@ -323,9 +324,25 @@ class Bullet extends PositionComponent
 
   @override
   void update(double dt) {
-    final d = displacement * dt;
-    position = Vector2(position.x + d.x, position.y + d.y);
+    lifetime -= dt;
+    if (lifetime <= 0) {
+      removeFromParent();
+    } else {
+      final d = displacement * dt;
+      position = Vector2(position.x + d.x, position.y + d.y);
+    }
     super.update(dt);
+  }
+
+  @override
+  void onResume(double dtElapsedWhileSuspended) {
+    lifetime -= dtElapsedWhileSuspended;
+    if (lifetime <= 0) {
+      removeFromParent();
+    } else {
+      final d = displacement * dtElapsedWhileSuspended;
+      position = Vector2(position.x + d.x, position.y + d.y);
+    }
   }
 
   @override
