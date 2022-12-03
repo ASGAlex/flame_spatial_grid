@@ -51,6 +51,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
       Component? rootComponent,
       required double blockSize,
       required int activeRadius,
+      required int unloadRadius,
       required ClusterizedComponent trackedComponent,
       required CellBuilder cellBuilder}) {
     cellBuilder.rootComponent = this.rootComponent = rootComponent ?? this;
@@ -59,7 +60,8 @@ mixin HasClusterizedCollisionDetection on FlameGame
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
         cellBuilder: cellBuilder,
-        activeRadius: activeRadius);
+        activeRadius: activeRadius,
+        unloadRadius: unloadRadius);
 
     _collisionDetection = ClusterizedCollisionDetection(
       clusterizer: clusterizer,

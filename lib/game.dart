@@ -51,33 +51,6 @@ Press T button to toggle player to collide with other objects.
   Future<void> onLoad() async {
     super.onLoad();
 
-    // final random = Random();
-    // final spriteBrick = await Sprite.load(
-    //   'retro_tiles.png',
-    //   srcPosition: Vector2.all(0),
-    //   srcSize: Vector2.all(tileSize),
-    // );
-    //
-    // final spriteWater = await Sprite.load(
-    //   'retro_tiles.png',
-    //   srcPosition: Vector2(0, tileSize),
-    //   srcSize: Vector2.all(tileSize),
-    // );
-    // for (var i = 0; i < bricksCount; i++) {
-    //   final x = random.nextInt(mapSize);
-    //   final y = random.nextInt(mapSize);
-    //   final brick = Brick(
-    //     position: Vector2(x.toDouble() * tileSize, y.toDouble() * tileSize),
-    //     size: Vector2.all(tileSize),
-    //     priority: 0,
-    //     sprite: spriteBrick,
-    //   );
-    //   add(brick);
-    //   staticLayer.components.add(brick);
-    // }
-    //
-    // staticLayer.reRender();
-
     final spriteBrick = await Sprite.load(
       'retro_tiles.png',
       srcPosition: Vector2.all(0),
@@ -89,6 +62,7 @@ Press T button to toggle player to collide with other objects.
     initializeCollisionDetection(
         debug: true,
         activeRadius: 5,
+        unloadRadius: 15,
         blockSize: 100,
         trackedComponent: player,
         rootComponent: world,
