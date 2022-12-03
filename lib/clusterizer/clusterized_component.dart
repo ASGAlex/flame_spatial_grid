@@ -69,7 +69,6 @@ mixin ClusterizedComponent on PositionComponent {
   @override
   void onRemove() {
     boundingBox.transform.removeListener(_onBoundingBoxTransform);
-    remove(boundingBox);
   }
 
   @override
