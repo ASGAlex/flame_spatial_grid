@@ -20,6 +20,7 @@ class Cell {
     rawBottom = _checkCell(_CellCreationContext.bottom);
 
     clusterizer.cellBuilder?.build(this);
+    state = clusterizer.getCellState(this);
   }
 
   final Clusterizer clusterizer;

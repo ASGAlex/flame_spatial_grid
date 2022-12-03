@@ -61,6 +61,23 @@ class Clusterizer {
     newActiveCell.state = CellState.active;
   }
 
+  CellState getCellState(Cell cell) {
+    final distance = _cellDistanceFromActiveCell(cell);
+    if (distance.x <= activeRadius && distance.y <= activeRadius) {
+      return CellState.active;
+    } else if (distance.x < unloadRadius && distance.y < unloadRadius) {
+      return CellState.inactive;
+    }
+    return CellState.suspended;
+  }
+
+  Vector2 _cellDistanceFromActiveCell(Cell cell) {
+    final current = _currentCell;
+    if (current == null) return Vector2.zero();
+    final diff = (current.center - cell.center)..absolute();
+    return Vector2(diff.x / blockSize.width, diff.y / blockSize.height);
+  }
+
   Set<Cell> _findCellsInRadius(int radius, {bool create = false}) {
     final current = _currentCell;
     if (current == null) throw 'current cell cant be null!';
