@@ -99,7 +99,7 @@ Press T button to toggle player to collide with other objects.
               return [];
             }
             final bricks = <Brick>[];
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 1; i++) {
               final random = Random();
               final diffX =
                   random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
@@ -177,6 +177,7 @@ Press T button to toggle player to collide with other objects.
         position: player.position,
         displacement: _playerDisplacement * 50,
       );
+      bullet.currentCell = player.currentCell;
       world.add(bullet);
       _playerDisplacement.setZero();
       _fireBullet = false;

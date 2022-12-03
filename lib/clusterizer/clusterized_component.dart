@@ -106,30 +106,21 @@ mixin ClusterizedComponent on PositionComponent {
     }
   }
 
-  // @override
-  // void onMount() {
-  //   super.onMount();
-  //   transform.addListener(_onTransform);
-  // }
-  //
-  // @override
-  // void onRemove() {
-  //   transform.removeListener(_onTransform);
-  //   super.onRemove();
-  // }
-
   @internal
   bool updateTransform() {
     _cachedCenters.remove(boundingBox);
-    final lookAtPoint = boundingBox.aabbCenter;
-    final current = currentCell;
-    if (current == null) throw 'current cell cant be null!';
-    if (clusterizer == null) throw 'clusterizer cant be null!';
-    if (current.rect.containsPoint(lookAtPoint) != true) {
+    final componentCenter = boundingBox.aabbCenter;
+    var current = currentCell;
+    current ??=
+        currentCell = clusterizer.findExistingCellByPosition(componentCenter);
+    if (current == null) {
+      throw 'Cell did not found at position $componentCenter';
+    }
+    if (current.rect.containsPoint(componentCenter) != true) {
       Cell? newCell;
       //look close neighbours
       for (var cell in current.neighbours) {
-        if (cell.rect.containsPoint(lookAtPoint)) {
+        if (cell.rect.containsPoint(componentCenter)) {
           newCell = cell;
           break;
         }
@@ -137,7 +128,7 @@ mixin ClusterizedComponent on PositionComponent {
       //if nothing - search among all cells
       if (newCell == null) {
         for (var cell in clusterizer.cells.entries) {
-          if (cell.value.rect.containsPoint(lookAtPoint)) {
+          if (cell.value.rect.containsPoint(componentCenter)) {
             newCell = cell.value;
             break;
           }
@@ -146,7 +137,7 @@ mixin ClusterizedComponent on PositionComponent {
       //if nothing again - try to locate new cell's position from component's
       //coordinates
       if (newCell == null) {
-        newCell = clusterizer.createNewCellAtPosition(lookAtPoint);
+        newCell = clusterizer.createNewCellAtPosition(componentCenter);
 
         if (newCell == null) {
           throw 'teleportation error';
