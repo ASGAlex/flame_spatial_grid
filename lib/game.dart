@@ -11,7 +11,6 @@ import 'package:flame/layers.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
-import 'clusterizer/cell.dart';
 import 'clusterizer/clusterized_component.dart';
 import 'clusterizer/collisions/has_clusterized_collision_detection.dart';
 
@@ -161,15 +160,12 @@ Press T button to toggle player to collide with other objects.
         _fireBullet = true;
       }
       if (key == LogicalKeyboardKey.keyT) {
-        final collisionType = player.defaultHitbox.collisionType;
+        final collisionType = player.boundingBox.collisionType;
         if (collisionType == CollisionType.active) {
-          player.defaultHitbox.collisionType = CollisionType.inactive;
+          player.boundingBox.collisionType = CollisionType.inactive;
         } else if (collisionType == CollisionType.inactive) {
-          player.defaultHitbox.collisionType = CollisionType.active;
+          player.boundingBox.collisionType = CollisionType.active;
         }
-      }
-      if (key == LogicalKeyboardKey.keyO) {
-        // collisionDetection.broadphase.tree.optimize();
       }
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
@@ -182,7 +178,6 @@ Press T button to toggle player to collide with other objects.
       _fireBullet = false;
     }
 
-    // print(player.position);
     return KeyEventResult.handled;
   }
 
@@ -217,29 +212,29 @@ class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
 
   @override
   void onTapDown(TapDownEvent event) {
-    final tapPosition = event.localPosition;
-    final cellsUnderCursor = <Cell>[];
-    gameRef.clusterizer.cells.forEach((rect, cell) {
-      if (cell.rect.containsPoint(tapPosition)) {
-        cellsUnderCursor.add(cell);
-        // print('State:  + ${cell.state}');
-        // print('Rect: $rect');
-        // print('Components count: ${cell.components.length}');
-      }
-    });
+    // final tapPosition = event.localPosition;
+    // final cellsUnderCursor = <Cell>[];
+    // gameRef.clusterizer.cells.forEach((rect, cell) {
+    //   if (cell.rect.containsPoint(tapPosition)) {
+    //     cellsUnderCursor.add(cell);
+    //     // print('State:  + ${cell.state}');
+    //     // print('Rect: $rect');
+    //     // print('Components count: ${cell.components.length}');
+    //   }
+    // });
+    //
+    // final list = componentsAtPoint(tapPosition);
+    // for (var component in list) {
+    //   if (component is! ClusterizedComponent) continue;
+    //   final cell = component.currentCell;
+    //   if (cell != null) {
+    //     print('State:  + ${cell.state}');
+    //     print('Rect: ${cell.rect}');
+    //     print('Components count: ${cell.components.length}');
+    //   }
+    // }
 
-    final list = componentsAtPoint(tapPosition);
-    for (var component in list) {
-      if (component is! ClusterizedComponent) continue;
-      final cell = component.currentCell;
-      if (cell != null) {
-        print('State:  + ${cell.state}');
-        print('Rect: ${cell.rect}');
-        print('Components count: ${cell.components.length}');
-      }
-    }
-
-    // player.position = event.localPosition;
+    player.position = event.localPosition;
   }
 }
 
@@ -259,12 +254,10 @@ class Player extends SpriteComponent
     ).then((value) {
       sprite = value;
     });
-    defaultHitbox.collisionType =
-        defaultHitbox.defaultCollisionType = CollisionType.active;
-    // add(hitbox);
+    boundingBox.collisionType =
+        boundingBox.defaultCollisionType = CollisionType.active;
   }
 
-  // final hitbox = RectangleHitbox();
   bool canMoveLeft = true;
   bool canMoveRight = true;
   bool canMoveTop = true;
@@ -275,7 +268,7 @@ class Player extends SpriteComponent
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
-    final myCenter = defaultHitbox.aabbCenter;
+    final myCenter = boundingBox.aabbCenter;
     if (other is GameCollideable) {
       final diffX = myCenter.x - other.cachedCenter.x;
       if (diffX < 0) {
@@ -312,8 +305,8 @@ class Bullet extends PositionComponent
     paint.color = Colors.deepOrange;
     priority = 10;
     size = Vector2.all(1);
-    defaultHitbox.collisionType =
-        defaultHitbox.defaultCollisionType = CollisionType.active;
+    boundingBox.collisionType =
+        boundingBox.defaultCollisionType = CollisionType.active;
   }
 
   final Vector2 displacement;
@@ -387,11 +380,11 @@ class Water extends SpriteComponent
 
 mixin GameCollideable on ClusterizedComponent {
   void initCollision() {
-    defaultHitbox.collisionType =
-        defaultHitbox.defaultCollisionType = CollisionType.passive;
+    boundingBox.collisionType =
+        boundingBox.defaultCollisionType = CollisionType.passive;
   }
 
-  Vector2 get cachedCenter => defaultHitbox.aabbCenter;
+  Vector2 get cachedCenter => boundingBox.aabbCenter;
 }
 
 //#endregion

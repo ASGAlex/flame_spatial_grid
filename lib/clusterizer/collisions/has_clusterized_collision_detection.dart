@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
 import 'package:flame/collisions.dart';
@@ -45,8 +47,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
   /// It should usually not be overridden, see
   /// [CollisionCallbacks.onComponentTypeCheck] instead
   void initializeCollisionDetection(
-      {double? minimumDistance,
-      bool? debug,
+      {bool? debug,
       Component? rootComponent,
       required double blockSize,
       required int activeRadius,
@@ -66,7 +67,6 @@ mixin HasClusterizedCollisionDetection on FlameGame
       minimumDistanceCheck: minimumDistanceCheck,
     );
 
-    this.minimumDistance = minimumDistance;
     isClusterizerDebugEnabled = debug ?? false;
   }
 
@@ -90,12 +90,16 @@ mixin HasClusterizedCollisionDetection on FlameGame
     super.onRemove();
   }
 
-  double? minimumDistance;
-
-  bool minimumDistanceCheck(Vector2 activeItemCenter, Vector2 potentialCenter) {
-    return minimumDistance == null ||
-        !((activeItemCenter.x - potentialCenter.x).abs() > minimumDistance! ||
-            (activeItemCenter.y - potentialCenter.y).abs() > minimumDistance!);
+  bool minimumDistanceCheck(
+      ClusterizedComponent activeItem, ClusterizedComponent potential) {
+    final minimumDistance =
+        max(activeItem.minDistanceQuad, potential.minDistanceQuad);
+    final activeItemCenter = activeItem.boundingBox.aabbCenter;
+    final potentialCenter = activeItem.boundingBox.aabbCenter;
+    return !(pow((activeItemCenter.x - potentialCenter.x).abs(), 2) >
+            minimumDistance ||
+        pow((activeItemCenter.y - potentialCenter.y).abs(), 2) >
+            minimumDistance);
   }
 
   bool onComponentTypeCheck(PositionComponent one, PositionComponent another) {

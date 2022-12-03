@@ -6,6 +6,11 @@ import 'package:flame/collisions.dart';
 import '../cell.dart';
 import '../clusterizer.dart';
 
+typedef ExternalMinDistanceCheckClusterized = bool Function(
+  ClusterizedComponent activeItem,
+  ClusterizedComponent potential,
+);
+
 /// Performs Quad Tree broadphase check.
 ///
 /// See [HasQuadTreeCollisionDetection.initializeCollisionDetection] for a
@@ -24,7 +29,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   final passiveCollisionsByCell = <Cell, List<T>>{};
 
   ExternalBroadphaseCheck broadphaseCheck;
-  ExternalMinDistanceCheck minimumDistanceCheck;
+  ExternalMinDistanceCheckClusterized minimumDistanceCheck;
   final _broadphaseCheckCache = <T, Map<T, bool>>{};
 
   final _potentials = HashSet<CollisionProspect<T>>();
@@ -32,7 +37,6 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   @override
   HashSet<CollisionProspect<T>> query() {
-    // return _potentials;
     _potentials.clear();
     _potentialsTmp.clear();
 
@@ -43,7 +47,6 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      final itemCenter = asShapeItem.center;
       final cellsToCheck =
           asShapeItem.clusterizedParent?.currentCell?.neighboursAndMe;
 
@@ -70,13 +73,18 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
             asShapeItem.parent != null) {
           continue;
         }
-
-        final distanceCloseEnough = minimumDistanceCheck.call(
-          itemCenter,
-          asShapePotential.aabbCenter,
-        );
-        if (distanceCloseEnough == false) {
-          continue;
+        final activeClusterizedComponent = asShapeItem.clusterizedParent;
+        final potentialClusterizedComponent =
+            asShapePotential.clusterizedParent;
+        if (activeClusterizedComponent != null &&
+            potentialClusterizedComponent != null) {
+          final distanceCloseEnough = minimumDistanceCheck.call(
+            activeClusterizedComponent,
+            potentialClusterizedComponent,
+          );
+          if (distanceCloseEnough == false) {
+            continue;
+          }
         }
 
         _potentialsTmp.add([asShapeItem, asShapePotential]);

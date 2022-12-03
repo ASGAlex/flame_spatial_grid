@@ -10,7 +10,7 @@ class ClusterizedCollisionDetection
     extends StandardCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   ClusterizedCollisionDetection(
       {required ExternalBroadphaseCheck onComponentTypeCheck,
-      required ExternalMinDistanceCheck minimumDistanceCheck,
+      required ExternalMinDistanceCheckClusterized minimumDistanceCheck,
       required this.clusterizer})
       : super(
             broadphase: ClusterizedBroadphase<ShapeHitbox>(

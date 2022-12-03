@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -30,10 +32,15 @@ mixin ClusterizedComponent on PositionComponent {
 
   bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
-  final defaultHitbox = RectangleHitbox()
-    ..collisionType = CollisionType.inactive;
+  final boundingBox = RectangleHitbox()..collisionType = CollisionType.inactive;
 
   double _dtElapsedWhileSuspended = 0;
+
+  double _minDistanceQuad = 0;
+
+  double get minDistanceQuad => _minDistanceQuad;
+
+  double get minDistance => sqrt(_minDistanceQuad);
 
   set isSuspended(bool suspend) {
     if (suspendNotifier.value != suspend) {
@@ -49,12 +56,20 @@ mixin ClusterizedComponent on PositionComponent {
 
   @override
   onMount() {
-    add(defaultHitbox);
+    add(boundingBox);
+    boundingBox.transform.addListener(_onBoundingBoxTransform);
+  }
+
+  void _onBoundingBoxTransform() {
+    _minDistanceQuad =
+        (pow(boundingBox.width / 2, 2) + pow(boundingBox.height / 2, 2))
+            .toDouble();
   }
 
   @override
   void onRemove() {
-    remove(defaultHitbox);
+    boundingBox.transform.removeListener(_onBoundingBoxTransform);
+    remove(boundingBox);
   }
 
   @override
@@ -105,8 +120,8 @@ mixin ClusterizedComponent on PositionComponent {
 
   @internal
   bool updateTransform() {
-    _cachedCenters.remove(defaultHitbox);
-    final lookAtPoint = defaultHitbox.aabbCenter;
+    _cachedCenters.remove(boundingBox);
+    final lookAtPoint = boundingBox.aabbCenter;
     final current = currentCell;
     if (current == null) throw 'current cell cant be null!';
     if (clusterizer == null) throw 'clusterizer cant be null!';
