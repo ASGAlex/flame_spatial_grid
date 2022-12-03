@@ -167,6 +167,10 @@ Press T button to toggle player to collide with other objects.
           player.boundingBox.collisionType = CollisionType.active;
         }
       }
+
+      if (key == LogicalKeyboardKey.keyM) {
+        isClusterizerDebugEnabled = !isClusterizerDebugEnabled;
+      }
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
       final bullet = Bullet(

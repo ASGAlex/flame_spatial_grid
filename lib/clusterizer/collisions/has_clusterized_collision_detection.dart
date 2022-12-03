@@ -82,6 +82,8 @@ mixin HasClusterizedCollisionDetection on FlameGame
     }
   }
 
+  bool get isClusterizerDebugEnabled => _isClusterizerDebugEnabled;
+
   @override
   void onRemove() {
     isClusterizerDebugEnabled = false;
