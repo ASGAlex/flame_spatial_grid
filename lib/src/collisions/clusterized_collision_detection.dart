@@ -1,10 +1,6 @@
-import 'package:cluisterizer_test/clusterizer/cell.dart';
-import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
-import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/foundation.dart';
-
-import 'clusterized_broadphase.dart';
 
 class ClusterizedCollisionDetection
     extends StandardCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {

@@ -1,7 +1,5 @@
-import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
 import 'package:flame/components.dart';
-
-import 'cell.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 typedef CellBuilderFunction = Future<List<ClusterizedComponent>> Function(
     Cell cell, Component parentComponent);

@@ -1,13 +1,11 @@
 import 'dart:math';
 
-import 'package:cluisterizer_test/clusterizer/clusterizer.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
-
-import 'cell.dart';
 
 mixin ClusterizedComponent on PositionComponent {
   static final _componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};

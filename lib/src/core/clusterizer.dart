@@ -1,9 +1,5 @@
-import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
-import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-
-import 'cell.dart';
-import 'clusterized_component.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 class Clusterizer {
   Clusterizer(

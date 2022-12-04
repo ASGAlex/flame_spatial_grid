@@ -1,10 +1,7 @@
 import 'dart:collection';
 
-import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
 import 'package:flame/collisions.dart';
-
-import '../cell.dart';
-import '../clusterizer.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 typedef ExternalMinDistanceCheckClusterized = bool Function(
   ClusterizedComponent activeItem,

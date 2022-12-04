@@ -1,16 +1,10 @@
 import 'dart:math';
 
-import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
-import 'package:cluisterizer_test/clusterizer/clusterized_component.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
-
-import '../clusterizer.dart';
-import '../debug_component.dart';
-import 'clusterized_broadphase.dart';
-import 'clusterized_collision_detection.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 mixin HasClusterizedCollisionDetection on FlameGame
     implements HasCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {

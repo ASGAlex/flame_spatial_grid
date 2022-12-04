@@ -1,9 +1,7 @@
 import 'dart:collection';
 
 import 'package:flame/extensions.dart';
-
-import 'clusterized_component.dart';
-import 'clusterizer.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 enum _CellCreationContext { left, top, right, bottom }
 

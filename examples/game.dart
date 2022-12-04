@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:cluisterizer_test/clusterizer/cell_builder.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -8,11 +7,9 @@ import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame/layers.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
-
-import 'clusterizer/clusterized_component.dart';
-import 'clusterizer/collisions/has_clusterized_collision_detection.dart';
 
 const tileSize = 8.0;
 

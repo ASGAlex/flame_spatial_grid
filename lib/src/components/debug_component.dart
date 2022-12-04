@@ -1,8 +1,6 @@
 import 'package:flame/components.dart';
+import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/material.dart';
-
-import 'cell.dart';
-import 'clusterizer.dart';
 
 class ClusterizerDebugComponent extends PositionComponent
     with HasPaint<String> {
