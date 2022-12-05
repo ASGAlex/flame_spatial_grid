@@ -19,6 +19,7 @@ library flame_clusterizer;
 export 'src/collisions/clusterized_broadphase.dart';
 export 'src/collisions/clusterized_collision_detection.dart';
 export 'src/collisions/has_clusterized_collision_detection.dart';
+export 'src/components/cell_static_animation_layer.dart';
 export 'src/components/cell_static_layer.dart';
 export 'src/components/clusterized_component.dart';
 export 'src/components/debug_component.dart';

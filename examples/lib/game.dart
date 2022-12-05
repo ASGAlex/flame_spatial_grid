@@ -53,8 +53,17 @@ Press T button to toggle player to collide with other objects.
       srcSize: Vector2.all(tileSize),
     );
 
+    final waterAnimation = SpriteAnimation.fromFrameData(
+        await images.load('retro_tiles.png'),
+        SpriteAnimationData.sequenced(
+          textureSize: Vector2.all(tileSize),
+          texturePosition: Vector2(0, tileSize),
+          amount: 3,
+          stepTime: 0.5,
+        ));
+
     player = world.player;
-    var firstBrick = true;
+    var firstCell = true;
     initializeCollisionDetection(
         debug: true,
         activeRadius: 5,
@@ -64,25 +73,45 @@ Press T button to toggle player to collide with other objects.
         rootComponent: world,
         cellBuilder: CellBuilder(
           builder: (cell, parentComponent) async {
-            if (firstBrick) {
-              firstBrick = false;
+            if (firstCell) {
+              firstCell = false;
               return [];
             }
             final staticLayer = CellStaticLayer(cell);
-            for (var i = 0; i < 25; i++) {
+            staticLayer.priority = 2;
+            for (var i = 0; i < 10; i++) {
               final random = Random();
               final diffX =
-                  random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
               final diffY =
-                  random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
               final position =
                   (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-              final brick =
-                  Brick(position: position, priority: 1, sprite: spriteBrick);
+              final brick = Brick(position: position, sprite: spriteBrick);
               brick.currentCell = cell;
               staticLayer.add(brick);
             }
-            return [staticLayer];
+
+            final animationLayer = CellStaticAnimationLayer(cell);
+            animationLayer.priority = 1;
+
+            for (var i = 0; i < 30; i++) {
+              final random = Random();
+              final diffX =
+                  random.nextInt(25).toDouble() * (random.nextBool() ? -1 : 1);
+              final diffY =
+                  random.nextInt(25).toDouble() * (random.nextBool() ? -1 : 1);
+              final position =
+                  (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+              final water = Water(
+                position: position,
+                animation: waterAnimation,
+              );
+              water.currentCell = cell;
+              animationLayer.add(water);
+            }
+
+            return [staticLayer, animationLayer];
           },
         ));
     cameraComponent = CameraComponent(world: world);
@@ -346,7 +375,6 @@ class Brick extends SpriteComponent
         UpdateOnDemand {
   Brick({
     required super.position,
-    required super.priority,
     required super.sprite,
   }) {
     size = Vector2.all(tileSize);
@@ -354,14 +382,10 @@ class Brick extends SpriteComponent
   }
 }
 
-class Water extends SpriteComponent
+class Water extends SpriteAnimationComponent
     with CollisionCallbacks, ClusterizedComponent, GameCollideable {
-  Water({
-    required super.position,
-    required super.size,
-    required super.priority,
-    required super.sprite,
-  }) {
+  Water({required super.position, required super.animation}) {
+    size = Vector2.all(tileSize);
     initCollision();
   }
 }
