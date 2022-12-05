@@ -52,6 +52,9 @@ mixin ClusterizedComponent on PositionComponent {
     suspendNotifier.value = suspend;
   }
 
+  @mustCallSuper
+  void onClusterizerMounted() {}
+
   @override
   onMount() {
     add(boundingBox);

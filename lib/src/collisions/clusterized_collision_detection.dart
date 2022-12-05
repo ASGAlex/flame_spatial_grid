@@ -49,6 +49,8 @@ class ClusterizedCollisionDetection
       clusterizedComponent.suspendNotifier
           .addListener(listenerClusterizerSuspend);
       _listenerClusterizedSuspend[hitbox] = listenerClusterizerSuspend;
+
+      clusterizedComponent.onClusterizerMounted();
     } else {
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {

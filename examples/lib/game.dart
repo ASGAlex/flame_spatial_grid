@@ -6,7 +6,6 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flame/layers.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
@@ -69,19 +68,21 @@ Press T button to toggle player to collide with other objects.
               firstBrick = false;
               return [];
             }
-            final bricks = <Brick>[];
-            for (var i = 0; i < 1; i++) {
+            final staticLayer = CellStaticLayer(cell);
+            for (var i = 0; i < 25; i++) {
               final random = Random();
               final diffX =
                   random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
               final diffY =
                   random.nextInt(35).toDouble() * (random.nextBool() ? -1 : 1);
               final position =
-                  cell.rect.center.toVector2().translate(diffX, diffY);
-              bricks.add(
-                  Brick(position: position, priority: 1, sprite: spriteBrick));
+                  (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+              final brick =
+                  Brick(position: position, priority: 1, sprite: spriteBrick);
+              brick.currentCell = cell;
+              staticLayer.add(brick);
             }
-            return bricks;
+            return [staticLayer];
           },
         ));
     cameraComponent = CameraComponent(world: world);
@@ -102,7 +103,6 @@ Press T button to toggle player to collide with other objects.
   final _playerDisplacement = Vector2.zero();
   var _fireBullet = false;
 
-  final staticLayer = StaticLayer();
   static const stepSize = 5.0;
 
   @override
@@ -339,7 +339,11 @@ class Bullet extends PositionComponent
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, ClusterizedComponent, GameCollideable, UpdateOnce {
+    with
+        CollisionCallbacks,
+        ClusterizedComponent,
+        GameCollideable,
+        UpdateOnDemand {
   Brick({
     required super.position,
     required super.priority,
@@ -348,19 +352,10 @@ class Brick extends SpriteComponent
     size = Vector2.all(tileSize);
     initCollision();
   }
-
-  bool rendered = false;
-
-  @override
-  void renderTree(Canvas canvas) {
-    if (!rendered) {
-      super.renderTree(canvas);
-    }
-  }
 }
 
 class Water extends SpriteComponent
-    with CollisionCallbacks, ClusterizedComponent, GameCollideable, UpdateOnce {
+    with CollisionCallbacks, ClusterizedComponent, GameCollideable {
   Water({
     required super.position,
     required super.size,
@@ -393,34 +388,6 @@ mixin UpdateOnce on PositionComponent {
       super.updateTree(dt);
       updateOnce = false;
     }
-  }
-}
-
-class StaticLayer extends PreRenderedLayer {
-  StaticLayer();
-
-  List<PositionComponent> components = [];
-
-  @override
-  void drawLayer() {
-    for (final element in components) {
-      if (element is Brick) {
-        element.rendered = false;
-        element.renderTree(canvas);
-        element.rendered = true;
-      }
-    }
-  }
-}
-
-class LayerComponent extends PositionComponent {
-  LayerComponent(this.layer);
-
-  StaticLayer layer;
-
-  @override
-  void render(Canvas canvas) {
-    layer.render(canvas);
   }
 }
 
