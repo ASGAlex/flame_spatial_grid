@@ -136,6 +136,7 @@ Press T button to toggle player to collide with other objects.
   late Player player;
   final _playerDisplacement = Vector2.zero();
   var _fireBullet = false;
+  var _killWater = false;
 
   static const stepSize = 2.0;
 
@@ -163,6 +164,11 @@ Press T button to toggle player to collide with other objects.
       }
       if (key == LogicalKeyboardKey.space) {
         _fireBullet = true;
+        if (keysPressed
+            .where((element) => element == LogicalKeyboardKey.shiftLeft)
+            .isNotEmpty) {
+          _killWater = true;
+        }
       }
       if (key == LogicalKeyboardKey.keyT) {
         final collisionType = player.boundingBox.collisionType;
@@ -179,13 +185,14 @@ Press T button to toggle player to collide with other objects.
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
       final bullet = Bullet(
-        position: player.position,
-        displacement: _playerDisplacement * 30,
-      );
+          position: player.position,
+          displacement: _playerDisplacement * 30,
+          killWater: _killWater);
       bullet.currentCell = player.currentCell;
       world.add(bullet);
       _playerDisplacement.setZero();
       _fireBullet = false;
+      _killWater = false;
     }
 
     return KeyEventResult.handled;
@@ -311,7 +318,10 @@ class Player extends SpriteComponent
 
 class Bullet extends PositionComponent
     with CollisionCallbacks, HasPaint, ClusterizedComponent {
-  Bullet({required super.position, required this.displacement}) {
+  Bullet(
+      {required super.position,
+      required this.displacement,
+      this.killWater = false}) {
     paint.color = Colors.deepOrange;
     priority = 10;
     size = Vector2.all(1);
@@ -321,6 +331,7 @@ class Bullet extends PositionComponent
 
   var lifetime = 10.0;
   final Vector2 displacement;
+  final bool killWater;
 
   @override
   void render(Canvas canvas) {
@@ -352,7 +363,7 @@ class Bullet extends PositionComponent
 
   @override
   bool onComponentTypeCheck(PositionComponent other) {
-    if (other is Player || other is Water) {
+    if (other is Player /* || other is Water*/) {
       return false;
     }
     return super.onComponentTypeCheck(other);
@@ -363,8 +374,13 @@ class Bullet extends PositionComponent
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
-    removeFromParent();
-    super.onCollisionStart(intersectionPoints, other);
+    if (other is Water && killWater) {
+      removeFromParent();
+      super.onCollisionStart(intersectionPoints, other);
+    } else if (other is! Water) {
+      removeFromParent();
+      super.onCollisionStart(intersectionPoints, other);
+    }
   }
 }
 
@@ -401,6 +417,15 @@ class Water extends SpriteAnimationComponent
   Water({required super.position, required super.animation}) {
     size = Vector2.all(tileSize);
     initCollision();
+  }
+
+  @override
+  void onCollisionStart(
+      Set<Vector2> intersectionPoints, PositionComponent other) {
+    if (other is Bullet && other.killWater) {
+      removeFromParent();
+      super.onCollisionStart(intersectionPoints, other);
+    }
   }
 }
 
