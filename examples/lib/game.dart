@@ -64,11 +64,12 @@ Press T button to toggle player to collide with other objects.
 
     player = world.player;
     var firstCell = true;
+    const blockSize = 100.0;
     initializeCollisionDetection(
         debug: true,
-        activeRadius: 5,
+        activeRadius: 7,
         unloadRadius: 15,
-        blockSize: 100,
+        blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
         cellBuilder: CellBuilder(
@@ -79,12 +80,14 @@ Press T button to toggle player to collide with other objects.
             }
             final staticLayer = CellStaticLayer(cell);
             staticLayer.priority = 2;
-            for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < 50; i++) {
               final random = Random();
               final diffX =
-                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt((blockSize / 2 - 5).ceil()).toDouble() *
+                      (random.nextBool() ? -1 : 1);
               final diffY =
-                  random.nextInt(45).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt((blockSize / 2 - 5).ceil()).toDouble() *
+                      (random.nextBool() ? -1 : 1);
               final position =
                   (cell.rect.size / 2).toVector2().translate(diffX, diffY);
               final brick = Brick(position: position, sprite: spriteBrick);
@@ -95,12 +98,14 @@ Press T button to toggle player to collide with other objects.
             final animationLayer = CellStaticAnimationLayer(cell);
             animationLayer.priority = 1;
 
-            for (var i = 0; i < 30; i++) {
+            for (var i = 0; i < 200; i++) {
               final random = Random();
               final diffX =
-                  random.nextInt(25).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+                      (random.nextBool() ? -1 : 1);
               final diffY =
-                  random.nextInt(25).toDouble() * (random.nextBool() ? -1 : 1);
+                  random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+                      (random.nextBool() ? -1 : 1);
               final position =
                   (cell.rect.size / 2).toVector2().translate(diffX, diffY);
               final water = Water(
@@ -132,7 +137,7 @@ Press T button to toggle player to collide with other objects.
   final _playerDisplacement = Vector2.zero();
   var _fireBullet = false;
 
-  static const stepSize = 5.0;
+  static const stepSize = 2.0;
 
   @override
   KeyEventResult onKeyEvent(
@@ -175,7 +180,7 @@ Press T button to toggle player to collide with other objects.
     if (_fireBullet && !_playerDisplacement.isZero()) {
       final bullet = Bullet(
         position: player.position,
-        displacement: _playerDisplacement * 50,
+        displacement: _playerDisplacement * 30,
       );
       bullet.currentCell = player.currentCell;
       world.add(bullet);
@@ -379,6 +384,15 @@ class Brick extends SpriteComponent
   }) {
     size = Vector2.all(tileSize);
     initCollision();
+  }
+
+  @override
+  void onCollisionStart(
+      Set<Vector2> intersectionPoints, PositionComponent other) {
+    if (other is Bullet) {
+      removeFromParent();
+    }
+    super.onCollisionStart(intersectionPoints, other);
   }
 }
 

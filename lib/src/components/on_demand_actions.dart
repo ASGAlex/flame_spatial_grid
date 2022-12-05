@@ -29,8 +29,8 @@ mixin UpdateOnDemand on ClusterizedComponent {
 
   bool get isUpdateNeeded => _updateNotifier.isActionNeeded;
 
-  set isUpdateNeeded(bool repaint) {
-    _updateNotifier.isActionNeeded = repaint;
+  set isUpdateNeeded(bool update) {
+    _updateNotifier.isActionNeeded = update;
   }
 
   @override

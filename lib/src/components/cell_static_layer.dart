@@ -54,6 +54,11 @@ class CellStaticLayer extends PositionComponent
   void onChildrenUpdate() {
     _needRepaint = true;
   }
+
+  @override
+  void update(double dt) {
+    onChildrenUpdate();
+  }
 }
 
 mixin ListenerChildrenUpdate on PositionComponent {
@@ -64,20 +69,14 @@ mixin ListenerChildrenUpdate on PositionComponent {
   @override
   Future<void>? add(Component component) {
     if (component is ClusterizedComponent) {
-      // ignore: no_leading_underscores_for_local_identifiers
-      _onChildrenUpdate() {
-        if (component.isMounted) {
-          onChildrenUpdate();
-        }
-      }
-
       if (component is RepaintOnDemand) {
-        component.repaintNotifier.addListener(_onChildrenUpdate);
+        component.repaintNotifier.addListener(onChildrenUpdate);
       } else {
-        component.transform.addListener(_onChildrenUpdate);
+        component.transform.addListener(onChildrenUpdate);
       }
-      _listenerChildrenUpdate[component] = _onChildrenUpdate;
+      _listenerChildrenUpdate[component] = onChildrenUpdate;
     }
+    onBeforeChildrenChanged(component, ChildrenChangeType.added);
     return super.add(component);
   }
 
@@ -91,6 +90,18 @@ mixin ListenerChildrenUpdate on PositionComponent {
         (component as PositionComponent).transform.removeListener(callback);
       }
     }
+
+    onBeforeChildrenChanged(component, ChildrenChangeType.removed);
+
     super.remove(component);
+  }
+
+  void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
+    if (child is UpdateOnDemand) {
+      child.isUpdateNeeded = true;
+      if (this is UpdateOnDemand) {
+        (this as UpdateOnDemand).isUpdateNeeded = true;
+      }
+    }
   }
 }
