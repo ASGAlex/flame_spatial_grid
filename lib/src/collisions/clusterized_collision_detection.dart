@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flame/collisions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/foundation.dart';
@@ -27,7 +29,7 @@ class ClusterizedCollisionDetection
     hitbox.onAabbChanged = () => _scheduledUpdate.add(hitbox);
     final clusterizedComponent = hitbox.clusterizedParent;
     if (clusterizedComponent != null) {
-      clusterizedComponent.clusterizer = clusterizer;
+      clusterizedComponent.setClusterizer(clusterizer);
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
         if (hitbox.isMounted) {
@@ -101,7 +103,8 @@ class ClusterizedCollisionDetection
     final cell = component.currentCell;
     if (cell != null && cell.state != CellState.suspended) {
       var list = broadphase.passiveCollisionsByCell[cell];
-      list ??= broadphase.passiveCollisionsByCell[cell] = [];
+      list ??=
+          broadphase.passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
       list.add(hitbox);
     }
   }
@@ -140,6 +143,7 @@ class ClusterizedCollisionDetection
       broadphase.activeCollisions.remove(hitbox);
     }
 
+    hitbox.clearClusterizedParent();
     super.remove(hitbox);
   }
 
@@ -170,10 +174,54 @@ class ClusterizedCollisionDetection
     }
   }
 
+  final Set<CollisionProspect<ShapeHitbox>> _lastPotentials = {};
+
   @override
   void run() {
     _scheduledUpdate.forEach(_updateTransform);
     _scheduledUpdate.clear();
-    super.run();
+    broadphase.update();
+    _runForPotentials(broadphase.query());
+  }
+
+  void _runForPotentials(HashSet<CollisionProspect<ShapeHitbox>> potentials) {
+    final repeatBroadphaseForItems = HashSet<CollisionProspect<ShapeHitbox>>();
+    for (var tuple in potentials) {
+      final itemA = tuple.a;
+      final itemB = tuple.b;
+
+      if (itemA.possiblyIntersects(itemB)) {
+        final intersectionPoints = intersections(itemA, itemB);
+        if (intersectionPoints.isNotEmpty) {
+          if (itemA is GroupHitbox || itemB is GroupHitbox) {
+            repeatBroadphaseForItems.add(tuple);
+            continue;
+          }
+          if (!itemA.collidingWith(itemB)) {
+            handleCollisionStart(intersectionPoints, itemA, itemB);
+          }
+          handleCollision(intersectionPoints, itemA, itemB);
+        } else if (itemA.collidingWith(itemB)) {
+          handleCollisionEnd(itemA, itemB);
+        }
+      } else if (itemA.collidingWith(itemB)) {
+        handleCollisionEnd(itemA, itemB);
+      }
+    }
+
+    // Handles callbacks for an ended collision that the broadphase didn't
+    // reports as a potential collision anymore.
+    _lastPotentials.difference(potentials).forEach((tuple) {
+      if (tuple.a.collidingWith(tuple.b)) {
+        handleCollisionEnd(tuple.a, tuple.b);
+      }
+    });
+    _lastPotentials
+      ..clear()
+      ..addAll(potentials);
+
+    if (repeatBroadphaseForItems.isNotEmpty) {
+      _runForPotentials(broadphase.querySubset(repeatBroadphaseForItems));
+    }
   }
 }

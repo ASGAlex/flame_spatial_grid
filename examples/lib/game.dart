@@ -64,6 +64,7 @@ Press T button to toggle player to collide with other objects.
 
     player = world.player;
     var firstCell = true;
+    var firstWater = true;
     const blockSize = 100.0;
     initializeCollisionDetection(
         debug: true,
@@ -94,29 +95,35 @@ Press T button to toggle player to collide with other objects.
               brick.currentCell = cell;
               staticLayer.add(brick);
             }
+            final result = <ClusterizedComponent>[staticLayer];
 
-            final animationLayer = CellStaticAnimationLayer(cell);
-            animationLayer.priority = 1;
+            if (firstWater) {
+              // firstWater = false;
+              final animationLayer = CellStaticAnimationLayer(cell);
+              animationLayer.priority = 1;
 
-            for (var i = 0; i < 200; i++) {
-              final random = Random();
-              final diffX =
-                  random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-                      (random.nextBool() ? -1 : 1);
-              final diffY =
-                  random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-                      (random.nextBool() ? -1 : 1);
-              final position =
-                  (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-              final water = Water(
-                position: position,
-                animation: waterAnimation,
-              );
-              water.currentCell = cell;
-              animationLayer.add(water);
+              for (var i = 0; i < 200; i++) {
+                final random = Random();
+                final diffX =
+                    random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+                        (random.nextBool() ? -1 : 1);
+                final diffY =
+                    random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+                        (random.nextBool() ? -1 : 1);
+                final position =
+                    (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+                final water = Water(
+                  position: position,
+                  animation: waterAnimation,
+                );
+                water.currentCell = cell;
+                animationLayer.add(water);
+              }
+
+              animationLayer.optimizeCollisions = true;
+              result.add(animationLayer);
             }
-
-            return [staticLayer, animationLayer];
+            return result;
           },
         ));
     cameraComponent = CameraComponent(world: world);
@@ -162,13 +169,11 @@ Press T button to toggle player to collide with other objects.
         _playerDisplacement.setValues(stepSize, 0);
         player.position = player.position.translate(stepSize, 0);
       }
+      if (key == LogicalKeyboardKey.shiftLeft) {
+        _killWater = !_killWater;
+      }
       if (key == LogicalKeyboardKey.space) {
         _fireBullet = true;
-        if (keysPressed
-            .where((element) => element == LogicalKeyboardKey.shiftLeft)
-            .isNotEmpty) {
-          _killWater = true;
-        }
       }
       if (key == LogicalKeyboardKey.keyT) {
         final collisionType = player.boundingBox.collisionType;
@@ -192,7 +197,6 @@ Press T button to toggle player to collide with other objects.
       world.add(bullet);
       _playerDisplacement.setZero();
       _fireBullet = false;
-      _killWater = false;
     }
 
     return KeyEventResult.handled;
@@ -329,7 +333,7 @@ class Bullet extends PositionComponent
         boundingBox.defaultCollisionType = CollisionType.active;
   }
 
-  var lifetime = 10.0;
+  var lifetime = 20.0;
   final Vector2 displacement;
   final bool killWater;
 
@@ -433,6 +437,7 @@ mixin GameCollideable on ClusterizedComponent {
   void initCollision() {
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.passive;
+    boundingBox.isSolid = true;
   }
 
   Vector2 get cachedCenter => boundingBox.aabbCenter;

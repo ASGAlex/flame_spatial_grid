@@ -1,19 +1,29 @@
 import 'package:flame/components.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 
 class CellStaticAnimationLayer extends PositionComponent
-    with ClusterizedComponent, UpdateOnDemand, ListenerChildrenUpdate {
+    with
+        ClusterizedComponent,
+        UpdateOnDemand,
+        ListenerChildrenUpdate,
+        HasGameReference<HasClusterizedCollisionDetection> {
   CellStaticAnimationLayer(Cell cell)
       : super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     cell.components.add(this);
+    _collisionOptimizer = CollisionOptimizer(this);
   }
 
   SpriteAnimationComponent? animationComponent;
   SpriteAnimation? animation;
+
+  bool optimizeCollisions = false;
+  late final CollisionOptimizer _collisionOptimizer;
+  bool _firstUpdate = true;
 
   @override
   Future<void>? add(Component component) {
@@ -35,6 +45,11 @@ class CellStaticAnimationLayer extends PositionComponent
   void updateTree(double dt) {
     animationComponent?.update(dt);
     if (isUpdateNeeded) {
+      super.updateTree(dt);
+      if (optimizeCollisions) {
+        _collisionOptimizer.optimize();
+        isUpdateNeeded = true;
+      }
       super.updateTree(dt);
       compileToSingleLayer();
     }

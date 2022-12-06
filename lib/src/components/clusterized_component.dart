@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -8,12 +9,13 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 mixin ClusterizedComponent on PositionComponent {
-  static final _componentHitboxes = <ShapeHitbox, ClusterizedComponent>{};
+  static final _componentHitboxes =
+      HashMap<ShapeHitbox, ClusterizedComponent>();
 
   // TODO: pass into ShapeHitbox
-  static final _cachedCenters = <ShapeHitbox, Vector2>{};
+  static final _cachedCenters = HashMap<ShapeHitbox, Vector2>();
 
-  static final _defaultCollisionType = <ShapeHitbox, CollisionType>{};
+  static final _defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
   bool isVisible = true;
 
@@ -26,7 +28,13 @@ mixin ClusterizedComponent on PositionComponent {
 
   Cell? currentCell;
 
-  late final Clusterizer clusterizer;
+  Clusterizer? _clusterizer;
+
+  Clusterizer get clusterizer => _clusterizer!;
+
+  void setClusterizer(Clusterizer clusterizer) {
+    _clusterizer ??= clusterizer;
+  }
 
   bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
 
@@ -181,17 +189,24 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
   }
 
   ClusterizedComponent? get clusterizedParent {
-    final component = ClusterizedComponent._componentHitboxes[this];
+    var component = ClusterizedComponent._componentHitboxes[this];
     if (component == null) {
       try {
-        return ancestors().firstWhere(
+        component = ancestors().firstWhere(
           (c) => c is ClusterizedComponent,
         ) as ClusterizedComponent;
+        ClusterizedComponent._componentHitboxes[this] = component;
+        return component;
       } catch (e) {
         return null;
       }
     }
     return component;
+  }
+
+  @internal
+  void clearClusterizedParent() {
+    ClusterizedComponent._componentHitboxes.remove(this);
   }
 
   set defaultCollisionType(CollisionType defaultCollisionType) {

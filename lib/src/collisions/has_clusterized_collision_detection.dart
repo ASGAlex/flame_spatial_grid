@@ -118,7 +118,11 @@ mixin HasClusterizedCollisionDetection on FlameGame
       checkParent = true;
     }
 
-    if (checkParent && one is ShapeHitbox && another is ShapeHitbox) {
+    if (checkParent &&
+        one is ShapeHitbox &&
+        another is ShapeHitbox &&
+        one is! GroupHitbox &&
+        another is! GroupHitbox) {
       return onComponentTypeCheck(one.hitboxParent, another.hitboxParent);
     }
     return true;
