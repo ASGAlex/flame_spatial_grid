@@ -64,7 +64,7 @@ Press T button to toggle player to collide with other objects.
 
     player = world.player;
     var firstCell = true;
-    var firstWater = true;
+    var firstWater = false;
     const blockSize = 100.0;
     initializeCollisionDetection(
         debug: true,
@@ -80,14 +80,15 @@ Press T button to toggle player to collide with other objects.
               return [];
             }
             final staticLayer = CellStaticLayer(cell);
+            staticLayer.optimizeCollisions = true;
             staticLayer.priority = 2;
-            for (var i = 0; i < 50; i++) {
+            for (var i = 0; i < 200; i++) {
               final random = Random();
               final diffX =
-                  random.nextInt((blockSize / 2 - 5).ceil()).toDouble() *
+                  random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
                       (random.nextBool() ? -1 : 1);
               final diffY =
-                  random.nextInt((blockSize / 2 - 5).ceil()).toDouble() *
+                  random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
                       (random.nextBool() ? -1 : 1);
               final position =
                   (cell.rect.size / 2).toVector2().translate(diffX, diffY);
@@ -121,7 +122,7 @@ Press T button to toggle player to collide with other objects.
               }
 
               animationLayer.optimizeCollisions = true;
-              result.add(animationLayer);
+              // result.add(animationLayer);
             }
             return result;
           },

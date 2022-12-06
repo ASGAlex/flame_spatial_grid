@@ -23,22 +23,13 @@ class CellStaticAnimationLayer extends PositionComponent
 
   bool optimizeCollisions = false;
   late final CollisionOptimizer _collisionOptimizer;
-  bool _firstUpdate = true;
 
   @override
   Future<void>? add(Component component) {
     if (component is SpriteAnimationComponent) {
       animation ??= component.animation;
     }
-    final result = super.add(component);
-    isUpdateNeeded = true;
-    return result;
-  }
-
-  @override
-  void remove(Component component) {
-    super.remove(component);
-    isUpdateNeeded = true;
+    return super.add(component);
   }
 
   @override

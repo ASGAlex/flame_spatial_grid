@@ -19,7 +19,7 @@ class CellStaticLayer extends PositionComponent
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     cell.components.add(this);
-    collisionOptimizer = CollisionOptimizer(this);
+    _collisionOptimizer = CollisionOptimizer(this);
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
     layerPicture = recorder.endRecording();
@@ -28,8 +28,11 @@ class CellStaticLayer extends PositionComponent
   bool _needRepaint = true;
 
   late Picture layerPicture;
+  late Image layerImage;
 
-  late final CollisionOptimizer collisionOptimizer;
+  bool renderAsImage = true;
+  bool optimizeCollisions = false;
+  late final CollisionOptimizer _collisionOptimizer;
 
   @override
   void renderTree(Canvas canvas) {
@@ -48,21 +51,42 @@ class CellStaticLayer extends PositionComponent
     canvas.drawPicture(layerPicture);
   }
 
-  void _renderToPicture() {
+  void _renderToPicture() async {
     final cell = currentCell;
     if (cell == null) return;
 
-    final recorder = PictureRecorder();
-    final canvas = Canvas(recorder);
+    var recorder = PictureRecorder();
+    var canvas = Canvas(recorder);
     for (var component in children) {
       component.renderTree(canvas);
     }
     layerPicture = recorder.endRecording();
+    if (renderAsImage) {
+      layerImage = await layerPicture.toImageSafe(
+          cell.rect.width.toInt(), cell.rect.height.toInt());
+
+      recorder = PictureRecorder();
+      canvas = Canvas(recorder);
+      canvas.drawImage(layerImage, Offset.zero, Paint());
+      layerPicture = recorder.endRecording();
+    }
   }
 
   @override
   void onChildrenUpdate() {
     _needRepaint = true;
+  }
+
+  @override
+  void updateTree(double dt) {
+    if (isUpdateNeeded) {
+      super.updateTree(dt);
+      if (optimizeCollisions) {
+        _collisionOptimizer.optimize();
+        isUpdateNeeded = true;
+      }
+      super.updateTree(dt);
+    }
   }
 
   @override
@@ -109,9 +133,9 @@ mixin ListenerChildrenUpdate on PositionComponent {
   void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
     if (child is UpdateOnDemand) {
       child.isUpdateNeeded = true;
-      if (this is UpdateOnDemand) {
-        (this as UpdateOnDemand).isUpdateNeeded = true;
-      }
+    }
+    if (this is UpdateOnDemand) {
+      (this as UpdateOnDemand).isUpdateNeeded = true;
     }
   }
 }
