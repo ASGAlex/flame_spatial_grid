@@ -144,6 +144,7 @@ class CollisionOptimizer {
   CollisionOptimizer(this.parentLayer);
 
   final ClusterizedComponent parentLayer;
+  final _createdCollisionLists = <OptimizedCollisionList>[];
 
   List<ClusterizedComponent> get clusterizedChildren => parentLayer.children
       .whereType<ClusterizedComponent>()
@@ -172,8 +173,11 @@ class CollisionOptimizer {
     if (collisionsListByGroup == null) {
       optimizedCollisionsByGroupBox[cell] = collisionsListByGroup = {};
     }
-    parentLayer.children.whereType<GroupHitbox>().forEach(parentLayer.remove);
-    collisionsListByGroup.clear();
+    for (final optimized in _createdCollisionLists) {
+      optimized.boundingBox.removeFromParent();
+      collisionsListByGroup.remove(optimized.boundingBox);
+    }
+    _createdCollisionLists.clear();
     _alreadyProcessed.clear();
 
     for (final child in clusterizedChildren) {
@@ -191,6 +195,7 @@ class CollisionOptimizer {
 
         final optimized = OptimizedCollisionList(hitboxes, parentLayer);
         collisionsListByGroup[optimized.boundingBox] = optimized;
+        _createdCollisionLists.add(optimized);
         for (final hb in hitboxes) {
           hb.collisionType = CollisionType.inactive;
         }

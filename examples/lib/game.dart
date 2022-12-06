@@ -64,7 +64,7 @@ Press T button to toggle player to collide with other objects.
 
     player = world.player;
     var firstCell = true;
-    var firstWater = false;
+    var firstWater = true;
     const blockSize = 100.0;
     initializeCollisionDetection(
         debug: true,
@@ -122,7 +122,7 @@ Press T button to toggle player to collide with other objects.
               }
 
               animationLayer.optimizeCollisions = true;
-              // result.add(animationLayer);
+              result.add(animationLayer);
             }
             return result;
           },
