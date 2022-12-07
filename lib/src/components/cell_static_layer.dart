@@ -28,7 +28,7 @@ class CellStaticLayer extends PositionComponent
   bool _needRepaint = true;
 
   late Picture layerPicture;
-  late Image layerImage;
+  Image? layerImage;
 
   bool renderAsImage = true;
   bool optimizeCollisions = false;
@@ -48,7 +48,11 @@ class CellStaticLayer extends PositionComponent
       _renderToPicture();
       _needRepaint = false;
     }
-    canvas.drawPicture(layerPicture);
+    if (renderAsImage && layerImage != null) {
+      canvas.drawImage(layerImage!, Offset.zero, Paint());
+    } else {
+      canvas.drawPicture(layerPicture);
+    }
   }
 
   void _renderToPicture() async {
@@ -64,11 +68,6 @@ class CellStaticLayer extends PositionComponent
     if (renderAsImage) {
       layerImage = await layerPicture.toImageSafe(
           cell.rect.width.toInt(), cell.rect.height.toInt());
-
-      recorder = PictureRecorder();
-      canvas = Canvas(recorder);
-      canvas.drawImage(layerImage, Offset.zero, Paint());
-      layerPicture = recorder.endRecording();
     }
   }
 

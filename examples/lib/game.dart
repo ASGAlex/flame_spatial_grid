@@ -67,9 +67,9 @@ Press T button to toggle player to collide with other objects.
     var firstWater = true;
     const blockSize = 100.0;
     initializeCollisionDetection(
-        debug: true,
-        activeRadius: 7,
-        unloadRadius: 15,
+        debug: false,
+        activeRadius: 8,
+        unloadRadius: 14,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
