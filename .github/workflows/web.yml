@@ -11,9 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2 # Only works with v2
       - uses: subosito/flutter-action@v1
-      - uses: bluefireteam/flutter-gh-pages@v7
-        with:
-          baseHref: /flame_clusterizer/
-          workingDir: examples
-          webRenderer: canvaskit
-          customArgs: --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false
+      - run: cd examples; flutter config --enable-web
+      - run: flutter build web --release --web-renderer=canvaskit --base-href /flame_clusterizer/ --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false
+      - run: git config user.name github-actions
+      - run: git config user.email github-actions@github.com
+      - run: git --work-tree build/web add --all
+      - run: git commit -m "Automatic deployment by github-actions"
+      - run: git push origin HEAD:gh-pages --forces
