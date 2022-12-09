@@ -216,6 +216,14 @@ Press T button to toggle player to collide with other objects.
     zoom += info.delta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
   }
+
+  @override
+  void update(double dt) {
+    // final sw = Stopwatch()..start();
+    super.update(dt);
+    // sw.stop();
+    // print(sw.elapsedMicroseconds);
+  }
 }
 
 class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
