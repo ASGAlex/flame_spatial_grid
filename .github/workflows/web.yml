@@ -14,3 +14,6 @@ jobs:
       - uses: bluefireteam/flutter-gh-pages@v7
         with:
           baseHref: /flame_clusterizer/
+          workingDir: examples
+          webRenderer: canvaskit
+          customArgs: --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false
