@@ -4,13 +4,28 @@ Clusterizer Test
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+In this example the "Clusterizer" algorithm work.
+Algorithm takes control over collision detection, components rendering and
+components lifecycle and frequency of updates. This allows to gain application
+performance by saving additional resources. Also a special 'Layer-components'
+are used to compile statical components to single layer but keeping ability to
+update layer's image as soon as components parameters are changed.
 
-A few resources to get you started if this is your first Flutter project:
+Use WASD to move the player and use the mouse scroll to change zoom.
+Hold direction button and press space to fire a bullet.
+Notice that bullet will fly above water but collides with bricks.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Press LShift button to toggle firing bullets which also destroys water.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Press T button to toggle player to collide with other objects.
+
+Press at any screen point to teleport Player instantly to the click position.
+
+Press M button to show clusters debugging info. Green clusters are active
+clusters, where components are viewed as usual, update() and collision detection
+works its ordinary way.
+Grey clusters are inactive clusters. Such clusters intend to be
+"out-of-the-screen", components are not rendering inside such clusters.
+Dark clusters shown if you moved too far for your's starting position. Such
+clusters are suspended: components are not rendering, update() not work and
+all collisions are disabled.
