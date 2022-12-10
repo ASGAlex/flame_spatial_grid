@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class ClusterizerDebugComponent extends PositionComponent
     with HasPaint<String> {
-  ClusterizerDebugComponent(this.clusterizer);
+  ClusterizerDebugComponent(this.clusterizer) : super(priority: -100);
 
   final Clusterizer clusterizer;
 
