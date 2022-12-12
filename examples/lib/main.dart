@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: GameWidget(game: QuadTreeExample()),
+      home: GameWidget(game: ClusterizerExample()),
     );
   }
 }

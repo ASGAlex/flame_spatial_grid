@@ -47,8 +47,8 @@ mixin HasClusterizedCollisionDetection on FlameGame
       required int activeRadius,
       required int unloadRadius,
       required ClusterizedComponent trackedComponent,
-      required CellBuilder cellBuilder}) {
-    cellBuilder.rootComponent = this.rootComponent = rootComponent ?? this;
+      CellBuilderFunction? cellBuilder}) {
+    this.rootComponent = rootComponent ?? this;
 
     clusterizer = Clusterizer(
         blockSize: Size.square(blockSize),
@@ -130,6 +130,13 @@ mixin HasClusterizedCollisionDetection on FlameGame
 
   @override
   void update(double dt) {
+    final cellBuilder = clusterizer.cellBuilder;
+    if (cellBuilder != null && clusterizer.cellsScheduledToBuild.isNotEmpty) {
+      for (var cell in clusterizer.cellsScheduledToBuild) {
+        cellBuilder(cell, rootComponent);
+      }
+      clusterizer.cellsScheduledToBuild.clear();
+    }
     super.update(dt);
     collisionDetection.run();
   }

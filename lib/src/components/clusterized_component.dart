@@ -64,9 +64,10 @@ mixin ClusterizedComponent on PositionComponent {
   void onClusterizerMounted() {}
 
   @override
-  onMount() {
+  onLoad() {
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
+    return null;
   }
 
   void _onBoundingBoxTransform() {
@@ -112,6 +113,9 @@ mixin ClusterizedComponent on PositionComponent {
     if (isVisible) {
       super.renderTree(canvas);
     }
+    if (debugMode) {
+      renderDebugMode(canvas);
+    }
   }
 
   @internal
@@ -144,13 +148,7 @@ mixin ClusterizedComponent on PositionComponent {
       }
       //if nothing again - try to locate new cell's position from component's
       //coordinates
-      if (newCell == null) {
-        newCell = clusterizer.createNewCellAtPosition(componentCenter);
-
-        if (newCell == null) {
-          throw 'teleportation error';
-        }
-      }
+      newCell ??= clusterizer.createNewCellAtPosition(componentCenter);
 
       newCell.left;
       newCell.right;
@@ -163,6 +161,16 @@ mixin ClusterizedComponent on PositionComponent {
       return true; //cell changed;
     }
     return false; //cell not changed;
+  }
+
+  @override
+  void renderDebugMode(Canvas canvas) {
+    super.renderDebugMode(canvas);
+    debugTextPaint.render(
+      canvas,
+      '$runtimeType',
+      Vector2(0, 0),
+    );
   }
 }
 

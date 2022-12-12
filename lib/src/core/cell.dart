@@ -1,5 +1,3 @@
-import 'dart:collection';
-
 import 'package:flame/extensions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 
@@ -17,15 +15,30 @@ class Cell {
     rawTop = _checkCell(_CellCreationContext.top);
     rawBottom = _checkCell(_CellCreationContext.bottom);
 
-    clusterizer.cellBuilder?.build(this);
     state = clusterizer.getCellState(this);
+    if (state == CellState.suspended) {
+      _scheduleToBuild = true;
+    } else {
+      clusterizer.cellsScheduledToBuild.add(this);
+    }
   }
 
+  bool _scheduleToBuild = false;
   final Clusterizer clusterizer;
   final Rect rect;
   late final Vector2 center;
-  final components = HashSet<ClusterizedComponent>();
-  CellState state = CellState.active;
+
+  CellState _state = CellState.active;
+
+  CellState get state => _state;
+
+  set state(CellState value) {
+    _state = value;
+    if (_state != CellState.suspended && _scheduleToBuild) {
+      clusterizer.cellsScheduledToBuild.add(this);
+      _scheduleToBuild = false;
+    }
+  }
 
   Cell? rawLeft;
   Cell? rawRight;
@@ -119,7 +132,6 @@ class Cell {
   List<Cell> get neighboursAndMe => neighbours..add(this);
 
   dispose() {
-    components.clear();
     rawLeft = rawRight = rawTop = rawBottom = null;
   }
 }

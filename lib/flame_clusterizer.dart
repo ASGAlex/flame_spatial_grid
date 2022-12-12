@@ -25,5 +25,6 @@ export 'src/components/clusterized_component.dart';
 export 'src/components/debug_component.dart';
 export 'src/components/on_demand_actions.dart';
 export 'src/core/cell.dart';
-export 'src/core/cell_builder.dart';
 export 'src/core/clusterizer.dart';
+export 'src/tiled/map_loader.dart';
+export 'src/tiled/tile_builder.dart';

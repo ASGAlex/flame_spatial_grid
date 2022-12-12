@@ -14,7 +14,6 @@ class CellStaticAnimationLayer extends PositionComponent
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
-    cell.components.add(this);
     _collisionOptimizer = CollisionOptimizer(this);
   }
 
@@ -24,10 +23,18 @@ class CellStaticAnimationLayer extends PositionComponent
   bool optimizeCollisions = false;
   late final CollisionOptimizer _collisionOptimizer;
 
+  final _correction = Vector2.zero();
+
   @override
   Future<void>? add(Component component) {
     if (component is SpriteAnimationComponent) {
       animation ??= component.animation;
+      if (component.position.x < _correction.x) {
+        _correction.x = component.position.x;
+      }
+      if (component.position.y < _correction.y) {
+        _correction.y = component.position.y;
+      }
     }
     return super.add(component);
   }
@@ -56,13 +63,21 @@ class CellStaticAnimationLayer extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    animationComponent?.render(canvas);
+    animationComponent?.renderTree(canvas);
+    if (debugMode) {
+      renderDebugMode(canvas);
+      for (final child in children) {
+        if (child.debugMode) {
+          child.renderTree(canvas);
+        }
+      }
+    }
   }
 
   Future<void> compileToSingleLayer() async {
     final anim = animation?.clone();
     if (anim == null) {
-      throw "Can't compile while animation is not loaded!";
+      return;
     }
 
     List<Sprite> newSprites = [];
@@ -71,7 +86,8 @@ class CellStaticAnimationLayer extends PositionComponent
       final sprite = anim.getSprite();
       final composition = ImageComposition();
       for (final component in children.whereType<SpriteAnimationComponent>()) {
-        composition.add(sprite.image, component.position, source: sprite.src);
+        final correctedPosition = component.position + (_correction * -1);
+        composition.add(sprite.image, correctedPosition, source: sprite.src);
       }
       var composedImage = await composition.compose();
       newSprites.add(Sprite(composedImage));
@@ -81,7 +97,7 @@ class CellStaticAnimationLayer extends PositionComponent
         stepTimes: anim.getVariableStepTimes());
     animationComponent = SpriteAnimationComponent(
         animation: spriteAnimation,
-        position: Vector2.all(0),
+        position: _correction,
         size: newSprites.first.image.size);
   }
 

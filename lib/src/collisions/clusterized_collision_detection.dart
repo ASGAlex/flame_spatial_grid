@@ -46,7 +46,7 @@ class ClusterizedCollisionDetection
 
       // ignore: prefer_function_declarations_over_variables
       final listenerClusterizerSuspend = () {
-        _onComponentSuspend(clusterizedComponent, hitbox);
+        _onCellSuspendChanged(clusterizedComponent, hitbox);
       };
       clusterizedComponent.suspendNotifier
           .addListener(listenerClusterizerSuspend);
@@ -69,7 +69,8 @@ class ClusterizedCollisionDetection
     }
   }
 
-  void _onComponentSuspend(ClusterizedComponent component, ShapeHitbox hitbox) {
+  void _onCellSuspendChanged(
+      ClusterizedComponent component, ShapeHitbox hitbox) {
     if (component.toggleCollisionOnSuspendChange) {
       if (component.isSuspended) {
         hitbox.collisionType = CollisionType.inactive;
@@ -159,7 +160,7 @@ class ClusterizedCollisionDetection
     final previousCell = clusterizedComponent.currentCell;
     final cellChanged = clusterizedComponent.updateTransform();
     //suspend hitbox, if was moved to suspended cell.
-    if (cellChanged && !clusterizedComponent.isTracked) {
+    if (cellChanged) {
       final onCellSuspend = _listenerClusterizedSuspend[item];
       if (onCellSuspend != null) {
         onCellSuspend();

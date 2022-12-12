@@ -18,7 +18,6 @@ class CellStaticLayer extends PositionComponent
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
-    cell.components.add(this);
     _collisionOptimizer = CollisionOptimizer(this);
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);

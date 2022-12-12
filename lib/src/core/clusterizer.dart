@@ -1,5 +1,12 @@
+import 'dart:collection';
+
+import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:meta/meta.dart';
+
+typedef CellBuilderFunction = Future<void> Function(
+    Cell cell, Component rootComponent);
 
 class Clusterizer {
   Clusterizer(
@@ -29,9 +36,12 @@ class Clusterizer {
     cells.clear();
   }
 
-  final cells = <Rect, Cell>{};
+  final cells = HashMap<Rect, Cell>();
   Cell? _currentCell;
-  CellBuilder? cellBuilder;
+  CellBuilderFunction? cellBuilder;
+
+  @internal
+  final cellsScheduledToBuild = <Cell>{};
 
   final Size blockSize;
   final ClusterizedComponent trackedComponent;
@@ -252,9 +262,11 @@ class Clusterizer {
     return nearestCell;
   }
 
-  Cell? createNewCellAtPosition(Vector2 position) {
+  Cell createNewCellAtPosition(Vector2 position) {
     final nearest = findNearestCellToPosition(position);
-    if (nearest == null) throw "There are no cells probably?";
+    if (nearest == null) {
+      throw "There are no cells probably? Position: $position";
+    }
 
     var startPoint = nearest.center;
     final diff = position - startPoint;
@@ -284,11 +296,10 @@ class Clusterizer {
         center: startPoint.toOffset(),
         width: blockSize.width,
         height: blockSize.height);
-    if (!rect.containsPoint(position)) {
-      print(rect);
-      print(position);
-      print(startPoint);
-      //throw 'Error creating new cell';
+
+    final existingCell = cells[rect];
+    if (existingCell != null) {
+      return existingCell;
     }
 
     final cell = Cell(clusterizer: this, rect: rect);

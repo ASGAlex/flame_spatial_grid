@@ -7,7 +7,9 @@ environment:
   sdk: '>=2.18.4 <3.0.0'
 
 dependencies:
-  flame: 1.5.0
+  flame: ^1.5.0
+  flame_tiled: ^1.9.0
+  tiled: ^0.10.1
 
 dev_dependencies:
   lints: ^2.0.0

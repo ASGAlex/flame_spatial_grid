@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -12,14 +13,14 @@ import 'package:flutter/services.dart';
 
 const tileSize = 8.0;
 
-class QuadTreeExample extends FlameGame
+class ClusterizerExample extends FlameGame
     with
         HasClusterizedCollisionDetection,
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
         HasTappableComponents {
-  QuadTreeExample();
+  ClusterizerExample();
 
   static const description = '''
 In this example the "Clusterizer" algorithm work. 
@@ -49,92 +50,25 @@ clusters are suspended: components are not rendering, update() not work and
 all collisions are disabled.
   ''';
 
+  final demoMapLoader = DemoMapLoader();
+
   @override
   Future<void> onLoad() async {
     super.onLoad();
 
-    final spriteBrick = await Sprite.load(
-      'retro_tiles.png',
-      srcPosition: Vector2.all(0),
-      srcSize: Vector2.all(tileSize),
-    );
-
-    final waterAnimation = SpriteAnimation.fromFrameData(
-        await images.load('retro_tiles.png'),
-        SpriteAnimationData.sequenced(
-          textureSize: Vector2.all(tileSize),
-          texturePosition: Vector2(0, tileSize),
-          amount: 3,
-          stepTime: 0.5,
-        ));
-
     player = world.player;
-    var firstCell = true;
-    var firstWater = true;
     const blockSize = 100.0;
     initializeCollisionDetection(
         debug: false,
-        activeRadius: 8,
-        unloadRadius: 14,
+        activeRadius: 4,
+        unloadRadius: 7,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
-        cellBuilder: CellBuilder(
-          builder: (cell, parentComponent) async {
-            if (firstCell) {
-              firstCell = false;
-              return [];
-            }
-            final staticLayer = CellStaticLayer(cell);
-            staticLayer.optimizeCollisions = true;
-            staticLayer.priority = 2;
-            for (var i = 0; i < 200; i++) {
-              final random = Random();
-              final diffX =
-                  random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-                      (random.nextBool() ? -1 : 1);
-              final diffY =
-                  random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-                      (random.nextBool() ? -1 : 1);
-              final position =
-                  (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-              final brick = Brick(position: position, sprite: spriteBrick);
-              brick.currentCell = cell;
-              staticLayer.add(brick);
-            }
-            final result = <ClusterizedComponent>[staticLayer];
-
-            if (firstWater) {
-              // firstWater = false;
-              final animationLayer = CellStaticAnimationLayer(cell);
-              animationLayer.priority = 1;
-
-              for (var i = 0; i < 200; i++) {
-                final random = Random();
-                final diffX =
-                    random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-                        (random.nextBool() ? -1 : 1);
-                final diffY =
-                    random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-                        (random.nextBool() ? -1 : 1);
-                final position =
-                    (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-                final water = Water(
-                  position: position,
-                  animation: waterAnimation,
-                );
-                water.currentCell = cell;
-                animationLayer.add(water);
-              }
-
-              animationLayer.optimizeCollisions = true;
-              result.add(animationLayer);
-            }
-            return result;
-          },
-        ));
+        cellBuilder: demoMapLoader.onBuildNewCell);
+    await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
-    cameraComponent.viewfinder.zoom = 1.5;
+    cameraComponent.viewfinder.zoom = 3;
     add(world);
     add(cameraComponent);
     cameraComponent.follow(player);
@@ -232,14 +166,11 @@ all collisions are disabled.
   }
 }
 
-class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
-  static const mapSize = 300;
-  static const bricksCount = 8000;
+class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
+  static const mapSize = 50;
 
   final Player player = Player(
-      position: Vector2.all(mapSize * tileSize / 2 + 6),
-      size: Vector2.all(tileSize),
-      priority: 2);
+      position: Vector2(400, 156), size: Vector2.all(tileSize), priority: 2);
 
   @override
   onLoad() async {
@@ -248,27 +179,22 @@ class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
 
   @override
   void onTapDown(TapDownEvent event) {
-    // final tapPosition = event.localPosition;
-    // final cellsUnderCursor = <Cell>[];
-    // gameRef.clusterizer.cells.forEach((rect, cell) {
-    //   if (cell.rect.containsPoint(tapPosition)) {
-    //     cellsUnderCursor.add(cell);
-    //     // print('State:  + ${cell.state}');
-    //     // print('Rect: $rect');
-    //     // print('Components count: ${cell.components.length}');
-    //   }
-    // });
-    //
-    // final list = componentsAtPoint(tapPosition);
-    // for (var component in list) {
-    //   if (component is! ClusterizedComponent) continue;
-    //   final cell = component.currentCell;
-    //   if (cell != null) {
-    //     print('State:  + ${cell.state}');
-    //     print('Rect: ${cell.rect}');
-    //     print('Components count: ${cell.components.length}');
-    //   }
-    // }
+    final tapPosition = event.localPosition;
+    final cellsUnderCursor = <Cell>[];
+    gameRef.clusterizer.cells.forEach((rect, cell) {
+      if (cell.rect.containsPoint(tapPosition)) {
+        cellsUnderCursor.add(cell);
+        print('State:  + ${cell.state}');
+        print('Rect: $rect');
+        // print('Components count: ${cell.components.length}');
+      }
+    });
+
+    final list = componentsAtPoint(tapPosition);
+    for (var component in list) {
+      if (component is! ClusterizedComponent) continue;
+      print(component.runtimeType);
+    }
 
     player.position = event.localPosition;
   }
@@ -277,7 +203,10 @@ class MyWorld extends World with TapCallbacks, HasGameRef<QuadTreeExample> {
 //#region Player
 
 class Player extends SpriteComponent
-    with CollisionCallbacks, HasGameRef<QuadTreeExample>, ClusterizedComponent {
+    with
+        CollisionCallbacks,
+        HasGameRef<ClusterizerExample>,
+        ClusterizedComponent {
   Player({
     required super.position,
     required super.size,
@@ -480,4 +409,126 @@ extension Vector2Ext on Vector2 {
   }
 }
 
+class DemoMapLoader extends TiledMapLoader {
+  @override
+  Vector2 get initialPosition => Vector2(0, 0);
+
+  @override
+  TileBuilderFunction? get defaultBuilder => null;
+
+  @override
+  Vector2 get destTileSize => Vector2.all(8);
+
+  @override
+  String get fileName => 'example.tmx';
+
+  @override
+  TileBuilderFunction? get notFoundBuilder => null; //onBackgroundBuilder;
+
+  @override
+  Map<String, TileBuilderFunction> get tileBuilders =>
+      {'Brick': onBuildBrick, 'Water': onBuildWater};
+
+  final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
+
+  Sprite? spriteBrick;
+  SpriteAnimation? waterAnimation;
+
+  Future<void> onBuildBrick(
+      TileBuilder tile, Vector2 position, Vector2 size, Cell cell) async {
+    spriteBrick ??= await tile.getSprite();
+    final brick = Brick(position: position, sprite: spriteBrick);
+    brick.currentCell = cell;
+    rootComponent.add(brick);
+  }
+
+  Future<void> onBuildWater(
+      TileBuilder tile, Vector2 position, Vector2 size, Cell cell) async {
+    final animationLayer =
+        _animationLayers[cell] ?? CellStaticAnimationLayer(cell);
+    animationLayer.priority = 1;
+    animationLayer.optimizeCollisions = true;
+
+    waterAnimation ??= await tile.getSpriteAnimation();
+    final water = Water(
+      position: position - cell.rect.topLeft.toVector2(),
+      animation: waterAnimation,
+    );
+
+    water.currentCell = cell;
+    animationLayer.add(water);
+
+    if (_animationLayers[cell] == null) {
+      _animationLayers[cell] = animationLayer;
+      rootComponent.add(animationLayer);
+    }
+  }
+
+  static const blockSize = 100.0;
+
+  Future<void> onBuildNewCell(Cell cell, Component rootComponent) async {
+    if (mapRect == Rect.zero) return;
+
+    final checkList = [
+      cell.rect.topLeft,
+      cell.rect.bottomLeft,
+      cell.rect.topRight,
+      cell.rect.bottomRight
+    ];
+    var isCellOutsideOfMap = true;
+    for (final cellPoint in checkList) {
+      if (mapRect.contains(cellPoint)) {
+        isCellOutsideOfMap = false;
+        break;
+      }
+    }
+
+    if (isCellOutsideOfMap) {
+      final staticLayer = CellStaticLayer(cell);
+      staticLayer.optimizeCollisions = true;
+      staticLayer.priority = 2;
+      for (var i = 0; i < 200; i++) {
+        final random = Random();
+        final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final position =
+            (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+        final brick = Brick(position: position, sprite: spriteBrick);
+        brick.currentCell = cell;
+        staticLayer.add(brick);
+      }
+
+      rootComponent.add(staticLayer);
+
+      final animationLayer = CellStaticAnimationLayer(cell);
+      animationLayer.priority = 1;
+
+      for (var i = 0; i < 200; i++) {
+        final random = Random();
+        final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final position =
+            (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+        final water = Water(
+          position: position,
+          animation: waterAnimation,
+        );
+        water.currentCell = cell;
+        animationLayer.add(water);
+      }
+
+      animationLayer.optimizeCollisions = true;
+      rootComponent.add(animationLayer);
+    }
+  }
+
+// Future<void> onBackgroundBuilder(
+//     TileBuilder tile, Vector2 position, Vector2 size) {
+//
+// }
+}
 //#endregion
