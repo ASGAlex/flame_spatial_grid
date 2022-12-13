@@ -440,6 +440,7 @@ class DemoMapLoader extends TiledMapLoader {
       {'Brick': onBuildBrick, 'Water': onBuildWater};
 
   final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
+  final _staticLayers = HashMap<Cell, CellStaticLayer>();
 
   static Sprite? spriteBrick;
   static SpriteAnimation? waterAnimation;
@@ -447,10 +448,22 @@ class DemoMapLoader extends TiledMapLoader {
   //TODO: optimize into layer
   Future<void> onBuildBrick(
       TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
+    final staticLayer = _staticLayers[cell] ?? CellStaticLayer(cell);
+    staticLayer.priority = 1;
+    staticLayer.optimizeCollisions = true;
+
     spriteBrick ??= await tile.getSprite();
-    final brick = Brick(position: position, sprite: spriteBrick);
+    final brick = Brick(
+        position: position - cell.rect.topLeft.toVector2(),
+        sprite: spriteBrick);
     brick.currentCell = cell;
-    rootComponent.add(brick);
+
+    staticLayer.add(brick);
+
+    if (_staticLayers[cell] == null) {
+      _staticLayers[cell] = staticLayer;
+      rootComponent.add(staticLayer);
+    }
   }
 
   //TODO: make map loader with autogrouping to layers

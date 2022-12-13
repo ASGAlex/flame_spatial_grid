@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
+import 'package:flame/rendering.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flame_clusterizer/src/collisions/collision_optimizer.dart';
 
@@ -32,6 +33,30 @@ class CellStaticLayer extends PositionComponent
   bool optimizeCollisions = false;
   late final CollisionOptimizer _collisionOptimizer;
 
+  final _correctionTopLeft = Vector2.zero();
+  final _correctionBottomRight = Vector2.zero();
+
+  @override
+  Future<void>? add(Component component) {
+    if (component is PositionComponent) {
+      if (component.position.x < _correctionTopLeft.x) {
+        _correctionTopLeft.x = component.position.x;
+      }
+      if (component.position.y < _correctionTopLeft.y) {
+        _correctionTopLeft.y = component.position.y;
+      }
+
+      final bottomRightPosition = component.position + component.size;
+      if (bottomRightPosition.x > _correctionBottomRight.x) {
+        _correctionBottomRight.x = bottomRightPosition.x;
+      }
+      if (bottomRightPosition.y > _correctionBottomRight.y) {
+        _correctionBottomRight.y = bottomRightPosition.y;
+      }
+    }
+    return super.add(component);
+  }
+
   @override
   void renderTree(Canvas canvas) {
     isVisible = (currentCell?.state == CellState.active ? true : false);
@@ -47,7 +72,7 @@ class CellStaticLayer extends PositionComponent
       _needRepaint = false;
     }
     if (renderAsImage && layerImage != null) {
-      canvas.drawImage(layerImage!, Offset.zero, Paint());
+      canvas.drawImage(layerImage!, _correctionTopLeft.toOffset(), Paint());
     } else {
       canvas.drawPicture(layerPicture);
     }
@@ -59,13 +84,24 @@ class CellStaticLayer extends PositionComponent
 
     var recorder = PictureRecorder();
     var canvas = Canvas(recorder);
+    final decorator = Transform2DDecorator();
+    decorator.transform2d.position = (_correctionTopLeft * -1);
     for (var component in children) {
-      component.renderTree(canvas);
+      if (component is! PositionComponent) continue;
+      // final correctedPosition = component.position + (_correction * -1);
+      decorator.applyChain(component.renderTree, canvas);
+      // component.renderTree(canvas);
     }
     layerPicture = recorder.endRecording();
     if (renderAsImage) {
-      layerImage = await layerPicture.toImageSafe(
-          cell.rect.width.toInt(), cell.rect.height.toInt());
+      var width = cell.rect.width.toInt();
+      var height = cell.rect.height.toInt();
+      if (_correctionBottomRight != Vector2.zero()) {
+        final diff = _correctionBottomRight - _correctionTopLeft;
+        width = diff.x.ceil();
+        height = diff.y.ceil();
+      }
+      layerImage = await layerPicture.toImageSafe(width, height);
     }
   }
 
