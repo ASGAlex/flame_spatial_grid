@@ -11,6 +11,8 @@ typedef TileBuilderFunction = Future<void> Function(
     TileDataProvider tile, Vector2 position, Vector2 size, Cell cell);
 
 abstract class TiledMapLoader {
+  static List<TiledMapLoader> loadedMaps = [];
+
   String get fileName;
 
   Vector2 get destTileSize;

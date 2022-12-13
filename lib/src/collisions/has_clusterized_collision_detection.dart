@@ -40,20 +40,23 @@ mixin HasClusterizedCollisionDetection on FlameGame
   /// type checker.
   /// It should usually not be overridden, see
   /// [CollisionCallbacks.onComponentTypeCheck] instead
-  void initializeCollisionDetection(
+  Future<void> initializeClusterizer(
       {bool? debug,
       Component? rootComponent,
       required double blockSize,
       required int activeRadius,
       required int unloadRadius,
       required ClusterizedComponent trackedComponent,
-      CellBuilderFunction? cellBuilder}) {
+      CellBuilderFunction? cellBuilder,
+      List<TiledMapLoader>? maps}) async {
     this.rootComponent = rootComponent ?? this;
-
+    _cellBuilder = cellBuilder;
+    if (maps != null) {
+      this.maps = maps;
+    }
     clusterizer = Clusterizer(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
-        cellBuilder: cellBuilder,
         activeRadius: activeRadius,
         unloadRadius: unloadRadius);
 
@@ -64,6 +67,24 @@ mixin HasClusterizedCollisionDetection on FlameGame
     );
 
     isClusterizerDebugEnabled = debug ?? false;
+
+    for (final map in this.maps) {
+      await map.init(this);
+      TiledMapLoader.loadedMaps.add(map);
+    }
+  }
+
+  List<TiledMapLoader> maps = [];
+  CellBuilderFunction? _cellBuilder;
+
+  Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
+    if (maps.isEmpty) {
+      return _cellBuilder?.call(cell, rootComponent);
+    }
+
+    for (final map in maps) {
+      await map.cellBuilder(cell, rootComponent);
+    }
   }
 
   set isClusterizerDebugEnabled(bool debug) {
@@ -130,10 +151,9 @@ mixin HasClusterizedCollisionDetection on FlameGame
 
   @override
   void update(double dt) async {
-    final cellBuilder = clusterizer.cellBuilder;
-    if (cellBuilder != null && clusterizer.cellsScheduledToBuild.isNotEmpty) {
+    if (clusterizer.cellsScheduledToBuild.isNotEmpty) {
       for (var cell in clusterizer.cellsScheduledToBuild) {
-        await cellBuilder(cell, rootComponent);
+        await _cellBuilderMulti(cell, rootComponent);
       }
       clusterizer.cellsScheduledToBuild.clear();
     }

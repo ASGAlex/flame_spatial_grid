@@ -12,7 +12,6 @@ class Clusterizer {
   Clusterizer(
       {required this.blockSize,
       required this.trackedComponent,
-      this.cellBuilder,
       int? activeRadius,
       int? unloadRadius}) {
     this.activeRadius = (activeRadius ?? 1);
@@ -38,7 +37,6 @@ class Clusterizer {
 
   final cells = HashMap<Rect, Cell>();
   Cell? _currentCell;
-  CellBuilderFunction? cellBuilder;
 
   @internal
   final cellsScheduledToBuild = <Cell>{};

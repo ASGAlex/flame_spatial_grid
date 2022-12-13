@@ -50,7 +50,7 @@ clusters are suspended: components are not rendering, update() not work and
 all collisions are disabled.
   ''';
 
-  final demoMapLoader = DemoMapLoader();
+  // final demoMapLoader = DemoMapLoader();
 
   @override
   Future<void> onLoad() async {
@@ -58,15 +58,19 @@ all collisions are disabled.
 
     player = world.player;
     const blockSize = 100.0;
-    initializeCollisionDetection(
+    initializeClusterizer(
         debug: false,
         activeRadius: 3,
         unloadRadius: 5,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
-        cellBuilder: demoMapLoader.cellBuilder);
-    await demoMapLoader.init(this);
+        // cellBuilder: demoMapLoader.cellBuilder,
+        maps: [
+          DemoMapLoader(),
+          DemoMapLoader(Vector2(600, 0)),
+        ]);
+    // await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 3;
     add(world);
@@ -410,8 +414,14 @@ extension Vector2Ext on Vector2 {
 }
 
 class DemoMapLoader extends TiledMapLoader {
+  DemoMapLoader([Vector2? initialPosition]) {
+    if (initialPosition != null) {
+      this.initialPosition = initialPosition;
+    }
+  }
+
   @override
-  Vector2 get initialPosition => Vector2(0, 0);
+  Vector2 initialPosition = Vector2(0, 0);
 
   @override
   TileBuilderFunction? get defaultBuilder => null;
@@ -431,8 +441,8 @@ class DemoMapLoader extends TiledMapLoader {
 
   final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
 
-  Sprite? spriteBrick;
-  SpriteAnimation? waterAnimation;
+  static Sprite? spriteBrick;
+  static SpriteAnimation? waterAnimation;
 
   //TODO: optimize into layer
   Future<void> onBuildBrick(
@@ -471,7 +481,6 @@ class DemoMapLoader extends TiledMapLoader {
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
-    if (mapRect == Rect.zero) return;
 
     final checkList = [
       cell.rect.topLeft,
@@ -480,10 +489,13 @@ class DemoMapLoader extends TiledMapLoader {
       cell.rect.bottomRight
     ];
     var isCellOutsideOfMap = true;
-    for (final cellPoint in checkList) {
-      if (mapRect.contains(cellPoint)) {
-        isCellOutsideOfMap = false;
-        break;
+    for (final map in TiledMapLoader.loadedMaps) {
+      if (map.mapRect == Rect.zero) continue;
+      for (final cellPoint in checkList) {
+        if (map.mapRect.contains(cellPoint)) {
+          isCellOutsideOfMap = false;
+          break;
+        }
       }
     }
 
