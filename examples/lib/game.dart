@@ -58,7 +58,7 @@ all collisions are disabled.
 
     player = world.player;
     const blockSize = 100.0;
-    initializeClusterizer(
+    await initializeClusterizer(
         debug: false,
         activeRadius: 3,
         unloadRadius: 5,

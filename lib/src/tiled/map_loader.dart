@@ -40,7 +40,8 @@ abstract class TiledMapLoader {
   Future<void> init(HasClusterizedCollisionDetection game) async {
     this.game = game;
 
-    await _load();
+    _tiledComponent = await TiledComponent.load(fileName, destTileSize,
+        priority: basePriority);
     final renderableTiledMap = _tiledComponent?.tileMap;
     if (renderableTiledMap == null) return;
     final widthInTiles = _tiledComponent?.tileMap.map.width;
@@ -52,9 +53,6 @@ abstract class TiledMapLoader {
 
     _processTileType(tileMap: renderableTiledMap);
   }
-
-  Future<TiledComponent> _load() async => _tiledComponent =
-      await TiledComponent.load(fileName, destTileSize, priority: basePriority);
 
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
