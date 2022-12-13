@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_clusterizer/src/collisions/collision_optimizer.dart';
 
 class CellStaticAnimationLayer extends PositionComponent
     with

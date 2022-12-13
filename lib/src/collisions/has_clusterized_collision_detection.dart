@@ -6,6 +6,8 @@ import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 
+import 'collision_optimizer.dart';
+
 mixin HasClusterizedCollisionDetection on FlameGame
     implements HasCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   late ClusterizedCollisionDetection _collisionDetection;

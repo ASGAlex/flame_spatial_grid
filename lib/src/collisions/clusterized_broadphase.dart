@@ -1,9 +1,9 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
-import 'package:flame/components.dart';
-import 'package:flame/extensions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
+
+import 'collision_optimizer.dart';
 
 typedef ExternalMinDistanceCheckClusterized = bool Function(
   ClusterizedComponent activeItem,
@@ -151,61 +151,4 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     activeCollisions.clear();
     _broadphaseCheckCache.clear();
   }
-}
-
-class OptimizedCollisionList {
-  OptimizedCollisionList(HashSet<ShapeHitbox> hitboxes, this.parentLayer) {
-    _hitboxes = hitboxes;
-    _updateBoundingBox();
-  }
-
-  List<ShapeHitbox> get hitboxes => _hitboxes.toList(growable: false);
-  var _hitboxes = HashSet<ShapeHitbox>();
-  var _boundingBox = GroupHitbox()..hasParent = false;
-  final PositionComponent parentLayer;
-
-  GroupHitbox get boundingBox => _boundingBox;
-
-  void add(ShapeHitbox hitbox) {
-    if (!_hitboxes.contains(hitbox)) {
-      _hitboxes.add(hitbox);
-      _updateBoundingBox();
-    }
-  }
-
-  void remove(ShapeHitbox hitbox) {
-    final found = _hitboxes.remove(hitbox);
-    if (found) {
-      _updateBoundingBox();
-    }
-  }
-
-  _updateBoundingBox() {
-    if (_boundingBox.hasParent) {
-      parentLayer.remove(_boundingBox);
-    }
-    var rect = Rect.zero;
-    for (final hitbox in _hitboxes) {
-      if (rect == Rect.zero) {
-        rect = (hitbox.parent as PositionComponent).toRect();
-        continue;
-      }
-      rect =
-          rect.expandToInclude((hitbox.parent as PositionComponent).toRect());
-    }
-    _boundingBox = GroupHitbox(
-        // parentLayer: parentLayer,
-        position: rect.topLeft.toVector2(),
-        size: rect.size.toVector2())
-      ..collisionType = CollisionType.passive;
-    parentLayer.add(_boundingBox);
-  }
-}
-
-class GroupHitbox extends RectangleHitbox {
-  GroupHitbox({super.position, super.size}) {
-    isSolid = true;
-  }
-
-  bool hasParent = true;
 }

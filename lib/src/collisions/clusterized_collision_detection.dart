@@ -4,6 +4,8 @@ import 'package:flame/collisions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flutter/foundation.dart';
 
+import 'collision_optimizer.dart';
+
 class ClusterizedCollisionDetection
     extends StandardCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
   ClusterizedCollisionDetection(
