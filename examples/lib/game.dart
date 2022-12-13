@@ -60,12 +60,12 @@ all collisions are disabled.
     const blockSize = 100.0;
     initializeCollisionDetection(
         debug: false,
-        activeRadius: 4,
-        unloadRadius: 7,
+        activeRadius: 3,
+        unloadRadius: 5,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
-        cellBuilder: demoMapLoader.onBuildNewCell);
+        cellBuilder: demoMapLoader.cellBuilder);
     await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 3;
@@ -434,16 +434,18 @@ class DemoMapLoader extends TiledMapLoader {
   Sprite? spriteBrick;
   SpriteAnimation? waterAnimation;
 
+  //TODO: optimize into layer
   Future<void> onBuildBrick(
-      TileBuilder tile, Vector2 position, Vector2 size, Cell cell) async {
+      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
     spriteBrick ??= await tile.getSprite();
     final brick = Brick(position: position, sprite: spriteBrick);
     brick.currentCell = cell;
     rootComponent.add(brick);
   }
 
+  //TODO: make map loader with autogrouping to layers
   Future<void> onBuildWater(
-      TileBuilder tile, Vector2 position, Vector2 size, Cell cell) async {
+      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
     final animationLayer =
         _animationLayers[cell] ?? CellStaticAnimationLayer(cell);
     animationLayer.priority = 1;
@@ -466,7 +468,9 @@ class DemoMapLoader extends TiledMapLoader {
 
   static const blockSize = 100.0;
 
-  Future<void> onBuildNewCell(Cell cell, Component rootComponent) async {
+  @override
+  Future<void> cellBuilder(Cell cell, Component rootComponent) async {
+    await super.cellBuilder(cell, rootComponent);
     if (mapRect == Rect.zero) return;
 
     final checkList = [

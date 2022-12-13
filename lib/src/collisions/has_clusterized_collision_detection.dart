@@ -129,11 +129,11 @@ mixin HasClusterizedCollisionDetection on FlameGame
   }
 
   @override
-  void update(double dt) {
+  void update(double dt) async {
     final cellBuilder = clusterizer.cellBuilder;
     if (cellBuilder != null && clusterizer.cellsScheduledToBuild.isNotEmpty) {
       for (var cell in clusterizer.cellsScheduledToBuild) {
-        cellBuilder(cell, rootComponent);
+        await cellBuilder(cell, rootComponent);
       }
       clusterizer.cellsScheduledToBuild.clear();
     }

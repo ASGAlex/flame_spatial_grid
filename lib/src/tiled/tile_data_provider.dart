@@ -6,9 +6,7 @@ import 'package:flame/flame.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flame_tiled/flame_tiled.dart';
-
-typedef TileBuilderFunction = Future<void> Function(
-    TileBuilder tile, Vector2 position, Vector2 size, Cell cell);
+import 'package:flutter/foundation.dart';
 
 /// Utility class allows to process each map tile individually
 /// Usage example:
@@ -31,17 +29,17 @@ typedef TileBuilderFunction = Future<void> Function(
 /// Use [getSpriteAnimation] to get [SpriteAnimation] object of the tile.
 /// Use [getCollisionRect] to load [RectangleHitbox] if it had been specified in Tiled
 ///
-/// You usually do not need to create the class manually. Call [TileBuilder.processTileType], and
+/// You usually do not need to create the class manually. Call [TileDataProvider.processTileType], and
 /// it will do the rest of work.
 ///
-/// If you need to process another map, it might be useful to call [TileBuilder.clearCache]
+/// If you need to process another map, it might be useful to call [TileDataProvider.clearCache]
 /// if new map's tiles are very different from previous one.
-class TileBuilder {
+class TileDataProvider {
   static final Map<String, Sprite> _spriteCache = {};
   static final Map<String, SpriteAnimation> _spriteAnimationCache = {};
   static final Map<String, Image> _imageCache = {};
 
-  TileBuilder(this.tile, this.tileset);
+  TileDataProvider(this.tile, this.tileset);
 
   Tile tile;
   Tileset tileset;
@@ -153,78 +151,13 @@ class TileBuilder {
       return null;
     }
   }
+}
 
-  static Future processTileType(
-      {required RenderableTiledMap tileMap,
-      required Clusterizer clusterizer,
-      required Vector2 initialPosition,
-      Map<String, TileBuilderFunction>? processorByType,
-      TileBuilderFunction? defaultBuilder,
-      TileBuilderFunction? notFoundBuilder,
-      List<String>? layersToLoad,
-      bool clear = true}) async {
-    List<TileLayer>? tileLayers = <TileLayer>[];
-    if (layersToLoad != null) {
-      for (final layer in layersToLoad) {
-        final tileLayer = tileMap.getLayer<TileLayer>(layer);
-        if (tileLayer != null) {
-          tileLayers.add(tileLayer);
-        }
-      }
-    } else {
-      tileLayers =
-          tileMap.map.layers.whereType<TileLayer>().toList(growable: false);
-    }
+@immutable
+class CellBuilderContext {
+  const CellBuilderContext(this.tileBuilder, this.position, this.size);
 
-    for (final tileLayer in tileLayers) {
-      final tileData = tileLayer.data;
-      if (tileData == null) {
-        continue;
-      }
-      int xOffset = 0;
-      int yOffset = 0;
-      for (var tileId in tileData) {
-        if (tileId != 0) {
-          final tileset = tileMap.map.tilesetByTileGId(tileId);
-
-          final firstGid = tileset.firstGid;
-          if (firstGid != null) {
-            tileId = tileId - firstGid; //+ 1;
-          }
-          final tileData = tileset.tiles[tileId];
-          final position = Vector2(xOffset.toDouble() * tileMap.map.tileWidth,
-                  yOffset.toDouble() * tileMap.map.tileWidth) +
-              initialPosition;
-
-          final processor = processorByType?[tileData.type];
-          final size = Vector2(tileMap.map.tileWidth.toDouble(),
-              tileMap.map.tileWidth.toDouble());
-          final tileProcessor = TileBuilder(tileData, tileset);
-          final cell = clusterizer.createNewCellAtPosition(position + size / 2);
-          if (processor != null) {
-            await processor(tileProcessor, position, size, cell);
-          } else if (notFoundBuilder != null) {
-            await notFoundBuilder(tileProcessor, position, size, cell);
-          }
-          if (defaultBuilder != null) {
-            await defaultBuilder(tileProcessor, position, size, cell);
-          }
-        }
-        xOffset++;
-        if (xOffset == tileLayer.width) {
-          xOffset = 0;
-          yOffset++;
-        }
-      }
-    }
-
-    if (clear) {
-      for (final layer in tileLayers) {
-        tileMap.map.layers.remove(layer);
-      }
-      for (var rl in tileMap.renderableLayers) {
-        rl.refreshCache();
-      }
-    }
-  }
+  final Vector2 position;
+  final Vector2 size;
+  final TileDataProvider tileBuilder;
 }
