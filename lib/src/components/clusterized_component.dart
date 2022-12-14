@@ -17,14 +17,7 @@ mixin ClusterizedComponent on PositionComponent {
 
   static final _defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
-  @internal
-  final visibilityNotifier = ValueNotifier<bool>(true);
-
-  bool get isVisible => visibilityNotifier.value;
-
-  set isVisible(bool visible) {
-    visibilityNotifier.value = visible;
-  }
+  bool isVisible = true;
 
   @internal
   final suspendNotifier = ValueNotifier<bool>(false);
@@ -32,18 +25,6 @@ mixin ClusterizedComponent on PositionComponent {
   bool toggleCollisionOnSuspendChange = true;
 
   bool get isSuspended => suspendNotifier.value;
-
-  set isSuspended(bool suspend) {
-    if (suspendNotifier.value != suspend) {
-      if (suspend) {
-        onSuspend();
-      } else {
-        onResume(_dtElapsedWhileSuspended);
-        _dtElapsedWhileSuspended = 0;
-      }
-    }
-    suspendNotifier.value = suspend;
-  }
 
   Cell? currentCell;
 
@@ -67,14 +48,26 @@ mixin ClusterizedComponent on PositionComponent {
 
   double get minDistance => sqrt(_minDistanceQuad);
 
+  set isSuspended(bool suspend) {
+    if (suspendNotifier.value != suspend) {
+      if (suspend) {
+        onSuspend();
+      } else {
+        onResume(_dtElapsedWhileSuspended);
+        _dtElapsedWhileSuspended = 0;
+      }
+    }
+    suspendNotifier.value = suspend;
+  }
+
   @mustCallSuper
   void onClusterizerMounted() {}
 
   @override
-  Future<void>? onLoad() {
+  onLoad() {
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
-    return super.onLoad();
+    return null;
   }
 
   void _onBoundingBoxTransform() {

@@ -18,7 +18,6 @@ abstract class CellLayer extends PositionComponent
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
-    updateOnVisibilityOrSuspendChange = false;
   }
 
   bool optimizeCollisions = false;
@@ -72,7 +71,6 @@ abstract class CellLayer extends PositionComponent
 
     if (component is ClusterizedComponent) {
       component.transform.addListener(onChildrenUpdate);
-      component.visibilityNotifier.addListener(onChildrenUpdate);
       _listenerChildrenUpdate[component] = onChildrenUpdate;
     }
     onBeforeChildrenChanged(component, ChildrenChangeType.added);
@@ -84,7 +82,6 @@ abstract class CellLayer extends PositionComponent
     final callback = _listenerChildrenUpdate.remove(component);
     if (callback != null && component is ClusterizedComponent) {
       component.transform.removeListener(callback);
-      component.visibilityNotifier.removeListener(callback);
     }
 
     onBeforeChildrenChanged(component, ChildrenChangeType.removed);
