@@ -80,42 +80,68 @@ abstract class TiledMapLoader {
   }
 
   void addToStaticLayer(ClusterizedComponent component,
-      {int layerPriority = 1, bool optimizeCollisions = true}) {
+      {int layerPriority = 1,
+      bool optimizeCollisions = true,
+      CellStaticLayer? layer}) {
     final cell = component.currentCell;
     if (cell == null) {
       throw 'Cell must be specified!';
     }
-    final staticLayer = _staticLayers[cell] ?? CellStaticLayer(cell);
-    staticLayer.priority = layerPriority;
-    staticLayer.optimizeCollisions = optimizeCollisions;
-    component.position = component.position - cell.rect.topLeft.toVector2();
-    staticLayer.add(component);
-    if (_staticLayers[cell] == null) {
-      _staticLayers[cell] = staticLayer;
-      rootComponent.add(staticLayer);
-    }
+    final staticLayer = layer ?? (_staticLayers[cell] ?? CellStaticLayer(cell));
+    _addToLayer(component,
+        externalLayer: layer != null,
+        layer: staticLayer,
+        layerPriority: layerPriority,
+        optimizeCollisions: optimizeCollisions);
   }
 
   void addToAnimatedLayer(ClusterizedComponent component,
-      {int layerPriority = 1, bool optimizeCollisions = true}) {
+      {int layerPriority = 1,
+      bool optimizeCollisions = true,
+      CellStaticAnimationLayer? layer}) {
     final cell = component.currentCell;
     if (cell == null) {
       throw 'Cell must be specified!';
     }
-
     if (component is! SpriteAnimationComponent) {
       throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
     }
     final animationLayer =
-        _animationLayers[cell] ?? CellStaticAnimationLayer(cell);
-    animationLayer.priority = layerPriority;
-    animationLayer.optimizeCollisions = optimizeCollisions;
-    component.position = component.position - cell.rect.topLeft.toVector2();
-    animationLayer.add(component);
+        layer ?? (_animationLayers[cell] ?? CellStaticAnimationLayer(cell));
+    _addToLayer(component,
+        externalLayer: layer != null,
+        layer: animationLayer,
+        layerPriority: layerPriority,
+        optimizeCollisions: optimizeCollisions);
+  }
 
-    if (_animationLayers[cell] == null) {
-      _animationLayers[cell] = animationLayer;
-      rootComponent.add(animationLayer);
+  void _addToLayer(ClusterizedComponent component,
+      {int layerPriority = 1,
+      bool optimizeCollisions = true,
+      required bool externalLayer,
+      required CellLayer layer}) {
+    final cell = component.currentCell;
+    if (cell == null) {
+      throw 'Cell must be specified!';
+    }
+    layer.priority = layerPriority;
+    layer.optimizeCollisions = optimizeCollisions;
+    component.position = component.position - cell.rect.topLeft.toVector2();
+    layer.add(component);
+    if (externalLayer) {
+      rootComponent.add(layer);
+    } else {
+      if (layer is CellStaticLayer) {
+        if (_staticLayers[cell] == null) {
+          _staticLayers[cell] = layer;
+          rootComponent.add(layer);
+        }
+      } else if (layer is CellStaticAnimationLayer) {
+        if (_animationLayers[cell] == null) {
+          _animationLayers[cell] = layer;
+          rootComponent.add(layer);
+        }
+      }
     }
   }
 

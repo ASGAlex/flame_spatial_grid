@@ -450,7 +450,7 @@ class DemoMapLoader extends TiledMapLoader {
     spriteBrick ??= await tile.getSprite();
     final brick = Brick(position: position, sprite: spriteBrick);
     brick.currentCell = cell;
-    addToStaticLayer(brick, layerPriority: 1);
+    addToStaticLayer(brick, layerPriority: 2);
   }
 
   Future<void> onBuildWater(
@@ -461,7 +461,7 @@ class DemoMapLoader extends TiledMapLoader {
       animation: waterAnimation,
     );
     water.currentCell = cell;
-    addToAnimatedLayer(water);
+    addToAnimatedLayer(water, layerPriority: 1);
   }
 
   static const blockSize = 100.0;
