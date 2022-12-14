@@ -28,4 +28,5 @@ export 'src/components/on_demand_actions.dart';
 export 'src/core/cell.dart';
 export 'src/core/clusterizer.dart';
 export 'src/tiled/map_loader.dart';
+export 'src/tiled/sprite_loader.dart';
 export 'src/tiled/tile_data_provider.dart';

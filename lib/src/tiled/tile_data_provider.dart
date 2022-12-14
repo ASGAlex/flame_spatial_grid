@@ -39,7 +39,18 @@ class TileDataProvider {
   Tile tile;
   Tileset tileset;
 
-  RectangleHitbox? getCollisionRect() => tile.getCollisionRect();
+  RectangleHitbox? getCollisionRect() {
+    if (tile.objectGroup?.type == LayerType.objectGroup) {
+      final grp = tile.objectGroup as ObjectGroup;
+      if (grp.objects.isNotEmpty) {
+        final obj = grp.objects.first;
+        return RectangleHitbox(
+            size: Vector2(obj.width, obj.height),
+            position: Vector2(obj.x, obj.y));
+      }
+    }
+    return null;
+  }
 
   Future<Sprite> getSprite() => tile.getSprite(tileset);
 
