@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -443,54 +442,26 @@ class DemoMapLoader extends TiledMapLoader {
   Map<String, TileBuilderFunction> get tileBuilders =>
       {'Brick': onBuildBrick, 'Water': onBuildWater};
 
-  final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
-  final _staticLayers = HashMap<Cell, CellStaticLayer>();
-
   static Sprite? spriteBrick;
   static SpriteAnimation? waterAnimation;
 
-  //TODO: optimize into layer
   Future<void> onBuildBrick(
       TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
-    final staticLayer = _staticLayers[cell] ?? CellStaticLayer(cell);
-    staticLayer.priority = 1;
-    staticLayer.optimizeCollisions = true;
-
     spriteBrick ??= await tile.getSprite();
-    final brick = Brick(
-        position: position - cell.rect.topLeft.toVector2(),
-        sprite: spriteBrick);
+    final brick = Brick(position: position, sprite: spriteBrick);
     brick.currentCell = cell;
-
-    staticLayer.add(brick);
-
-    if (_staticLayers[cell] == null) {
-      _staticLayers[cell] = staticLayer;
-      rootComponent.add(staticLayer);
-    }
+    addToStaticLayer(brick, layerPriority: 1);
   }
 
-  //TODO: make map loader with autogrouping to layers
   Future<void> onBuildWater(
       TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
-    final animationLayer =
-        _animationLayers[cell] ?? CellStaticAnimationLayer(cell);
-    animationLayer.priority = 1;
-    animationLayer.optimizeCollisions = true;
-
     waterAnimation ??= await tile.getSpriteAnimation();
     final water = Water(
-      position: position - cell.rect.topLeft.toVector2(),
+      position: position,
       animation: waterAnimation,
     );
-
     water.currentCell = cell;
-    animationLayer.add(water);
-
-    if (_animationLayers[cell] == null) {
-      _animationLayers[cell] = animationLayer;
-      rootComponent.add(animationLayer);
-    }
+    addToAnimatedLayer(water);
   }
 
   static const blockSize = 100.0;
@@ -499,24 +470,7 @@ class DemoMapLoader extends TiledMapLoader {
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
 
-    final checkList = [
-      cell.rect.topLeft,
-      cell.rect.bottomLeft,
-      cell.rect.topRight,
-      cell.rect.bottomRight
-    ];
-    var isCellOutsideOfMap = true;
-    for (final map in TiledMapLoader.loadedMaps) {
-      if (map.mapRect == Rect.zero) continue;
-      for (final cellPoint in checkList) {
-        if (map.mapRect.contains(cellPoint)) {
-          isCellOutsideOfMap = false;
-          break;
-        }
-      }
-    }
-
-    if (isCellOutsideOfMap) {
+    if (isCellOutsideMap(cell)) {
       final staticLayer = CellStaticLayer(cell);
       staticLayer.optimizeCollisions = true;
       staticLayer.priority = 2;

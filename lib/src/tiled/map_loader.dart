@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame_clusterizer/flame_clusterizer.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
@@ -36,6 +37,8 @@ abstract class TiledMapLoader {
   var mapRect = Rect.zero;
 
   final _contextByCell = HashMap<Cell, List<CellBuilderContext>>();
+  final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
+  final _staticLayers = HashMap<Cell, CellStaticLayer>();
 
   Future<void> init(HasClusterizedCollisionDetection game) async {
     this.game = game;
@@ -74,6 +77,67 @@ abstract class TiledMapLoader {
           context.tileBuilder, context.position, context.size, cell);
     }
     contextList.clear();
+  }
+
+  void addToStaticLayer(ClusterizedComponent component,
+      {int layerPriority = 1, bool optimizeCollisions = true}) {
+    final cell = component.currentCell;
+    if (cell == null) {
+      throw 'Cell must be specified!';
+    }
+    final staticLayer = _staticLayers[cell] ?? CellStaticLayer(cell);
+    staticLayer.priority = layerPriority;
+    staticLayer.optimizeCollisions = optimizeCollisions;
+    component.position = component.position - cell.rect.topLeft.toVector2();
+    staticLayer.add(component);
+    if (_staticLayers[cell] == null) {
+      _staticLayers[cell] = staticLayer;
+      rootComponent.add(staticLayer);
+    }
+  }
+
+  void addToAnimatedLayer(ClusterizedComponent component,
+      {int layerPriority = 1, bool optimizeCollisions = true}) {
+    final cell = component.currentCell;
+    if (cell == null) {
+      throw 'Cell must be specified!';
+    }
+
+    if (component is! SpriteAnimationComponent) {
+      throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
+    }
+    final animationLayer =
+        _animationLayers[cell] ?? CellStaticAnimationLayer(cell);
+    animationLayer.priority = layerPriority;
+    animationLayer.optimizeCollisions = optimizeCollisions;
+    component.position = component.position - cell.rect.topLeft.toVector2();
+    animationLayer.add(component);
+
+    if (_animationLayers[cell] == null) {
+      _animationLayers[cell] = animationLayer;
+      rootComponent.add(animationLayer);
+    }
+  }
+
+  bool isCellOutsideMap(Cell cell) {
+    final checkList = [
+      cell.rect.topLeft,
+      cell.rect.bottomLeft,
+      cell.rect.topRight,
+      cell.rect.bottomRight
+    ];
+    var isCellOutsideOfMap = true;
+    for (final map in TiledMapLoader.loadedMaps) {
+      if (map.mapRect == Rect.zero) continue;
+      for (final cellPoint in checkList) {
+        if (map.mapRect.contains(cellPoint)) {
+          isCellOutsideOfMap = false;
+          break;
+        }
+      }
+    }
+
+    return isCellOutsideOfMap;
   }
 
   void _processTileType(
