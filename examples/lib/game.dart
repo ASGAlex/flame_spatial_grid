@@ -173,7 +173,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-      position: Vector2(400, 156), size: Vector2.all(tileSize), priority: 2);
+      position: Vector2(400, 156), size: Vector2.all(tileSize), priority: 10);
 
   @override
   onLoad() async {
@@ -437,7 +437,7 @@ class DemoMapLoader extends TiledMapLoader {
   String get fileName => 'example.tmx';
 
   @override
-  TileBuilderFunction? get notFoundBuilder => null; //onBackgroundBuilder;
+  TileBuilderFunction? get notFoundBuilder => onBackgroundBuilder;
 
   @override
   Map<String, TileBuilderFunction> get tileBuilders =>
@@ -448,7 +448,7 @@ class DemoMapLoader extends TiledMapLoader {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
     final brick = Brick(position: position, sprite: spriteBrick);
     brick.currentCell = cell;
-    addToStaticLayer(brick, layerPriority: 2);
+    addToStaticLayer(brick, layerPriority: 1);
   }
 
   Future<void> onBuildWater(
@@ -460,7 +460,7 @@ class DemoMapLoader extends TiledMapLoader {
       animation: waterAnimation,
     );
     water.currentCell = cell;
-    addToAnimatedLayer(water, layerPriority: 1);
+    addToAnimatedLayer(water, layerPriority: 2);
   }
 
   static const blockSize = 100.0;
@@ -515,9 +515,17 @@ class DemoMapLoader extends TiledMapLoader {
     }
   }
 
-// Future<void> onBackgroundBuilder(
-//     TileBuilder tile, Vector2 position, Vector2 size) {
-//
-// }
+  Future<void> onBackgroundBuilder(
+      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
+    final component = await TileComponent.fromProvider(tile);
+    component.currentCell = cell;
+    component.position = position;
+    component.size = size;
+    if (component.sprite != null) {
+      addToStaticLayer(component, layerPriority: 1);
+    } else if (component.animation != null) {
+      addToAnimatedLayer(component, layerPriority: 1);
+    }
+  }
 }
 //#endregion

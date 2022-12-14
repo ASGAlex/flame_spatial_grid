@@ -25,6 +25,7 @@ export 'src/components/layers/cell_layer.dart';
 export 'src/components/layers/cell_static_animation_layer.dart';
 export 'src/components/layers/cell_static_layer.dart';
 export 'src/components/on_demand_actions.dart';
+export 'src/components/tile_component.dart';
 export 'src/core/cell.dart';
 export 'src/core/clusterizer.dart';
 export 'src/tiled/map_loader.dart';
