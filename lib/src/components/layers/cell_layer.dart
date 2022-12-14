@@ -18,6 +18,7 @@ abstract class CellLayer extends PositionComponent
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
+    updateOnVisibilityOrSuspendChange = false;
   }
 
   bool optimizeCollisions = false;
@@ -32,10 +33,6 @@ abstract class CellLayer extends PositionComponent
   final correctionBottomRight = Vector2.zero();
 
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
-
-  void onChildrenUpdate() {
-    isUpdateNeeded = true;
-  }
 
   @protected
   compileToSingleLayer();
@@ -74,15 +71,25 @@ abstract class CellLayer extends PositionComponent
     }
 
     if (component is ClusterizedComponent) {
-      if (component is RepaintOnDemand) {
-        component.repaintNotifier.addListener(onChildrenUpdate);
-      } else {
-        component.transform.addListener(onChildrenUpdate);
-      }
+      component.transform.addListener(onChildrenUpdate);
+      component.visibilityNotifier.addListener(onChildrenUpdate);
       _listenerChildrenUpdate[component] = onChildrenUpdate;
     }
     onBeforeChildrenChanged(component, ChildrenChangeType.added);
     return super.add(component);
+  }
+
+  @override
+  void remove(Component component) {
+    final callback = _listenerChildrenUpdate.remove(component);
+    if (callback != null && component is ClusterizedComponent) {
+      component.transform.removeListener(callback);
+      component.visibilityNotifier.removeListener(callback);
+    }
+
+    onBeforeChildrenChanged(component, ChildrenChangeType.removed);
+
+    super.remove(component);
   }
 
   @override
@@ -106,20 +113,8 @@ abstract class CellLayer extends PositionComponent
     }
   }
 
-  @override
-  void remove(Component component) {
-    final callback = _listenerChildrenUpdate.remove(component);
-    if (callback != null) {
-      if (component is RepaintOnDemand) {
-        component.repaintNotifier.removeListener(callback);
-      } else {
-        (component as PositionComponent).transform.removeListener(callback);
-      }
-    }
-
-    onBeforeChildrenChanged(component, ChildrenChangeType.removed);
-
-    super.remove(component);
+  void onChildrenUpdate() {
+    isUpdateNeeded = true;
   }
 
   void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {

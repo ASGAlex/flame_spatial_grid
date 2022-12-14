@@ -14,6 +14,22 @@ mixin RepaintOnDemand on ClusterizedComponent {
   }
 
   @override
+  Future<void>? onLoad() {
+    visibilityNotifier.addListener(_requestRepaint);
+    return super.onLoad();
+  }
+
+  @override
+  void onRemove() {
+    visibilityNotifier.removeListener(_requestRepaint);
+    super.onRemove();
+  }
+
+  void _requestRepaint() {
+    isRepaintNeeded = true;
+  }
+
+  @override
   void renderTree(Canvas canvas) {
     if (isRepaintNeeded) {
       super.renderTree(canvas);
@@ -31,6 +47,28 @@ mixin UpdateOnDemand on ClusterizedComponent {
 
   set isUpdateNeeded(bool update) {
     _updateNotifier.isActionNeeded = update;
+  }
+
+  bool updateOnVisibilityOrSuspendChange = true;
+
+  @override
+  Future<void>? onLoad() {
+    suspendNotifier.addListener(_requestUpdate);
+    visibilityNotifier.addListener(_requestUpdate);
+    return super.onLoad();
+  }
+
+  @override
+  void onRemove() {
+    suspendNotifier.removeListener(_requestUpdate);
+    visibilityNotifier.removeListener(_requestUpdate);
+    super.onRemove();
+  }
+
+  void _requestUpdate() {
+    if (updateOnVisibilityOrSuspendChange) {
+      isUpdateNeeded = true;
+    }
   }
 
   @override

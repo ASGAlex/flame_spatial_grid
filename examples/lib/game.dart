@@ -365,7 +365,11 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteAnimationComponent
-    with CollisionCallbacks, ClusterizedComponent, GameCollideable {
+    with
+        CollisionCallbacks,
+        ClusterizedComponent,
+        GameCollideable,
+        UpdateOnDemand {
   Water({required super.position, required super.animation}) {
     size = Vector2.all(tileSize);
     initCollision();

@@ -39,7 +39,7 @@ class Clusterizer {
   Cell? _currentCell;
 
   @internal
-  final cellsScheduledToBuild = <Cell>{};
+  final cellsScheduledToBuild = HashSet<Cell>();
 
   final Size blockSize;
   final ClusterizedComponent trackedComponent;

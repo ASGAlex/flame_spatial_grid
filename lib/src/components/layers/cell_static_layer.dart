@@ -36,8 +36,11 @@ class CellStaticLayer extends CellLayer {
     final decorator = Transform2DDecorator();
     decorator.transform2d.position = (correctionTopLeft * -1);
     for (var component in children) {
-      if (component is! PositionComponent) continue;
+      if (component is! ClusterizedComponent) continue;
+      final originalVisibility = component.isVisible;
+      component.isVisible = true;
       decorator.applyChain(component.renderTree, canvas);
+      component.isVisible = originalVisibility;
     }
     layerPicture = recorder.endRecording();
     if (renderAsImage) {
