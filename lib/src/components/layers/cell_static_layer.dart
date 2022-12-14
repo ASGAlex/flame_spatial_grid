@@ -35,7 +35,7 @@ class CellStaticLayer extends CellLayer {
     var canvas = Canvas(recorder);
     final decorator = Transform2DDecorator();
     decorator.transform2d.position = (correctionTopLeft * -1);
-    for (var component in children) {
+    for (final component in children) {
       if (component is! ClusterizedComponent) continue;
       decorator.applyChain((canvas) {
         component.decorator.applyChain(component.render, canvas);

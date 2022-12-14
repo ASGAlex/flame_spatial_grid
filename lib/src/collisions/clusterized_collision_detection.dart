@@ -189,7 +189,7 @@ class ClusterizedCollisionDetection
 
   void _runForPotentials(HashSet<CollisionProspect<ShapeHitbox>> potentials) {
     final repeatBroadphaseForItems = HashSet<CollisionProspect<ShapeHitbox>>();
-    for (var tuple in potentials) {
+    for (final tuple in potentials) {
       final itemA = tuple.a;
       final itemB = tuple.b;
 

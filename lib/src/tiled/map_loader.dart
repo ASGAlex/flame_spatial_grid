@@ -136,7 +136,7 @@ abstract class TiledMapLoader {
       for (final layer in tileLayers) {
         tileMap.map.layers.remove(layer);
       }
-      for (var rl in tileMap.renderableLayers) {
+      for (final rl in tileMap.renderableLayers) {
         rl.refreshCache();
       }
     }

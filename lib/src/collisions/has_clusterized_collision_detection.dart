@@ -154,7 +154,7 @@ mixin HasClusterizedCollisionDetection on FlameGame
   @override
   void update(double dt) async {
     if (clusterizer.cellsScheduledToBuild.isNotEmpty) {
-      for (var cell in clusterizer.cellsScheduledToBuild) {
+      for (final cell in clusterizer.cellsScheduledToBuild) {
         await _cellBuilderMulti(cell, rootComponent);
       }
       clusterizer.cellsScheduledToBuild.clear();

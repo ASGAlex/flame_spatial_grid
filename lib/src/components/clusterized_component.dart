@@ -131,7 +131,7 @@ mixin ClusterizedComponent on PositionComponent {
     if (current.rect.containsPoint(componentCenter) != true) {
       Cell? newCell;
       //look close neighbours
-      for (var cell in current.neighbours) {
+      for (final cell in current.neighbours) {
         if (cell.rect.containsPoint(componentCenter)) {
           newCell = cell;
           break;
@@ -139,7 +139,7 @@ mixin ClusterizedComponent on PositionComponent {
       }
       //if nothing - search among all cells
       if (newCell == null) {
-        for (var cell in clusterizer.cells.entries) {
+        for (final cell in clusterizer.cells.entries) {
           if (cell.value.rect.containsPoint(componentCenter)) {
             newCell = cell.value;
             break;

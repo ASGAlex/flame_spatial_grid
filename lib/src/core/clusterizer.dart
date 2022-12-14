@@ -29,7 +29,7 @@ class Clusterizer {
 
   @override
   dispose() {
-    for (var cell in cells.values) {
+    for (final cell in cells.values) {
       cell.dispose();
     }
     cells.clear();
@@ -49,17 +49,17 @@ class Clusterizer {
 
   void setActiveCell(Cell newActiveCell) {
     _currentCell = newActiveCell;
-    for (var cell in cells.values) {
+    for (final cell in cells.values) {
       cell.state = CellState.suspended;
     }
 
     final cellsToInactivate = _findCellsInRadius(unloadRadius);
-    for (var cell in cellsToInactivate) {
+    for (final cell in cellsToInactivate) {
       cell.state = CellState.inactive;
     }
 
     final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
-    for (var cell in cellsToActivate) {
+    for (final cell in cellsToActivate) {
       cell.state = CellState.active;
     }
     newActiveCell.state = CellState.active;
