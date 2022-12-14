@@ -421,6 +421,7 @@ class DemoMapLoader extends TiledMapLoader {
     if (initialPosition != null) {
       this.initialPosition = initialPosition;
     }
+    preloadTileSets = true;
   }
 
   @override
@@ -440,14 +441,11 @@ class DemoMapLoader extends TiledMapLoader {
 
   @override
   Map<String, TileBuilderFunction> get tileBuilders =>
-      {'Brick': onBuildBrick, 'Water': onBuildWater};
-
-  static Sprite? spriteBrick;
-  static SpriteAnimation? waterAnimation;
+      {'Brick': onBuildBrick, 'Water': onBuildWater, 'Man': onBuildBrick};
 
   Future<void> onBuildBrick(
       TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
-    spriteBrick ??= await tile.getSprite();
+    final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
     final brick = Brick(position: position, sprite: spriteBrick);
     brick.currentCell = cell;
     addToStaticLayer(brick, layerPriority: 2);
@@ -455,7 +453,8 @@ class DemoMapLoader extends TiledMapLoader {
 
   Future<void> onBuildWater(
       TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
-    waterAnimation ??= await tile.getSpriteAnimation();
+    final waterAnimation =
+        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
     final water = Water(
       position: position,
       animation: waterAnimation,
@@ -470,7 +469,10 @@ class DemoMapLoader extends TiledMapLoader {
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
 
-    if (isCellOutsideMap(cell)) {
+    if (isCellOutsideOfMap(cell)) {
+      final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
+      final waterAnimation =
+          getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
       final staticLayer = CellStaticLayer(cell);
       staticLayer.optimizeCollisions = true;
       staticLayer.priority = 2;
