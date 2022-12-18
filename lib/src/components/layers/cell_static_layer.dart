@@ -7,22 +7,28 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
   CellStaticLayer(super.cell) {
-    final recorder = PictureRecorder();
-    final canvas = Canvas(recorder);
-    layerPicture = recorder.endRecording();
+    layerPicture = _getEmptyPicture();
   }
 
-  late Picture layerPicture;
+  Picture? layerPicture;
   Image? layerImage;
 
   bool renderAsImage = true;
+
+  Picture _getEmptyPicture() {
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+    return recorder.endRecording();
+  }
 
   @override
   void render(Canvas canvas) {
     if (renderAsImage && layerImage != null) {
       canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), Paint());
     } else {
-      canvas.drawPicture(layerPicture);
+      if (layerPicture != null) {
+        canvas.drawPicture(layerPicture!);
+      }
     }
   }
 
@@ -43,9 +49,25 @@ class CellStaticLayer extends CellLayer {
     }
     layerPicture = recorder.endRecording();
     if (renderAsImage) {
-      layerImage = await layerPicture.toImageSafe(
+      layerImage = await layerPicture!.toImageSafe(
           layerCalculatedSize.width.toInt(),
           layerCalculatedSize.height.toInt());
     }
+  }
+
+  @override
+  void onSuspend() {
+    try {
+      layerImage?.dispose();
+      layerPicture?.dispose();
+    } catch (e) {}
+    layerImage = null;
+    layerPicture = null;
+  }
+
+  @override
+  void onResume(double dtElapsedWhileSuspended) {
+    isUpdateNeeded = true;
+    super.onResume(dtElapsedWhileSuspended);
   }
 }

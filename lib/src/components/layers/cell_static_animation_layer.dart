@@ -62,6 +62,23 @@ class CellStaticAnimationLayer extends CellLayer {
         position: correctionTopLeft,
         size: newSprites.first.image.size);
   }
+
+  @override
+  void onSuspend() {
+    final frames = animationComponent?.animation?.frames;
+    if (frames != null) {
+      for (var element in frames) {
+        element.sprite.image.dispose();
+      }
+    }
+    animationComponent = null;
+  }
+
+  @override
+  void onResume(double dtElapsedWhileSuspended) {
+    isUpdateNeeded = true;
+    super.onResume(dtElapsedWhileSuspended);
+  }
 }
 
 extension _VariableStepTimes on SpriteAnimation {

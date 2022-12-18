@@ -39,7 +39,8 @@ mixin HasGridSupport on PositionComponent {
 
   final boundingBox = RectangleHitbox()..collisionType = CollisionType.inactive;
 
-  double _dtElapsedWhileSuspended = 0;
+  @internal
+  double dtElapsedWhileSuspended = 0;
 
   double _minDistanceQuad = 0;
 
@@ -52,8 +53,8 @@ mixin HasGridSupport on PositionComponent {
       if (suspend) {
         onSuspend();
       } else {
-        onResume(_dtElapsedWhileSuspended);
-        _dtElapsedWhileSuspended = 0;
+        onResume(dtElapsedWhileSuspended);
+        dtElapsedWhileSuspended = 0;
       }
     }
     suspendNotifier.value = suspend;
@@ -84,8 +85,8 @@ mixin HasGridSupport on PositionComponent {
   void updateTree(double dt) {
     isSuspended = (currentCell?.state == CellState.suspended ? true : false);
     if (isSuspended) {
-      _dtElapsedWhileSuspended += dt;
-      updateSuspendedTree(_dtElapsedWhileSuspended);
+      dtElapsedWhileSuspended += dt;
+      updateSuspendedTree(dtElapsedWhileSuspended);
     } else {
       super.updateTree(dt);
     }

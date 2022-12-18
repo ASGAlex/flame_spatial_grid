@@ -34,7 +34,7 @@ abstract class CellLayer extends PositionComponent
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
   @protected
-  compileToSingleLayer();
+  void compileToSingleLayer();
 
   Size get layerCalculatedSize {
     final cell = currentCell;
@@ -91,14 +91,20 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void updateTree(double dt) {
+    isSuspended = (currentCell?.state == CellState.suspended ? true : false);
     if (isUpdateNeeded) {
-      super.updateTree(dt);
-      if (optimizeCollisions) {
-        collisionOptimizer.optimize();
-        isUpdateNeeded = true;
+      if (isSuspended) {
+        dtElapsedWhileSuspended += dt;
+        updateSuspendedTree(dtElapsedWhileSuspended);
+      } else {
+        super.updateTree(dt);
+        if (optimizeCollisions) {
+          collisionOptimizer.optimize();
+          isUpdateNeeded = true;
+        }
+        super.updateTree(dt);
+        compileToSingleLayer();
       }
-      super.updateTree(dt);
-      compileToSingleLayer();
     }
   }
 
