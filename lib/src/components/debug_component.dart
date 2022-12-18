@@ -1,12 +1,12 @@
 import 'package:flame/components.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/material.dart';
 
-class ClusterizerDebugComponent extends PositionComponent
+class SpatialGridDebugComponent extends PositionComponent
     with HasPaint<String> {
-  ClusterizerDebugComponent(this.clusterizer) : super(priority: -100);
+  SpatialGridDebugComponent(this.spatialGrid) : super(priority: -100);
 
-  final Clusterizer clusterizer;
+  final SpatialGrid spatialGrid;
 
   @override
   void updateTree(double dt) {}
@@ -48,7 +48,7 @@ class ClusterizerDebugComponent extends PositionComponent
     final inactive = getPaint('inactive');
     final unloaded = getPaint('unloaded');
     final border = getPaint('border');
-    for (final element in clusterizer.cells.entries) {
+    for (final element in spatialGrid.cells.entries) {
       if (element.value.state == CellState.active) {
         canvas.drawRect(element.key, fill);
       } else if (element.value.state == CellState.inactive) {

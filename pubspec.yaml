@@ -1,7 +1,7 @@
-name: flame_clusterizer
+name: flame_spatial_grid
 description: Clusterizing game for faster rendering and collision detecting
 version: 1.0.0
-homepage: https://github.com/ASGAlex/flame_clusterizer
+homepage: https://github.com/ASGAlex/flame_spatial_grid
 
 environment:
   sdk: '>=2.18.4 <3.0.0'

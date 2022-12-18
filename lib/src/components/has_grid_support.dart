@@ -4,13 +4,12 @@ import 'dart:math';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
-mixin ClusterizedComponent on PositionComponent {
-  static final _componentHitboxes =
-      HashMap<ShapeHitbox, ClusterizedComponent>();
+mixin HasGridSupport on PositionComponent {
+  static final _componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
   // TODO: pass into ShapeHitbox
   static final _cachedCenters = HashMap<ShapeHitbox, Vector2>();
@@ -28,15 +27,15 @@ mixin ClusterizedComponent on PositionComponent {
 
   Cell? currentCell;
 
-  Clusterizer? _clusterizer;
+  SpatialGrid? _spatialGrid;
 
-  Clusterizer get clusterizer => _clusterizer!;
+  SpatialGrid get spatialGrid => _spatialGrid!;
 
-  void setClusterizer(Clusterizer clusterizer) {
-    _clusterizer ??= clusterizer;
+  void setSpatialGrid(SpatialGrid spatialGrid) {
+    _spatialGrid ??= spatialGrid;
   }
 
-  bool get isTracked => this == currentCell?.clusterizer.trackedComponent;
+  bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
 
   final boundingBox = RectangleHitbox()..collisionType = CollisionType.inactive;
 
@@ -61,7 +60,7 @@ mixin ClusterizedComponent on PositionComponent {
   }
 
   @mustCallSuper
-  void onClusterizerMounted() {}
+  void onSpatialGridSupportComponentMounted() {}
 
   @override
   onLoad() {
@@ -124,7 +123,7 @@ mixin ClusterizedComponent on PositionComponent {
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
     current ??=
-        currentCell = clusterizer.findExistingCellByPosition(componentCenter);
+        currentCell = spatialGrid.findExistingCellByPosition(componentCenter);
     if (current == null) {
       throw 'Cell did not found at position $componentCenter';
     }
@@ -139,7 +138,7 @@ mixin ClusterizedComponent on PositionComponent {
       }
       //if nothing - search among all cells
       if (newCell == null) {
-        for (final cell in clusterizer.cells.entries) {
+        for (final cell in spatialGrid.cells.entries) {
           if (cell.value.rect.containsPoint(componentCenter)) {
             newCell = cell.value;
             break;
@@ -148,7 +147,7 @@ mixin ClusterizedComponent on PositionComponent {
       }
       //if nothing again - try to locate new cell's position from component's
       //coordinates
-      newCell ??= clusterizer.createNewCellAtPosition(componentCenter);
+      newCell ??= spatialGrid.createNewCellAtPosition(componentCenter);
 
       newCell.left;
       newCell.right;
@@ -156,7 +155,7 @@ mixin ClusterizedComponent on PositionComponent {
       newCell.bottom;
       currentCell = newCell;
       if (isTracked) {
-        clusterizer.setActiveCell(newCell);
+        spatialGrid.setActiveCell(newCell);
       }
       return true; //cell changed;
     }
@@ -174,36 +173,36 @@ mixin ClusterizedComponent on PositionComponent {
   }
 }
 
-extension ClusterizedRectangleHitbox on RectangleHitbox {
+extension SpatialGridRectangleHitbox on RectangleHitbox {
   Vector2 get aabbCenter {
-    var cache = ClusterizedComponent._cachedCenters[this];
+    var cache = HasGridSupport._cachedCenters[this];
     if (cache == null) {
-      ClusterizedComponent._cachedCenters[this] = aabb.center;
-      cache = ClusterizedComponent._cachedCenters[this];
+      HasGridSupport._cachedCenters[this] = aabb.center;
+      cache = HasGridSupport._cachedCenters[this];
     }
     return cache!;
   }
 }
 
-extension ClusterizedShapeHitbox on ShapeHitbox {
+extension SpatialGridShapeHitbox on ShapeHitbox {
   // TODO: pass into ShapeHitbox?
   Vector2 get aabbCenter {
-    var cache = ClusterizedComponent._cachedCenters[this];
+    var cache = HasGridSupport._cachedCenters[this];
     if (cache == null) {
-      ClusterizedComponent._cachedCenters[this] = aabb.center;
-      cache = ClusterizedComponent._cachedCenters[this];
+      HasGridSupport._cachedCenters[this] = aabb.center;
+      cache = HasGridSupport._cachedCenters[this];
     }
     return cache!;
   }
 
-  ClusterizedComponent? get clusterizedParent {
-    var component = ClusterizedComponent._componentHitboxes[this];
+  HasGridSupport? get parentWithGridSupport {
+    var component = HasGridSupport._componentHitboxes[this];
     if (component == null) {
       try {
         component = ancestors().firstWhere(
-          (c) => c is ClusterizedComponent,
-        ) as ClusterizedComponent;
-        ClusterizedComponent._componentHitboxes[this] = component;
+          (c) => c is HasGridSupport,
+        ) as HasGridSupport;
+        HasGridSupport._componentHitboxes[this] = component;
         return component;
       } catch (e) {
         return null;
@@ -213,19 +212,19 @@ extension ClusterizedShapeHitbox on ShapeHitbox {
   }
 
   @internal
-  void clearClusterizedParent() {
-    ClusterizedComponent._componentHitboxes.remove(this);
+  void clearGridComponentParent() {
+    HasGridSupport._componentHitboxes.remove(this);
   }
 
   set defaultCollisionType(CollisionType defaultCollisionType) {
-    ClusterizedComponent._defaultCollisionType[this] = defaultCollisionType;
+    HasGridSupport._defaultCollisionType[this] = defaultCollisionType;
   }
 
   CollisionType get defaultCollisionType {
-    var cache = ClusterizedComponent._defaultCollisionType[this];
+    var cache = HasGridSupport._defaultCollisionType[this];
     if (cache == null) {
-      ClusterizedComponent._defaultCollisionType[this] = collisionType;
-      cache = ClusterizedComponent._defaultCollisionType[this];
+      HasGridSupport._defaultCollisionType[this] = collisionType;
+      cache = HasGridSupport._defaultCollisionType[this];
     }
     return cache!;
   }

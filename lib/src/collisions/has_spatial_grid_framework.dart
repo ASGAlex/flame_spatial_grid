@@ -4,27 +4,27 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 import 'collision_optimizer.dart';
 
-mixin HasClusterizedCollisionDetection on FlameGame
-    implements HasCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
-  late ClusterizedCollisionDetection _collisionDetection;
-  late final Clusterizer clusterizer;
+mixin HasSpatialGridFramework on FlameGame
+    implements HasCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
+  late SpatialGridCollisionDetection _collisionDetection;
+  late final SpatialGrid spatialGrid;
   late Component rootComponent;
-  ClusterizerDebugComponent? _clusterizerDebug;
-  bool _isClusterizerDebugEnabled = false;
+  SpatialGridDebugComponent? _spatialGridDebug;
+  bool _isSpatialGridDebugEnabled = false;
 
   @override
-  ClusterizedCollisionDetection get collisionDetection => _collisionDetection;
+  SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
 
   @override
   set collisionDetection(
-    CollisionDetection<ShapeHitbox, ClusterizedBroadphase<ShapeHitbox>> cd,
+    CollisionDetection<ShapeHitbox, SpatialGridBroadphase<ShapeHitbox>> cd,
   ) {
-    if (cd is! ClusterizedCollisionDetection) {
-      throw 'Must be ClusterizedCollisionDetection!';
+    if (cd is! SpatialGridCollisionDetection) {
+      throw 'Must be SpatialGridCollisionDetection!';
     }
     _collisionDetection = cd;
   }
@@ -42,13 +42,13 @@ mixin HasClusterizedCollisionDetection on FlameGame
   /// type checker.
   /// It should usually not be overridden, see
   /// [CollisionCallbacks.onComponentTypeCheck] instead
-  Future<void> initializeClusterizer(
+  Future<void> initializeSpatialGrid(
       {bool? debug,
       Component? rootComponent,
       required double blockSize,
       required int activeRadius,
       required int unloadRadius,
-      required ClusterizedComponent trackedComponent,
+      required HasGridSupport trackedComponent,
       CellBuilderFunction? cellBuilder,
       List<TiledMapLoader>? maps}) async {
     this.rootComponent = rootComponent ?? this;
@@ -56,19 +56,19 @@ mixin HasClusterizedCollisionDetection on FlameGame
     if (maps != null) {
       this.maps = maps;
     }
-    clusterizer = Clusterizer(
+    spatialGrid = SpatialGrid(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
         activeRadius: activeRadius,
         unloadRadius: unloadRadius);
 
-    _collisionDetection = ClusterizedCollisionDetection(
-      clusterizer: clusterizer,
+    _collisionDetection = SpatialGridCollisionDetection(
+      spatialGrid: spatialGrid,
       onComponentTypeCheck: onComponentTypeCheck,
       minimumDistanceCheck: minimumDistanceCheck,
     );
 
-    isClusterizerDebugEnabled = debug ?? false;
+    isSpatialGridDebugEnabled = debug ?? false;
 
     for (final map in this.maps) {
       await map.init(this);
@@ -89,30 +89,30 @@ mixin HasClusterizedCollisionDetection on FlameGame
     }
   }
 
-  set isClusterizerDebugEnabled(bool debug) {
-    if (_isClusterizerDebugEnabled == debug) return;
+  set isSpatialGridDebugEnabled(bool debug) {
+    if (_isSpatialGridDebugEnabled == debug) return;
 
-    _isClusterizerDebugEnabled = debug;
-    if (_isClusterizerDebugEnabled) {
-      _clusterizerDebug ??= ClusterizerDebugComponent(clusterizer);
-      rootComponent.add(_clusterizerDebug!);
+    _isSpatialGridDebugEnabled = debug;
+    if (_isSpatialGridDebugEnabled) {
+      _spatialGridDebug ??= SpatialGridDebugComponent(spatialGrid);
+      rootComponent.add(_spatialGridDebug!);
     } else {
-      _clusterizerDebug?.removeFromParent();
+      _spatialGridDebug?.removeFromParent();
     }
   }
 
-  bool get isClusterizerDebugEnabled => _isClusterizerDebugEnabled;
+  bool get isSpatialGridDebugEnabled => _isSpatialGridDebugEnabled;
 
   @override
   void onRemove() {
-    isClusterizerDebugEnabled = false;
-    _clusterizerDebug = null;
-    clusterizer.dispose();
+    isSpatialGridDebugEnabled = false;
+    _spatialGridDebug = null;
+    spatialGrid.dispose();
     super.onRemove();
   }
 
   bool minimumDistanceCheck(
-      ClusterizedComponent activeItem, ClusterizedComponent potential) {
+      HasGridSupport activeItem, HasGridSupport potential) {
     final minimumDistance =
         max(activeItem.minDistanceQuad, potential.minDistanceQuad);
     final activeItemCenter = activeItem.boundingBox.aabbCenter;
@@ -153,11 +153,11 @@ mixin HasClusterizedCollisionDetection on FlameGame
 
   @override
   void update(double dt) async {
-    if (clusterizer.cellsScheduledToBuild.isNotEmpty) {
-      for (final cell in clusterizer.cellsScheduledToBuild) {
+    if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
+      for (final cell in spatialGrid.cellsScheduledToBuild) {
         await _cellBuilderMulti(cell, rootComponent);
       }
-      clusterizer.cellsScheduledToBuild.clear();
+      spatialGrid.cellsScheduledToBuild.clear();
     }
     super.update(dt);
     collisionDetection.run();

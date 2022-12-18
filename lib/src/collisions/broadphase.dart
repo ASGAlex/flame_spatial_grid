@@ -1,28 +1,28 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 import 'collision_optimizer.dart';
 
-typedef ExternalMinDistanceCheckClusterized = bool Function(
-  ClusterizedComponent activeItem,
-  ClusterizedComponent potential,
+typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
+  HasGridSupport activeItem,
+  HasGridSupport potential,
 );
 
 /// Performs Quad Tree broadphase check.
 ///
 /// See [HasQuadTreeCollisionDetection.initializeCollisionDetection] for a
 /// detailed description of its initialization parameters.
-class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
-  ClusterizedBroadphase({
+class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
+  SpatialGridBroadphase({
     super.items,
-    required this.clusterizer,
+    required this.spatialGrid,
     required this.broadphaseCheck,
     required this.minimumDistanceCheck,
   });
 
-  final Clusterizer clusterizer;
+  final SpatialGrid spatialGrid;
 
   final activeCollisions = HashSet<T>();
   final passiveCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
@@ -30,7 +30,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       <Cell, Map<GroupHitbox, OptimizedCollisionList>>{};
 
   ExternalBroadphaseCheck broadphaseCheck;
-  ExternalMinDistanceCheckClusterized minimumDistanceCheck;
+  ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
   final _broadphaseCheckCache = <T, Map<T, bool>>{};
 
   final _potentials = HashSet<CollisionProspect<T>>();
@@ -56,7 +56,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         componentHitbox = tuple.a as RectangleHitbox;
       }
 
-      final cell = groupBox.clusterizedParent?.currentCell;
+      final cell = groupBox.parentWithGridSupport?.currentCell;
       if (cell == null) continue;
       final hitboxes =
           optimizedCollisionsByGroupBox[cell]?[groupBox]?.hitboxes.toList();
@@ -82,7 +82,7 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
 
       final cellsToCheck =
-          asShapeItem.clusterizedParent?.currentCell?.neighboursAndMe;
+          asShapeItem.parentWithGridSupport?.currentCell?.neighboursAndMe;
 
       final potentiallyCollide = HashSet<ShapeHitbox>();
       if (cellsToCheck == null) continue;
@@ -113,13 +113,12 @@ class ClusterizedBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           asShapeItem.parent != null) {
         continue;
       }
-      final activeClusterizedComponent = asShapeItem.clusterizedParent;
-      final potentialClusterizedComponent = potential.clusterizedParent;
-      if (activeClusterizedComponent != null &&
-          potentialClusterizedComponent != null) {
+      final activeWithGridSupport = asShapeItem.parentWithGridSupport;
+      final potentialWithGridSupport = potential.parentWithGridSupport;
+      if (activeWithGridSupport != null && potentialWithGridSupport != null) {
         final distanceCloseEnough = minimumDistanceCheck.call(
-          activeClusterizedComponent,
-          potentialClusterizedComponent,
+          activeWithGridSupport,
+          potentialWithGridSupport,
         );
         if (distanceCloseEnough == false) {
           continue;

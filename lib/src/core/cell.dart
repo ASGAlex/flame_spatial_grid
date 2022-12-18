@@ -1,30 +1,30 @@
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 enum _CellCreationContext { left, top, right, bottom }
 
 enum CellState { active, inactive, suspended }
 
 class Cell {
-  Cell({required this.clusterizer, required this.rect}) {
+  Cell({required this.spatialGrid, required this.rect}) {
     center = rect.center.toVector2();
-    clusterizer.cells[rect] = this;
+    spatialGrid.cells[rect] = this;
 
     rawLeft = _checkCell(_CellCreationContext.left);
     rawRight = _checkCell(_CellCreationContext.right);
     rawTop = _checkCell(_CellCreationContext.top);
     rawBottom = _checkCell(_CellCreationContext.bottom);
 
-    state = clusterizer.getCellState(this);
+    state = spatialGrid.getCellState(this);
     if (state == CellState.suspended) {
       _scheduleToBuild = true;
     } else {
-      clusterizer.cellsScheduledToBuild.add(this);
+      spatialGrid.cellsScheduledToBuild.add(this);
     }
   }
 
   bool _scheduleToBuild = false;
-  final Clusterizer clusterizer;
+  final SpatialGrid spatialGrid;
   final Rect rect;
   late final Vector2 center;
 
@@ -35,7 +35,7 @@ class Cell {
   set state(CellState value) {
     _state = value;
     if (_state != CellState.suspended && _scheduleToBuild) {
-      clusterizer.cellsScheduledToBuild.add(this);
+      spatialGrid.cellsScheduledToBuild.add(this);
       _scheduleToBuild = false;
     }
   }
@@ -66,16 +66,16 @@ class Cell {
 
   Cell _createCell(_CellCreationContext direction) =>
       _checkCell(direction) ??
-      Cell(clusterizer: clusterizer, rect: _createRectForDirection(direction));
+      Cell(spatialGrid: spatialGrid, rect: _createRectForDirection(direction));
 
   Cell? _checkCell(_CellCreationContext direction) =>
-      clusterizer.cells[_createRectForDirection(direction)];
+      spatialGrid.cells[_createRectForDirection(direction)];
 
   Rect _createRectForDirection(_CellCreationContext creationContext) {
     var newRect = _cachedRects[creationContext];
     if (newRect == null) {
-      final width = clusterizer.blockSize.width;
-      final height = clusterizer.blockSize.height;
+      final width = spatialGrid.blockSize.width;
+      final height = spatialGrid.blockSize.height;
       switch (creationContext) {
         case _CellCreationContext.left:
           newRect = Rect.fromLTWH(rect.left - width, rect.top, width, height);

@@ -6,20 +6,20 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
 const tileSize = 8.0;
 
-class ClusterizerExample extends FlameGame
+class SpatialGridExample extends FlameGame
     with
-        HasClusterizedCollisionDetection,
+        HasSpatialGridFramework,
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
         HasTappableComponents {
-  ClusterizerExample();
+  SpatialGridExample();
 
   static const description = '''
 In this example the "Clusterizer" algorithm work. 
@@ -57,7 +57,7 @@ all collisions are disabled.
 
     player = world.player;
     const blockSize = 100.0;
-    await initializeClusterizer(
+    await initializeSpatialGrid(
         debug: false,
         activeRadius: 3,
         unloadRadius: 5,
@@ -129,7 +129,7 @@ all collisions are disabled.
       }
 
       if (key == LogicalKeyboardKey.keyM) {
-        isClusterizerDebugEnabled = !isClusterizerDebugEnabled;
+        isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
       }
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
@@ -169,7 +169,7 @@ all collisions are disabled.
   }
 }
 
-class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
+class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
@@ -184,7 +184,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
   void onTapDown(TapDownEvent event) {
     final tapPosition = event.localPosition;
     final cellsUnderCursor = <Cell>[];
-    gameRef.clusterizer.cells.forEach((rect, cell) {
+    gameRef.spatialGrid.cells.forEach((rect, cell) {
       if (cell.rect.containsPoint(tapPosition)) {
         cellsUnderCursor.add(cell);
         print('State:  + ${cell.state}');
@@ -195,7 +195,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
 
     final list = componentsAtPoint(tapPosition);
     for (var component in list) {
-      if (component is! ClusterizedComponent) continue;
+      if (component is! HasGridSupport) continue;
       print(component.runtimeType);
     }
 
@@ -206,10 +206,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<ClusterizerExample> {
 //#region Player
 
 class Player extends SpriteComponent
-    with
-        CollisionCallbacks,
-        HasGameRef<ClusterizerExample>,
-        ClusterizedComponent {
+    with CollisionCallbacks, HasGameRef<SpatialGridExample>, HasGridSupport {
   Player({
     required super.position,
     required super.size,
@@ -268,7 +265,7 @@ class Player extends SpriteComponent
 }
 
 class Bullet extends PositionComponent
-    with CollisionCallbacks, HasPaint, ClusterizedComponent {
+    with CollisionCallbacks, HasPaint, HasGridSupport {
   Bullet(
       {required super.position,
       required this.displacement,
@@ -340,11 +337,7 @@ class Bullet extends PositionComponent
 //#region Environment
 
 class Brick extends SpriteComponent
-    with
-        CollisionCallbacks,
-        ClusterizedComponent,
-        GameCollideable,
-        UpdateOnDemand {
+    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Brick({
     required super.position,
     required super.sprite,
@@ -364,11 +357,7 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteAnimationComponent
-    with
-        CollisionCallbacks,
-        ClusterizedComponent,
-        GameCollideable,
-        UpdateOnDemand {
+    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Water({required super.position, required super.animation}) {
     size = Vector2.all(tileSize);
     initCollision();
@@ -384,7 +373,7 @@ class Water extends SpriteAnimationComponent
   }
 }
 
-mixin GameCollideable on ClusterizedComponent {
+mixin GameCollideable on HasGridSupport {
   void initCollision() {
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.passive;

@@ -2,14 +2,14 @@ import 'dart:collection';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
 typedef CellBuilderFunction = Future<void> Function(
     Cell cell, Component rootComponent);
 
-class Clusterizer {
-  Clusterizer(
+class SpatialGrid {
+  SpatialGrid(
       {required this.blockSize,
       required this.trackedComponent,
       int? activeRadius,
@@ -17,7 +17,7 @@ class Clusterizer {
     this.activeRadius = (activeRadius ?? 1);
     this.unloadRadius = (unloadRadius ?? 10);
     final cell = Cell(
-        clusterizer: this,
+        spatialGrid: this,
         rect: Rect.fromCenter(
             center: trackedComponent.position.toOffset(),
             width: blockSize.width,
@@ -42,7 +42,7 @@ class Clusterizer {
   final cellsScheduledToBuild = HashSet<Cell>();
 
   final Size blockSize;
-  final ClusterizedComponent trackedComponent;
+  final HasGridSupport trackedComponent;
 
   var activeRadius = 1;
   var unloadRadius = 3;
@@ -300,7 +300,7 @@ class Clusterizer {
       return existingCell;
     }
 
-    final cell = Cell(clusterizer: this, rect: rect);
+    final cell = Cell(spatialGrid: this, rect: rect);
     cell.left;
     cell.right;
     cell.top;

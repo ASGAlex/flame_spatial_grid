@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
   CellStaticLayer(super.cell) {
@@ -36,7 +36,7 @@ class CellStaticLayer extends CellLayer {
     final decorator = Transform2DDecorator();
     decorator.transform2d.position = (correctionTopLeft * -1);
     for (final component in children) {
-      if (component is! ClusterizedComponent) continue;
+      if (component is! HasGridSupport) continue;
       decorator.applyChain((canvas) {
         component.decorator.applyChain(component.render, canvas);
       }, canvas);

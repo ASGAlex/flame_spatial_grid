@@ -1,8 +1,8 @@
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 
-mixin RepaintOnDemand on ClusterizedComponent {
+mixin RepaintOnDemand on HasGridSupport {
   final _repaintNotifier = _ActionNotifier();
 
   ChangeNotifier get repaintNotifier => _repaintNotifier;
@@ -22,7 +22,7 @@ mixin RepaintOnDemand on ClusterizedComponent {
   }
 }
 
-mixin UpdateOnDemand on ClusterizedComponent {
+mixin UpdateOnDemand on HasGridSupport {
   final _updateNotifier = _ActionNotifier();
 
   ChangeNotifier get updateNotifier => _updateNotifier;

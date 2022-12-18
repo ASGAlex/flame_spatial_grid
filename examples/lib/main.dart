@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: GameWidget(game: ClusterizerExample()),
+      home: GameWidget(game: SpatialGridExample()),
     );
   }
 }

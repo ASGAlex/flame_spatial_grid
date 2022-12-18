@@ -1,90 +1,89 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 
 import 'collision_optimizer.dart';
 
-class ClusterizedCollisionDetection
-    extends StandardCollisionDetection<ClusterizedBroadphase<ShapeHitbox>> {
-  ClusterizedCollisionDetection(
+class SpatialGridCollisionDetection
+    extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
+  SpatialGridCollisionDetection(
       {required ExternalBroadphaseCheck onComponentTypeCheck,
-      required ExternalMinDistanceCheckClusterized minimumDistanceCheck,
-      required this.clusterizer})
+      required ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck,
+      required this.spatialGrid})
       : super(
-            broadphase: ClusterizedBroadphase<ShapeHitbox>(
-          clusterizer: clusterizer,
+            broadphase: SpatialGridBroadphase<ShapeHitbox>(
+          spatialGrid: spatialGrid,
           broadphaseCheck: onComponentTypeCheck,
           minimumDistanceCheck: minimumDistanceCheck,
         ));
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
-  final _listenerClusterizedSuspend = <ShapeHitbox, VoidCallback>{};
+  final _listenerComponentInCellSuspend = <ShapeHitbox, VoidCallback>{};
   final _scheduledUpdate = <ShapeHitbox>{};
-  final Clusterizer clusterizer;
+  final SpatialGrid spatialGrid;
 
   @override
-  void add(ShapeHitbox hitbox) {
-    super.add(hitbox);
+  void add(ShapeHitbox item) {
+    super.add(item);
 
-    hitbox.onAabbChanged = () => _scheduledUpdate.add(hitbox);
-    final clusterizedComponent = hitbox.clusterizedParent;
-    if (clusterizedComponent != null) {
-      clusterizedComponent.setClusterizer(clusterizer);
+    item.onAabbChanged = () => _scheduledUpdate.add(item);
+    final withGridSupportComponent = item.parentWithGridSupport;
+    if (withGridSupportComponent != null) {
+      withGridSupportComponent.setSpatialGrid(spatialGrid);
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
-        if (hitbox.isMounted) {
-          _onClusterizedCollisionTypeChange(clusterizedComponent, hitbox);
+        if (item.isMounted) {
+          _onSpatialGridCollisionTypeChange(withGridSupportComponent, item);
         }
       };
 
-      hitbox.collisionTypeNotifier.addListener(listenerCollisionType);
-      _listenerCollisionType[hitbox] = listenerCollisionType;
+      item.collisionTypeNotifier.addListener(listenerCollisionType);
+      _listenerCollisionType[item] = listenerCollisionType;
 
-      _onClusterizedCollisionTypeChange(clusterizedComponent, hitbox);
+      _onSpatialGridCollisionTypeChange(withGridSupportComponent, item);
 
-      hitbox.defaultCollisionType; //init defaults with current value;
+      item.defaultCollisionType; //init defaults with current value;
 
       // ignore: prefer_function_declarations_over_variables
-      final listenerClusterizerSuspend = () {
-        _onCellSuspendChanged(clusterizedComponent, hitbox);
+      final listenerComponentInCellSuspend = () {
+        _onCellSuspendChanged(withGridSupportComponent, item);
       };
-      clusterizedComponent.suspendNotifier
-          .addListener(listenerClusterizerSuspend);
-      _listenerClusterizedSuspend[hitbox] = listenerClusterizerSuspend;
+      withGridSupportComponent.suspendNotifier
+          .addListener(listenerComponentInCellSuspend);
+      _listenerComponentInCellSuspend[item] = listenerComponentInCellSuspend;
 
-      clusterizedComponent.onClusterizerMounted();
+      withGridSupportComponent.onSpatialGridSupportComponentMounted();
     } else {
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
-        if (hitbox.isMounted) {
-          if (hitbox.collisionType == CollisionType.active) {
-            broadphase.activeCollisions.add(hitbox);
+        if (item.isMounted) {
+          if (item.collisionType == CollisionType.active) {
+            broadphase.activeCollisions.add(item);
           } else {
-            broadphase.activeCollisions.remove(hitbox);
+            broadphase.activeCollisions.remove(item);
           }
         }
       };
-      hitbox.collisionTypeNotifier.addListener(listenerCollisionType);
-      _listenerCollisionType[hitbox] = listenerCollisionType;
+      item.collisionTypeNotifier.addListener(listenerCollisionType);
+      _listenerCollisionType[item] = listenerCollisionType;
     }
   }
 
-  void _onCellSuspendChanged(
-      ClusterizedComponent component, ShapeHitbox hitbox) {
+  void _onCellSuspendChanged(HasGridSupport component, ShapeHitbox hitbox) {
     if (component.toggleCollisionOnSuspendChange) {
       if (component.isSuspended) {
         hitbox.collisionType = CollisionType.inactive;
       } else {
         hitbox.collisionType = hitbox.defaultCollisionType;
       }
-      _onClusterizedCollisionTypeChange(component, hitbox);
+      _onSpatialGridCollisionTypeChange(component, hitbox);
     }
   }
 
-  void _onClusterizedCollisionTypeChange(
-      ClusterizedComponent component, ShapeHitbox hitbox) {
+  void _onSpatialGridCollisionTypeChange(
+      HasGridSupport component, ShapeHitbox hitbox) {
     switch (hitbox.collisionType) {
       case CollisionType.active:
         broadphase.activeCollisions.add(hitbox);
@@ -101,8 +100,7 @@ class ClusterizedCollisionDetection
     }
   }
 
-  void _addHotboxToPassives(
-      ClusterizedComponent component, ShapeHitbox hitbox) {
+  void _addHotboxToPassives(HasGridSupport component, ShapeHitbox hitbox) {
     final cell = component.currentCell;
     if (cell != null && cell.state != CellState.suspended) {
       var list = broadphase.passiveCollisionsByCell[cell];
@@ -112,8 +110,7 @@ class ClusterizedCollisionDetection
     }
   }
 
-  void _removeHitboxFromPassives(
-      ClusterizedComponent component, ShapeHitbox hitbox) {
+  void _removeHitboxFromPassives(HasGridSupport component, ShapeHitbox hitbox) {
     final cell = component.currentCell;
     if (cell != null) {
       broadphase.passiveCollisionsByCell[cell]?.remove(hitbox);
@@ -134,19 +131,19 @@ class ClusterizedCollisionDetection
       _listenerCollisionType.remove(hitbox);
     }
 
-    final clusterizedComponent = hitbox.clusterizedParent;
-    if (clusterizedComponent != null) {
-      final listenerClusterizerSuspend = _listenerCollisionType[hitbox];
-      if (listenerClusterizerSuspend != null) {
-        clusterizedComponent.suspendNotifier
-            .removeListener(listenerClusterizerSuspend);
-        _listenerClusterizedSuspend.remove(hitbox);
+    final spatialGridSupportComponent = hitbox.parentWithGridSupport;
+    if (spatialGridSupportComponent != null) {
+      final listenerComponentInCellSuspend = _listenerCollisionType[hitbox];
+      if (listenerComponentInCellSuspend != null) {
+        spatialGridSupportComponent.suspendNotifier
+            .removeListener(listenerComponentInCellSuspend);
+        _listenerComponentInCellSuspend.remove(hitbox);
       }
-      _removeHitboxFromPassives(clusterizedComponent, hitbox);
+      _removeHitboxFromPassives(spatialGridSupportComponent, hitbox);
       broadphase.activeCollisions.remove(hitbox);
     }
 
-    hitbox.clearClusterizedParent();
+    hitbox.clearGridComponentParent();
     super.remove(hitbox);
   }
 
@@ -157,13 +154,13 @@ class ClusterizedCollisionDetection
   }
 
   void _updateTransform(ShapeHitbox item) {
-    final clusterizedComponent = item.clusterizedParent;
-    if (clusterizedComponent == null) return;
-    final previousCell = clusterizedComponent.currentCell;
-    final cellChanged = clusterizedComponent.updateTransform();
+    final withGridSupportComponent = item.parentWithGridSupport;
+    if (withGridSupportComponent == null) return;
+    final previousCell = withGridSupportComponent.currentCell;
+    final cellChanged = withGridSupportComponent.updateTransform();
     //suspend hitbox, if was moved to suspended cell.
     if (cellChanged) {
-      final onCellSuspend = _listenerClusterizedSuspend[item];
+      final onCellSuspend = _listenerComponentInCellSuspend[item];
       if (onCellSuspend != null) {
         onCellSuspend();
       }

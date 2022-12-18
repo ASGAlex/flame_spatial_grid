@@ -3,15 +3,15 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
-import 'package:flame_clusterizer/src/collisions/collision_optimizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
 
 abstract class CellLayer extends PositionComponent
     with
-        ClusterizedComponent,
+        HasGridSupport,
         UpdateOnDemand,
-        HasGameReference<HasClusterizedCollisionDetection> {
+        HasGameReference<HasSpatialGridFramework> {
   CellLayer(Cell cell)
       : super(
             position: cell.rect.topLeft.toVector2(),
@@ -69,7 +69,7 @@ abstract class CellLayer extends PositionComponent
       }
     }
 
-    if (component is ClusterizedComponent) {
+    if (component is HasGridSupport) {
       component.transform.addListener(onChildrenUpdate);
       _listenerChildrenUpdate[component] = onChildrenUpdate;
     }
@@ -80,7 +80,7 @@ abstract class CellLayer extends PositionComponent
   @override
   void remove(Component component) {
     final callback = _listenerChildrenUpdate.remove(component);
-    if (callback != null && component is ClusterizedComponent) {
+    if (callback != null && component is HasGridSupport) {
       component.transform.removeListener(callback);
     }
 

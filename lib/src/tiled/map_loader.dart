@@ -3,7 +3,7 @@ import 'dart:collection';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
 
@@ -29,7 +29,7 @@ abstract class TiledMapLoader {
 
   TiledComponent? _tiledComponent;
 
-  late HasClusterizedCollisionDetection game;
+  late HasSpatialGridFramework game;
 
   Component get rootComponent => game.rootComponent;
 
@@ -40,7 +40,7 @@ abstract class TiledMapLoader {
   final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
   final _staticLayers = HashMap<Cell, CellStaticLayer>();
 
-  Future<void> init(HasClusterizedCollisionDetection game) async {
+  Future<void> init(HasSpatialGridFramework game) async {
     this.game = game;
 
     _tiledComponent = await TiledComponent.load(fileName, destTileSize,
@@ -105,7 +105,7 @@ abstract class TiledMapLoader {
     contextList.clear();
   }
 
-  void addToStaticLayer(ClusterizedComponent component,
+  void addToStaticLayer(HasGridSupport component,
       {int layerPriority = 1,
       bool optimizeCollisions = true,
       CellStaticLayer? layer}) {
@@ -121,7 +121,7 @@ abstract class TiledMapLoader {
         optimizeCollisions: optimizeCollisions);
   }
 
-  void addToAnimatedLayer(ClusterizedComponent component,
+  void addToAnimatedLayer(HasGridSupport component,
       {int layerPriority = 1,
       bool optimizeCollisions = true,
       CellStaticAnimationLayer? layer}) {
@@ -141,7 +141,7 @@ abstract class TiledMapLoader {
         optimizeCollisions: optimizeCollisions);
   }
 
-  void _addToLayer(ClusterizedComponent component,
+  void _addToLayer(HasGridSupport component,
       {int layerPriority = 1,
       bool optimizeCollisions = true,
       required bool externalLayer,
@@ -235,7 +235,7 @@ abstract class TiledMapLoader {
 
           final context = CellBuilderContext(tileProcessor, position, size);
           final cell =
-              game.clusterizer.createNewCellAtPosition(position + size / 2);
+              game.spatialGrid.createNewCellAtPosition(position + size / 2);
           var list = <CellBuilderContext>[];
           list = _contextByCell[cell] ??= list;
           list.add(context);

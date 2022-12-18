@@ -4,29 +4,27 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CollisionOptimizer {
   CollisionOptimizer(this.parentLayer);
 
-  final ClusterizedComponent parentLayer;
+  final HasGridSupport parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
 
-  List<ClusterizedComponent> get clusterizedChildren => parentLayer.children
-      .whereType<ClusterizedComponent>()
-      .toList(growable: false);
+  List<HasGridSupport> get gridChildren =>
+      parentLayer.children.whereType<HasGridSupport>().toList(growable: false);
 
-  List<ClusterizedComponent> get clusterizedChildrenActiveOrPassive =>
-      parentLayer.children
-          .whereType<ClusterizedComponent>()
-          .where((element) =>
-              element.boundingBox.collisionType != CollisionType.inactive)
-          .toList(growable: false);
+  List<HasGridSupport> get gridChildrenActiveOrPassive => parentLayer.children
+      .whereType<HasGridSupport>()
+      .where((element) =>
+          element.boundingBox.collisionType != CollisionType.inactive)
+      .toList(growable: false);
 
   final _alreadyProcessed = HashSet<ShapeHitbox>();
 
-  HasClusterizedCollisionDetection get game =>
-      (parentLayer as HasGameReference<HasClusterizedCollisionDetection>).game;
+  HasSpatialGridFramework get game =>
+      (parentLayer as HasGameReference<HasSpatialGridFramework>).game;
 
   void optimize() {
     final cell = parentLayer.currentCell;
@@ -46,14 +44,14 @@ class CollisionOptimizer {
     _createdCollisionLists.clear();
     _alreadyProcessed.clear();
 
-    for (final child in clusterizedChildren) {
+    for (final child in gridChildren) {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
       }
     }
 
-    for (final child in clusterizedChildrenActiveOrPassive) {
+    for (final child in gridChildrenActiveOrPassive) {
       if (_alreadyProcessed.contains(child.boundingBox)) continue;
       final hitboxes = _findOverlappingRects(child.boundingBox);
       if (hitboxes.isNotEmpty) {
@@ -74,7 +72,7 @@ class CollisionOptimizer {
     exception ??= HashSet<ShapeHitbox>();
     final hitboxes = HashSet<ShapeHitbox>();
     exception.add(hitbox);
-    for (final otherChild in clusterizedChildrenActiveOrPassive) {
+    for (final otherChild in gridChildrenActiveOrPassive) {
       if (exception.contains(otherChild.boundingBox)) continue;
       if (hitbox.toRect().overlapsSpecial(otherChild.boundingBox.toRect())) {
         hitboxes.add(otherChild.boundingBox);

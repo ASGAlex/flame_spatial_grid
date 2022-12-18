@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
-import 'package:flame_clusterizer/flame_clusterizer.dart';
+import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell);

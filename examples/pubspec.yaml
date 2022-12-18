@@ -30,7 +30,7 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flame: 1.5.0
-  flame_clusterizer: # ^1.0.2
+  flame_spatial_grid: # ^1.0.2
     path: ../
   flutter:
     sdk: flutter
