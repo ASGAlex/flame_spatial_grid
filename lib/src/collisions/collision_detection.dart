@@ -21,14 +21,14 @@ class SpatialGridCollisionDetection
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
   final _listenerComponentInCellSuspend = <ShapeHitbox, VoidCallback>{};
-  final _scheduledUpdate = <ShapeHitbox>{};
+  final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
   final SpatialGrid spatialGrid;
 
   @override
   void add(ShapeHitbox item) {
     super.add(item);
 
-    item.onAabbChanged = () => _scheduledUpdate.add(item);
+    item.onAabbChanged = () => _scheduledUpdateAfterTransform.add(item);
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent != null) {
       withGridSupportComponent.setSpatialGrid(spatialGrid);
@@ -60,9 +60,11 @@ class SpatialGridCollisionDetection
       final listenerCollisionType = () {
         if (item.isMounted) {
           if (item.collisionType == CollisionType.active) {
-            broadphase.activeCollisions.add(item);
+            broadphase.scheduledOperations
+                .add(ScheduledHitboxOperation.addActive(hitbox: item));
           } else {
-            broadphase.activeCollisions.remove(item);
+            broadphase.scheduledOperations
+                .add(ScheduledHitboxOperation.removeActive(hitbox: item));
           }
         }
       };
@@ -86,34 +88,25 @@ class SpatialGridCollisionDetection
       HasGridSupport component, ShapeHitbox hitbox) {
     switch (hitbox.collisionType) {
       case CollisionType.active:
-        broadphase.activeCollisions.add(hitbox);
-        _removeHitboxFromPassives(component, hitbox);
+        broadphase.scheduledOperations
+            .add(ScheduledHitboxOperation.addActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+                hitbox: hitbox, cell: component.currentCell));
         break;
       case CollisionType.passive:
-        broadphase.activeCollisions.remove(hitbox);
-        _addHotboxToPassives(component, hitbox);
+        broadphase.scheduledOperations
+            .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(ScheduledHitboxOperation.addPassive(
+            hitbox: hitbox, cell: component.currentCell));
         break;
       case CollisionType.inactive:
-        broadphase.activeCollisions.remove(hitbox);
-        _removeHitboxFromPassives(component, hitbox);
+        broadphase.scheduledOperations
+            .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+                hitbox: hitbox, cell: component.currentCell));
         break;
-    }
-  }
-
-  void _addHotboxToPassives(HasGridSupport component, ShapeHitbox hitbox) {
-    final cell = component.currentCell;
-    if (cell != null && cell.state != CellState.suspended) {
-      var list = broadphase.passiveCollisionsByCell[cell];
-      list ??=
-          broadphase.passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-      list.add(hitbox);
-    }
-  }
-
-  void _removeHitboxFromPassives(HasGridSupport component, ShapeHitbox hitbox) {
-    final cell = component.currentCell;
-    if (cell != null) {
-      broadphase.passiveCollisionsByCell[cell]?.remove(hitbox);
     }
   }
 
@@ -139,8 +132,10 @@ class SpatialGridCollisionDetection
             .removeListener(listenerComponentInCellSuspend);
         _listenerComponentInCellSuspend.remove(hitbox);
       }
-      _removeHitboxFromPassives(spatialGridSupportComponent, hitbox);
-      broadphase.activeCollisions.remove(hitbox);
+      broadphase.scheduledOperations.add(ScheduledHitboxOperation.removePassive(
+          hitbox: hitbox, cell: spatialGridSupportComponent.currentCell));
+      broadphase.scheduledOperations
+          .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
     }
 
     hitbox.clearGridComponentParent();
@@ -166,10 +161,9 @@ class SpatialGridCollisionDetection
       }
       if (item.collisionType == CollisionType.inactive &&
           previousCell != null) {
-        final list = broadphase.passiveCollisionsByCell[previousCell];
-        if (list != null) {
-          list.remove(item);
-        }
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+                hitbox: item, cell: previousCell));
       }
     }
   }
@@ -178,8 +172,8 @@ class SpatialGridCollisionDetection
 
   @override
   void run() {
-    _scheduledUpdate.forEach(_updateTransform);
-    _scheduledUpdate.clear();
+    _scheduledUpdateAfterTransform.forEach(_updateTransform);
+    _scheduledUpdateAfterTransform.clear();
     broadphase.update();
     _runForPotentials(broadphase.query());
   }

@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:meta/meta.dart';
 
 import 'collision_optimizer.dart';
 
@@ -24,7 +25,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   final SpatialGrid spatialGrid;
 
+  @protected
   final activeCollisions = HashSet<T>();
+
+  @protected
   final passiveCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
   final optimizedCollisionsByGroupBox =
       <Cell, Map<GroupHitbox, OptimizedCollisionList>>{};
@@ -35,6 +39,36 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   final _potentials = HashSet<CollisionProspect<T>>();
   final _potentialsTmp = <List<ShapeHitbox>>[];
+
+  @internal
+  final scheduledOperations = <ScheduledHitboxOperation>[];
+
+  @override
+  void update() {
+    for (final operation in scheduledOperations) {
+      if (operation.add) {
+        if (operation.active) {
+          activeCollisions.add(operation.hitbox as T);
+        } else {
+          final cell = operation.cell;
+          if (cell != null && cell.state != CellState.suspended) {
+            var list = passiveCollisionsByCell[cell];
+            list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
+            list.add(operation.hitbox);
+          }
+        }
+      } else {
+        if (operation.active) {
+          activeCollisions.remove(operation.hitbox as T);
+        } else {
+          final cell = operation.cell;
+          if (cell != null) {
+            passiveCollisionsByCell[cell]?.remove(operation.hitbox);
+          }
+        }
+      }
+    }
+  }
 
   HashSet<CollisionProspect<T>> querySubset(
       HashSet<CollisionProspect<ShapeHitbox>> potentials) {
@@ -150,4 +184,37 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     activeCollisions.clear();
     _broadphaseCheckCache.clear();
   }
+}
+
+@internal
+@immutable
+class ScheduledHitboxOperation {
+  const ScheduledHitboxOperation(
+      {required this.add,
+      required this.active,
+      required this.hitbox,
+      this.cell});
+
+  const ScheduledHitboxOperation.addActive({required this.hitbox, this.cell})
+      : add = true,
+        active = true;
+
+  const ScheduledHitboxOperation.addPassive(
+      {required this.hitbox, required this.cell})
+      : add = true,
+        active = false;
+
+  const ScheduledHitboxOperation.removeActive({required this.hitbox, this.cell})
+      : add = false,
+        active = true;
+
+  const ScheduledHitboxOperation.removePassive(
+      {required this.hitbox, required this.cell})
+      : add = false,
+        active = false;
+
+  final bool add;
+  final bool active;
+  final ShapeHitbox hitbox;
+  final Cell? cell;
 }
