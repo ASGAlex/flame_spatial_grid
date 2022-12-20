@@ -49,6 +49,7 @@ mixin HasSpatialGridFramework on FlameGame
       required int activeRadius,
       required int unloadRadius,
       required HasGridSupport trackedComponent,
+      required HasSpatialGridFramework game,
       CellBuilderFunction? cellBuilder,
       List<TiledMapLoader>? maps}) async {
     this.rootComponent = rootComponent ?? this;
@@ -60,7 +61,8 @@ mixin HasSpatialGridFramework on FlameGame
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
         activeRadius: activeRadius,
-        unloadRadius: unloadRadius);
+        unloadRadius: unloadRadius,
+        game: game);
 
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,

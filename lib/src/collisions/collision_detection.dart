@@ -20,7 +20,6 @@ class SpatialGridCollisionDetection
         ));
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
-  final _listenerComponentInCellSuspend = <ShapeHitbox, VoidCallback>{};
   final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
   final SpatialGrid spatialGrid;
 
@@ -46,41 +45,7 @@ class SpatialGridCollisionDetection
 
       item.defaultCollisionType; //init defaults with current value;
 
-      // ignore: prefer_function_declarations_over_variables
-      final listenerComponentInCellSuspend = () {
-        _onCellSuspendChanged(withGridSupportComponent, item);
-      };
-      withGridSupportComponent.suspendNotifier
-          .addListener(listenerComponentInCellSuspend);
-      _listenerComponentInCellSuspend[item] = listenerComponentInCellSuspend;
-
       withGridSupportComponent.onSpatialGridSupportComponentMounted();
-    } else {
-      // ignore: prefer_function_declarations_over_variables
-      final listenerCollisionType = () {
-        if (item.isMounted) {
-          if (item.collisionType == CollisionType.active) {
-            broadphase.scheduledOperations
-                .add(ScheduledHitboxOperation.addActive(hitbox: item));
-          } else {
-            broadphase.scheduledOperations
-                .add(ScheduledHitboxOperation.removeActive(hitbox: item));
-          }
-        }
-      };
-      item.collisionTypeNotifier.addListener(listenerCollisionType);
-      _listenerCollisionType[item] = listenerCollisionType;
-    }
-  }
-
-  void _onCellSuspendChanged(HasGridSupport component, ShapeHitbox hitbox) {
-    if (component.toggleCollisionOnSuspendChange) {
-      if (component.isSuspended) {
-        hitbox.collisionType = CollisionType.inactive;
-      } else {
-        hitbox.collisionType = hitbox.defaultCollisionType;
-      }
-      _onSpatialGridCollisionTypeChange(component, hitbox);
     }
   }
 
@@ -130,7 +95,6 @@ class SpatialGridCollisionDetection
       if (listenerComponentInCellSuspend != null) {
         spatialGridSupportComponent.suspendNotifier
             .removeListener(listenerComponentInCellSuspend);
-        _listenerComponentInCellSuspend.remove(hitbox);
       }
       broadphase.scheduledOperations.add(ScheduledHitboxOperation.removePassive(
           hitbox: hitbox, cell: spatialGridSupportComponent.currentCell));
@@ -148,26 +112,6 @@ class SpatialGridCollisionDetection
     items.forEach(remove);
   }
 
-  void _updateTransform(ShapeHitbox item) {
-    final withGridSupportComponent = item.parentWithGridSupport;
-    if (withGridSupportComponent == null) return;
-    final previousCell = withGridSupportComponent.currentCell;
-    final cellChanged = withGridSupportComponent.updateTransform();
-    //suspend hitbox, if was moved to suspended cell.
-    if (cellChanged) {
-      final onCellSuspend = _listenerComponentInCellSuspend[item];
-      if (onCellSuspend != null) {
-        onCellSuspend();
-      }
-      if (item.collisionType == CollisionType.inactive &&
-          previousCell != null) {
-        broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removePassive(
-                hitbox: item, cell: previousCell));
-      }
-    }
-  }
-
   final Set<CollisionProspect<ShapeHitbox>> _lastPotentials = {};
 
   @override
@@ -176,6 +120,12 @@ class SpatialGridCollisionDetection
     _scheduledUpdateAfterTransform.clear();
     broadphase.update();
     _runForPotentials(broadphase.query());
+  }
+
+  void _updateTransform(ShapeHitbox item) {
+    final withGridSupportComponent = item.parentWithGridSupport;
+    if (withGridSupportComponent == null) return;
+    withGridSupportComponent.updateTransform();
   }
 
   void _runForPotentials(HashSet<CollisionProspect<ShapeHitbox>> potentials) {

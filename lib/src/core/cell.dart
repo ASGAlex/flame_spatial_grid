@@ -1,5 +1,10 @@
+import 'dart:collection';
+
+import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 enum _CellCreationContext { left, top, right, bottom }
 
@@ -28,17 +33,12 @@ class Cell {
   final Rect rect;
   late final Vector2 center;
 
-  CellState _state = CellState.active;
+  final _state = ValueNotifier<CellState>(CellState.active);
 
-  CellState get state => _state;
+  @internal
+  final components = HashSet<HasGridSupport>();
 
-  set state(CellState value) {
-    _state = value;
-    if (_state != CellState.suspended && _scheduleToBuild) {
-      spatialGrid.cellsScheduledToBuild.add(this);
-      _scheduleToBuild = false;
-    }
-  }
+  get broadphase => spatialGrid.game.collisionDetection.broadphase;
 
   Cell? rawLeft;
   Cell? rawRight;
@@ -63,6 +63,74 @@ class Cell {
   Cell get top => rawTop ??= _createCell(_CellCreationContext.top);
 
   Cell get bottom => rawBottom ??= _createCell(_CellCreationContext.bottom);
+
+  CellState get state => _state.value;
+
+  CellState tmpState = CellState.active;
+
+  set state(CellState value) {
+    if (_state.value == value) return;
+
+    _state.value = value;
+    if (_state.value != CellState.suspended && _scheduleToBuild) {
+      spatialGrid.cellsScheduledToBuild.add(this);
+      _scheduleToBuild = false;
+    }
+    _updateComponentsState();
+  }
+
+  void _updateComponentsState() {
+    switch (_state.value) {
+      case CellState.active:
+        _activateComponents();
+        break;
+      case CellState.inactive:
+        _deactivateComponents();
+        break;
+      case CellState.suspended:
+        _suspendComponents();
+        break;
+    }
+  }
+
+  void _activateComponents() {
+    for (final component in components) {
+      component.isSuspended = false;
+      component.isVisible = true;
+      final hitboxes = component.children.whereType<ShapeHitbox>();
+      for (final hitbox in hitboxes) {
+        if (component.toggleCollisionOnSuspendChange) {
+          hitbox.collisionType = hitbox.defaultCollisionType;
+        }
+      }
+    }
+  }
+
+  void _deactivateComponents() {
+    for (final component in components) {
+      component.isVisible = false;
+      final hitboxes = component.children.whereType<ShapeHitbox>();
+      for (final hitbox in hitboxes) {
+        if (component.toggleCollisionOnSuspendChange) {
+          hitbox.collisionType = hitbox.defaultCollisionType;
+        }
+      }
+    }
+  }
+
+  void _suspendComponents() {
+    for (final component in components) {
+      component.isSuspended = true;
+      component.isVisible = false;
+      final hitboxes = component.children.whereType<ShapeHitbox>();
+
+      for (final hitbox in hitboxes) {
+        if (component.toggleCollisionOnSuspendChange) {
+          hitbox.collisionType = CollisionType.inactive;
+        }
+      }
+    }
+  }
 
   Cell _createCell(_CellCreationContext direction) =>
       _checkCell(direction) ??

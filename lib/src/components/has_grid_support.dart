@@ -25,7 +25,33 @@ mixin HasGridSupport on PositionComponent {
 
   bool get isSuspended => suspendNotifier.value;
 
-  Cell? currentCell;
+  Cell? _currentCell;
+
+  Cell? get currentCell => _currentCell;
+
+  set currentCell(Cell? value) {
+    final previousCell = _currentCell;
+    final hitboxes = children.whereType<ShapeHitbox>();
+
+    _currentCell = value;
+    value?.components.add(this);
+
+    for (final hitbox in hitboxes) {
+      if (previousCell != null) {
+        previousCell.components.remove(this);
+      }
+      if (hitbox.collisionType == CollisionType.inactive) {
+        if (previousCell != null) {
+          spatialGrid.game.collisionDetection.broadphase.scheduledOperations
+              .add(ScheduledHitboxOperation.removePassive(
+                  hitbox: hitbox, cell: previousCell));
+        }
+        spatialGrid.game.collisionDetection.broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.addPassive(
+                hitbox: hitbox, cell: _currentCell));
+      }
+    }
+  }
 
   SpatialGrid? _spatialGrid;
 
@@ -83,7 +109,6 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void updateTree(double dt) {
-    isSuspended = (currentCell?.state == CellState.suspended ? true : false);
     if (isSuspended) {
       dtElapsedWhileSuspended += dt;
       updateSuspendedTree(dtElapsedWhileSuspended);
@@ -109,7 +134,6 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void renderTree(Canvas canvas) {
-    isVisible = (currentCell?.state == CellState.active ? true : false);
     if (isVisible) {
       super.renderTree(canvas);
     }

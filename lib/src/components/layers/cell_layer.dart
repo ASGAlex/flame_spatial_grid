@@ -91,7 +91,6 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void updateTree(double dt) {
-    isSuspended = (currentCell?.state == CellState.suspended ? true : false);
     if (isUpdateNeeded) {
       if (isSuspended) {
         dtElapsedWhileSuspended += dt;
@@ -110,7 +109,6 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void renderTree(Canvas canvas) {
-    isVisible = (currentCell?.state == CellState.active ? true : false);
     if (isVisible) {
       decorator.applyChain(render, canvas);
     }

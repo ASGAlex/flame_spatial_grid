@@ -68,6 +68,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
     }
+    scheduledOperations.clear();
   }
 
   HashSet<CollisionProspect<T>> querySubset(

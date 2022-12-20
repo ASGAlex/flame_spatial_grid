@@ -59,11 +59,12 @@ all collisions are disabled.
     const blockSize = 100.0;
     await initializeSpatialGrid(
         debug: false,
-        activeRadius: 3,
-        unloadRadius: 5,
+        activeRadius: 5,
+        unloadRadius: 8,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
+        game: this,
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(),
@@ -386,18 +387,6 @@ mixin GameCollideable on HasGridSupport {
 //#endregion
 
 //#region Utils
-
-mixin UpdateOnce on PositionComponent {
-  bool updateOnce = true;
-
-  @override
-  void updateTree(double dt) {
-    if (updateOnce) {
-      super.updateTree(dt);
-      updateOnce = false;
-    }
-  }
-}
 
 extension Vector2Ext on Vector2 {
   Vector2 translate(double x, double y) {

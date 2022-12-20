@@ -12,6 +12,7 @@ class SpatialGrid {
   SpatialGrid(
       {required this.blockSize,
       required this.trackedComponent,
+      required this.game,
       int? activeRadius,
       int? unloadRadius}) {
     this.activeRadius = (activeRadius ?? 1);
@@ -35,6 +36,8 @@ class SpatialGrid {
     cells.clear();
   }
 
+  final HasSpatialGridFramework game;
+
   final cells = HashMap<Rect, Cell>();
   Cell? _currentCell;
 
@@ -50,19 +53,23 @@ class SpatialGrid {
   void setActiveCell(Cell newActiveCell) {
     _currentCell = newActiveCell;
     for (final cell in cells.values) {
-      cell.state = CellState.suspended;
+      cell.tmpState = CellState.suspended;
     }
 
     final cellsToInactivate = _findCellsInRadius(unloadRadius);
     for (final cell in cellsToInactivate) {
-      cell.state = CellState.inactive;
+      cell.tmpState = CellState.inactive;
     }
 
     final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
     for (final cell in cellsToActivate) {
-      cell.state = CellState.active;
+      cell.tmpState = CellState.active;
     }
-    newActiveCell.state = CellState.active;
+    newActiveCell.tmpState = CellState.active;
+
+    for (final cell in cells.values) {
+      cell.state = cell.tmpState;
+    }
   }
 
   CellState getCellState(Cell cell) {
