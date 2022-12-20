@@ -59,8 +59,8 @@ all collisions are disabled.
     const blockSize = 100.0;
     await initializeSpatialGrid(
         debug: false,
-        activeRadius: 5,
-        unloadRadius: 8,
+        activeRadius: 3,
+        unloadRadius: 5,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
@@ -500,9 +500,9 @@ class DemoMapLoader extends TiledMapLoader {
     component.position = position;
     component.size = size;
     if (component.sprite != null) {
-      addToStaticLayer(component, layerPriority: 1);
+      addToStaticLayer(component, layerPriority: -1);
     } else if (component.animation != null) {
-      addToAnimatedLayer(component, layerPriority: 1);
+      addToAnimatedLayer(component, layerPriority: -1);
     }
   }
 }
