@@ -65,6 +65,7 @@ all collisions are disabled.
         trackedComponent: player,
         rootComponent: world,
         game: this,
+        buildCellsPerUpdate: 1,
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(),

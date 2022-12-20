@@ -50,10 +50,12 @@ mixin HasSpatialGridFramework on FlameGame
       required int unloadRadius,
       required HasGridSupport trackedComponent,
       required HasSpatialGridFramework game,
+      int buildCellsPerUpdate = -1,
       CellBuilderFunction? cellBuilder,
       List<TiledMapLoader>? maps}) async {
     this.rootComponent = rootComponent ?? this;
     _cellBuilder = cellBuilder;
+    this.buildCellsPerUpdate = buildCellsPerUpdate;
     if (maps != null) {
       this.maps = maps;
     }
@@ -80,6 +82,7 @@ mixin HasSpatialGridFramework on FlameGame
 
   List<TiledMapLoader> maps = [];
   CellBuilderFunction? _cellBuilder;
+  int buildCellsPerUpdate = -1;
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     if (maps.isEmpty) {
@@ -156,10 +159,14 @@ mixin HasSpatialGridFramework on FlameGame
   @override
   void update(double dt) async {
     if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
-      for (final cell in spatialGrid.cellsScheduledToBuild) {
+      final cellsToProcess = (buildCellsPerUpdate > 0
+          ? buildCellsPerUpdate
+          : spatialGrid.cellsScheduledToBuild.length);
+      for (var i = 0; i < cellsToProcess; i++) {
+        final cell = spatialGrid.cellsScheduledToBuild.first;
+        spatialGrid.cellsScheduledToBuild.remove(cell);
         await _cellBuilderMulti(cell, rootComponent);
       }
-      spatialGrid.cellsScheduledToBuild.clear();
     }
     super.update(dt);
     collisionDetection.run();
