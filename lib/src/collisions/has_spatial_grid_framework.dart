@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
@@ -50,12 +51,13 @@ mixin HasSpatialGridFramework on FlameGame
       required int unloadRadius,
       required HasGridSupport trackedComponent,
       required HasSpatialGridFramework game,
-      int buildCellsPerUpdate = -1,
+      double buildCellsPerUpdate = -1,
+      Duration suspendedCellLifetime = Duration.zero,
       CellBuilderFunction? cellBuilder,
       List<TiledMapLoader>? maps}) async {
     this.rootComponent = rootComponent ?? this;
     _cellBuilder = cellBuilder;
-    this.buildCellsPerUpdate = buildCellsPerUpdate;
+    this.suspendedCellLifetime = suspendedCellLifetime;
     if (maps != null) {
       this.maps = maps;
     }
@@ -78,11 +80,24 @@ mixin HasSpatialGridFramework on FlameGame
       await map.init(this);
       TiledMapLoader.loadedMaps.add(map);
     }
+    this.buildCellsPerUpdate = buildCellsPerUpdate;
   }
 
   List<TiledMapLoader> maps = [];
   CellBuilderFunction? _cellBuilder;
-  int buildCellsPerUpdate = -1;
+  double buildCellsPerUpdate = -1;
+  double _buildCellsNow = 0;
+
+  double _suspendedCellLifetime = -1;
+
+  set suspendedCellLifetime(Duration value) {
+    _suspendedCellLifetime = value.inMicroseconds / 1000000;
+  }
+
+  Duration get suspendedCellLifetime =>
+      Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
+  final _cellsForStateUpdate = <Cell>[];
+  final _cellsToRemove = HashSet<Cell>();
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     if (maps.isEmpty) {
@@ -156,18 +171,63 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
-  @override
-  void update(double dt) async {
-    if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
-      final cellsToProcess = (buildCellsPerUpdate > 0
-          ? buildCellsPerUpdate
-          : spatialGrid.cellsScheduledToBuild.length);
+  Future _buildNewCells() async {
+    if (spatialGrid.cellsScheduledToBuild.isEmpty) return;
+
+    if (buildCellsPerUpdate > 0) {
+      _buildCellsNow += buildCellsPerUpdate;
+      final cellsToProcess = _buildCellsNow.floor().toInt();
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = spatialGrid.cellsScheduledToBuild.first;
         spatialGrid.cellsScheduledToBuild.remove(cell);
         await _cellBuilderMulti(cell, rootComponent);
+        _cellsForStateUpdate.add(cell);
+      }
+
+      _buildCellsNow -= cellsToProcess;
+    } else {
+      for (final cell in spatialGrid.cellsScheduledToBuild) {
+        await _cellBuilderMulti(cell, rootComponent);
+        _cellsForStateUpdate.add(cell);
       }
     }
+
+    if (buildCellsPerUpdate > 0) {}
+  }
+
+  void removeUnusedCells() {
+    for (final cell in spatialGrid.cells.values) {
+      if (cell.state != CellState.suspended) continue;
+      if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+        _cellsToRemove.add(cell);
+      }
+    }
+
+    for (final cell in _cellsToRemove) {
+      cell.remove();
+    }
+    _cellsToRemove.clear();
+  }
+
+  void markUnusedCells(double dt) {
+    if (_suspendedCellLifetime > 0) {
+      for (final cell in spatialGrid.cells.values) {
+        if (cell.state != CellState.suspended) continue;
+        cell.beingSuspendedTimeMicroseconds += dt;
+      }
+    }
+  }
+
+  @override
+  Future update(double dt) async {
+    await _buildNewCells();
+    if (_cellsForStateUpdate.isNotEmpty) {
+      for (final cell in _cellsForStateUpdate) {
+        cell.updateComponentsState();
+      }
+      _cellsForStateUpdate.clear();
+    }
+    markUnusedCells(dt);
     super.update(dt);
     collisionDetection.run();
   }

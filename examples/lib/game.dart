@@ -66,6 +66,7 @@ all collisions are disabled.
         rootComponent: world,
         game: this,
         buildCellsPerUpdate: 1,
+        suspendedCellLifetime: const Duration(seconds: 30),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(),
@@ -133,6 +134,9 @@ all collisions are disabled.
       if (key == LogicalKeyboardKey.keyM) {
         isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
       }
+      if (key == LogicalKeyboardKey.keyR) {
+        removeUnusedCells();
+      }
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
       final bullet = Bullet(
@@ -163,7 +167,7 @@ all collisions are disabled.
   }
 
   @override
-  void update(double dt) {
+  Future update(double dt) async {
     // final sw = Stopwatch()..start();
     super.update(dt);
     // sw.stop();

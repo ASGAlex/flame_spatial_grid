@@ -45,6 +45,8 @@ class Cell {
   Cell? rawTop;
   Cell? rawBottom;
 
+  double beingSuspendedTimeMicroseconds = 0;
+
   final _cachedRects = <_CellCreationContext, Rect>{};
 
   Cell? get leftChecked => rawLeft ??= _checkCell(_CellCreationContext.left);
@@ -76,15 +78,18 @@ class Cell {
       spatialGrid.cellsScheduledToBuild.add(this);
       _scheduleToBuild = false;
     }
-    _updateComponentsState();
+    updateComponentsState();
   }
 
-  void _updateComponentsState() {
+  @internal
+  void updateComponentsState() {
     switch (_state.value) {
       case CellState.active:
+        beingSuspendedTimeMicroseconds = 0;
         _activateComponents();
         break;
       case CellState.inactive:
+        beingSuspendedTimeMicroseconds = 0;
         _deactivateComponents();
         break;
       case CellState.suspended:
@@ -130,6 +135,23 @@ class Cell {
         }
       }
     }
+  }
+
+  void remove() {
+    rawLeft?.rawRight = null;
+    rawLeft = null;
+    rawRight?.rawLeft = null;
+    rawRight = null;
+    rawTop?.rawBottom = null;
+    rawTop = null;
+    rawBottom?.rawTop = null;
+    rawBottom = null;
+
+    spatialGrid.cells.remove(rect);
+    for (final component in components) {
+      component.removeFromParent();
+    }
+    _state.dispose();
   }
 
   Cell _createCell(_CellCreationContext direction) =>
@@ -198,8 +220,4 @@ class Cell {
   }
 
   List<Cell> get neighboursAndMe => neighbours..add(this);
-
-  dispose() {
-    rawLeft = rawRight = rawTop = rawBottom = null;
-  }
 }

@@ -31,7 +31,7 @@ class SpatialGrid {
   @override
   dispose() {
     for (final cell in cells.values) {
-      cell.dispose();
+      cell.remove();
     }
     cells.clear();
   }
