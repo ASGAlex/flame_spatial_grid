@@ -52,6 +52,7 @@ mixin HasSpatialGridFramework on FlameGame
       required HasGridSupport trackedComponent,
       required HasSpatialGridFramework game,
       double buildCellsPerUpdate = -1,
+      double removeCellsPerUpdate = -1,
       Duration suspendedCellLifetime = Duration.zero,
       CellBuilderFunction? cellBuilder,
       List<TiledMapLoader>? maps}) async {
@@ -81,12 +82,15 @@ mixin HasSpatialGridFramework on FlameGame
       TiledMapLoader.loadedMaps.add(map);
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
+    this.removeCellsPerUpdate = removeCellsPerUpdate;
   }
 
   List<TiledMapLoader> maps = [];
   CellBuilderFunction? _cellBuilder;
   double buildCellsPerUpdate = -1;
   double _buildCellsNow = 0;
+  double removeCellsPerUpdate = -1;
+  double _removeCellsNow = 0;
 
   double _suspendedCellLifetime = -1;
 
@@ -97,7 +101,6 @@ mixin HasSpatialGridFramework on FlameGame
   Duration get suspendedCellLifetime =>
       Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
   final _cellsForStateUpdate = <Cell>[];
-  final _cellsToRemove = HashSet<Cell>();
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     if (maps.isEmpty) {
@@ -191,30 +194,55 @@ mixin HasSpatialGridFramework on FlameGame
         _cellsForStateUpdate.add(cell);
       }
     }
-
-    if (buildCellsPerUpdate > 0) {}
   }
 
   void removeUnusedCells() {
+    final cellsToRemove = _catchCellsForRemoval();
+    for (final cell in cellsToRemove) {
+      cell.remove();
+    }
+    cellsToRemove.clear();
+  }
+
+  HashSet<Cell> _catchCellsForRemoval() {
+    final cellsToRemove = HashSet<Cell>();
     for (final cell in spatialGrid.cells.values) {
       if (cell.state != CellState.suspended) continue;
       if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
-        _cellsToRemove.add(cell);
+        cellsToRemove.add(cell);
       }
     }
-
-    for (final cell in _cellsToRemove) {
-      cell.remove();
-    }
-    _cellsToRemove.clear();
+    return cellsToRemove;
   }
 
-  void markUnusedCells(double dt) {
+  void _countSuspendedCellsTimers(double dt) {
     if (_suspendedCellLifetime > 0) {
       for (final cell in spatialGrid.cells.values) {
         if (cell.state != CellState.suspended) continue;
         cell.beingSuspendedTimeMicroseconds += dt;
       }
+    }
+  }
+
+  _autoRemoveOldCells(double dt) {
+    final cellsToRemove = _catchCellsForRemoval();
+    if (cellsToRemove.isEmpty) return;
+
+    if (removeCellsPerUpdate > 0) {
+      _removeCellsNow += removeCellsPerUpdate;
+      final cellsToProcess = _removeCellsNow.floor().toInt();
+      for (var i = 0; i < cellsToProcess; i++) {
+        final cell = cellsToRemove.first;
+        cellsToRemove.remove(cell);
+        cell.remove();
+      }
+
+      _removeCellsNow -= cellsToProcess;
+    } else {
+      for (final cell in cellsToRemove) {
+        cell.remove();
+      }
+      cellsToRemove.clear();
     }
   }
 
@@ -227,7 +255,10 @@ mixin HasSpatialGridFramework on FlameGame
       }
       _cellsForStateUpdate.clear();
     }
-    markUnusedCells(dt);
+    _countSuspendedCellsTimers(dt);
+    if (removeCellsPerUpdate > 0) {
+      _autoRemoveOldCells(dt);
+    }
     super.update(dt);
     collisionDetection.run();
   }

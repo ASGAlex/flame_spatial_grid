@@ -64,7 +64,13 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   @override
-  void onSuspend() {
+  void onResume(double dtElapsedWhileSuspended) {
+    isUpdateNeeded = true;
+    super.onResume(dtElapsedWhileSuspended);
+  }
+
+  @override
+  void onRemove() {
     final frames = animationComponent?.animation?.frames;
     if (frames != null) {
       for (var element in frames) {
@@ -72,12 +78,7 @@ class CellStaticAnimationLayer extends CellLayer {
       }
     }
     animationComponent = null;
-  }
-
-  @override
-  void onResume(double dtElapsedWhileSuspended) {
-    isUpdateNeeded = true;
-    super.onResume(dtElapsedWhileSuspended);
+    super.onRemove();
   }
 }
 

@@ -66,7 +66,8 @@ all collisions are disabled.
         rootComponent: world,
         game: this,
         buildCellsPerUpdate: 1,
-        suspendedCellLifetime: const Duration(seconds: 30),
+        removeCellsPerUpdate: 0.25,
+        suspendedCellLifetime: const Duration(minutes: 5),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(),

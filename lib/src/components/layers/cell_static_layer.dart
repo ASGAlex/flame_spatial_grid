@@ -49,25 +49,26 @@ class CellStaticLayer extends CellLayer {
     }
     layerPicture = recorder.endRecording();
     if (renderAsImage) {
-      layerImage = await layerPicture!.toImageSafe(
+      layerImage = await layerPicture?.toImageSafe(
           layerCalculatedSize.width.toInt(),
           layerCalculatedSize.height.toInt());
     }
   }
 
   @override
-  void onSuspend() {
+  void onResume(double dtElapsedWhileSuspended) {
+    isUpdateNeeded = true;
+    super.onResume(dtElapsedWhileSuspended);
+  }
+
+  @override
+  void onRemove() {
     try {
       layerImage?.dispose();
       layerPicture?.dispose();
     } catch (e) {}
     layerImage = null;
     layerPicture = null;
-  }
-
-  @override
-  void onResume(double dtElapsedWhileSuspended) {
-    isUpdateNeeded = true;
-    super.onResume(dtElapsedWhileSuspended);
+    super.onRemove();
   }
 }

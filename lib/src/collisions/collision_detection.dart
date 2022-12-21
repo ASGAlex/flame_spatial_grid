@@ -25,7 +25,7 @@ class SpatialGridCollisionDetection
 
   @override
   void add(ShapeHitbox item) {
-    super.add(item);
+    //super.add(item);
 
     item.onAabbChanged = () => _scheduledUpdateAfterTransform.add(item);
     final withGridSupportComponent = item.parentWithGridSupport;
@@ -103,7 +103,7 @@ class SpatialGridCollisionDetection
     }
 
     hitbox.clearGridComponentParent();
-    super.remove(hitbox);
+    //super.remove(hitbox);
   }
 
   @override
