@@ -36,7 +36,7 @@ abstract class TiledMapLoader {
   bool preloadTileSets = false;
   var mapRect = Rect.zero;
 
-  final _contextByCell = HashMap<Cell, List<CellBuilderContext>>();
+  final _contextByCell = HashMap<Rect, List<CellBuilderContext>>();
   final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
   final _staticLayers = HashMap<Cell, CellStaticLayer>();
 
@@ -85,8 +85,8 @@ abstract class TiledMapLoader {
 
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
-    final contextList = _contextByCell.remove(cell);
-    if (contextList == null) return;
+    final contextList = _contextByCell[cell.rect];
+    if (contextList == null || contextList.isEmpty) return;
 
     for (final context in contextList) {
       final tileType = context.tileBuilder.tile.type;
@@ -102,7 +102,6 @@ abstract class TiledMapLoader {
       await defaultBuilder?.call(
           context.tileBuilder, context.position, context.size, cell);
     }
-    contextList.clear();
   }
 
   void addToStaticLayer(HasGridSupport component,
@@ -192,6 +191,8 @@ abstract class TiledMapLoader {
     return isCellOutsideOfMap;
   }
 
+  bool isCellInsideOfMap(Cell cell) => !isCellOutsideOfMap(cell);
+
   void _processTileType(
       {required RenderableTiledMap tileMap,
       List<String>? layersToLoad,
@@ -237,7 +238,7 @@ abstract class TiledMapLoader {
           final cell =
               game.spatialGrid.createNewCellAtPosition(position + size / 2);
           var list = <CellBuilderContext>[];
-          list = _contextByCell[cell] ??= list;
+          list = _contextByCell[cell.rect] ??= list;
           list.add(context);
         }
         xOffset++;
