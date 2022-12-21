@@ -7,8 +7,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
 
-typedef TileBuilderFunction = Future<void> Function(
-    TileDataProvider tile, Vector2 position, Vector2 size, Cell cell);
+typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
 
 abstract class TiledMapLoader {
   static List<TiledMapLoader> loadedMaps = [];
@@ -36,9 +35,13 @@ abstract class TiledMapLoader {
   bool preloadTileSets = false;
   var mapRect = Rect.zero;
 
-  final _contextByCell = HashMap<Rect, List<CellBuilderContext>>();
-  final _animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
-  final _staticLayers = HashMap<Cell, CellStaticLayer>();
+  final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
+
+  @internal
+  final animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
+
+  @internal
+  final staticLayers = HashMap<Cell, CellStaticLayer>();
 
   Future<void> init(HasSpatialGridFramework game) async {
     this.game = game;
@@ -85,22 +88,30 @@ abstract class TiledMapLoader {
 
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
-    final contextList = _contextByCell[cell.rect];
+    final contextList = _contextByCellRect[cell.rect];
+    final contextsToRemove = <CellBuilderContext>[];
     if (contextList == null || contextList.isEmpty) return;
 
     for (final context in contextList) {
-      final tileType = context.tileBuilder.tile.type;
-      final processor = tileBuilders?[tileType];
-      if (processor != null) {
-        await processor(
-            context.tileBuilder, context.position, context.size, cell);
+      if (context.remove) {
+        contextsToRemove.add(context);
       } else {
-        await notFoundBuilder?.call(
-            context.tileBuilder, context.position, context.size, cell);
+        final tileType = context.tileDataProvider.tile.type;
+        final processor = tileBuilders?[tileType];
+        if (processor != null) {
+          await processor(context);
+        } else {
+          await notFoundBuilder?.call(context);
+        }
       }
 
-      await defaultBuilder?.call(
-          context.tileBuilder, context.position, context.size, cell);
+      await defaultBuilder?.call(context);
+    }
+
+    if (contextsToRemove.isNotEmpty) {
+      for (final context in contextsToRemove) {
+        contextList.remove(context);
+      }
     }
   }
 
@@ -112,7 +123,10 @@ abstract class TiledMapLoader {
     if (cell == null) {
       throw 'Cell must be specified!';
     }
-    final staticLayer = layer ?? (_staticLayers[cell] ?? CellStaticLayer(cell));
+    if (component is! SpriteComponent) {
+      throw 'Component ${component.runtimeType} must be SpriteComponent!';
+    }
+    final staticLayer = layer ?? (staticLayers[cell] ?? CellStaticLayer(cell));
     _addToLayer(component,
         externalLayer: layer != null,
         layer: staticLayer,
@@ -132,7 +146,7 @@ abstract class TiledMapLoader {
       throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
     }
     final animationLayer =
-        layer ?? (_animationLayers[cell] ?? CellStaticAnimationLayer(cell));
+        layer ?? (animationLayers[cell] ?? CellStaticAnimationLayer(cell));
     _addToLayer(component,
         externalLayer: layer != null,
         layer: animationLayer,
@@ -149,6 +163,7 @@ abstract class TiledMapLoader {
     if (cell == null) {
       throw 'Cell must be specified!';
     }
+    layer.mapLoader = this;
     layer.priority = layerPriority;
     layer.optimizeCollisions = optimizeCollisions;
     component.position = component.position - cell.rect.topLeft.toVector2();
@@ -157,13 +172,13 @@ abstract class TiledMapLoader {
       rootComponent.add(layer);
     } else {
       if (layer is CellStaticLayer) {
-        if (_staticLayers[cell] == null) {
-          _staticLayers[cell] = layer;
+        if (staticLayers[cell] == null) {
+          staticLayers[cell] = layer;
           rootComponent.add(layer);
         }
       } else if (layer is CellStaticAnimationLayer) {
-        if (_animationLayers[cell] == null) {
-          _animationLayers[cell] = layer;
+        if (animationLayers[cell] == null) {
+          animationLayers[cell] = layer;
           rootComponent.add(layer);
         }
       }
@@ -223,7 +238,7 @@ abstract class TiledMapLoader {
 
           final firstGid = tileset.firstGid;
           if (firstGid != null) {
-            tileId = tileId - firstGid; //+ 1;
+            tileId = tileId - firstGid;
           }
           final tileData = tileset.tiles[tileId];
           final position = Vector2(xOffset.toDouble() * tileMap.map.tileWidth,
@@ -234,11 +249,12 @@ abstract class TiledMapLoader {
               tileMap.map.tileWidth.toDouble());
           final tileProcessor = TileDataProvider(tileData, tileset);
 
-          final context = CellBuilderContext(tileProcessor, position, size);
           final cell =
               game.spatialGrid.createNewCellAtPosition(position + size / 2);
-          var list = <CellBuilderContext>[];
-          list = _contextByCell[cell.rect] ??= list;
+          final context = CellBuilderContext(
+              tileProcessor, position, size, cell.rect, game.spatialGrid);
+          var list = HashSet<CellBuilderContext>();
+          list = _contextByCellRect[cell.rect] ??= list;
           list.add(context);
         }
         xOffset++;

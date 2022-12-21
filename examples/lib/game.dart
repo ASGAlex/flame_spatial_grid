@@ -67,7 +67,7 @@ all collisions are disabled.
         game: this,
         buildCellsPerUpdate: 1,
         removeCellsPerUpdate: 0.25,
-        suspendedCellLifetime: const Duration(minutes: 5),
+        suspendedCellLifetime: const Duration(seconds: 5),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(),
@@ -345,18 +345,18 @@ class Bullet extends PositionComponent
 
 class Brick extends SpriteComponent
     with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
-  Brick({
-    required super.position,
-    required super.sprite,
-  }) {
+  Brick({required super.position, required super.sprite, this.context}) {
     size = Vector2.all(tileSize);
     initCollision();
   }
+
+  final CellBuilderContext? context;
 
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Bullet) {
+      context?.remove = true;
       removeFromParent();
     }
     super.onCollisionStart(intersectionPoints, other);
@@ -365,15 +365,18 @@ class Brick extends SpriteComponent
 
 class Water extends SpriteAnimationComponent
     with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
-  Water({required super.position, required super.animation}) {
+  Water({required super.position, required super.animation, this.context}) {
     size = Vector2.all(tileSize);
     initCollision();
   }
+
+  final CellBuilderContext? context;
 
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Bullet && other.killWater) {
+      context?.remove = true;
       removeFromParent();
       super.onCollisionStart(intersectionPoints, other);
     }
@@ -425,25 +428,25 @@ class DemoMapLoader extends TiledMapLoader {
 
   @override
   Map<String, TileBuilderFunction> get tileBuilders =>
-      {'Brick': onBuildBrick, 'Water': onBuildWater, 'Man': onBuildBrick};
+      {'Brick': onBuildBrick, 'Water': onBuildWater};
 
-  Future<void> onBuildBrick(
-      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
+  Future<void> onBuildBrick(CellBuilderContext context) async {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
-    final brick = Brick(position: position, sprite: spriteBrick);
-    brick.currentCell = cell;
+    final brick = Brick(
+        position: context.position, sprite: spriteBrick, context: context);
+    brick.currentCell = context.cell;
+    // rootComponent.add(brick);
     addToStaticLayer(brick, layerPriority: 1);
   }
 
-  Future<void> onBuildWater(
-      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
+  Future<void> onBuildWater(CellBuilderContext context) async {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
     final water = Water(
-      position: position,
-      animation: waterAnimation,
-    );
-    water.currentCell = cell;
+        position: context.position,
+        animation: waterAnimation,
+        context: context);
+    water.currentCell = context.cell;
     addToAnimatedLayer(water, layerPriority: 2);
   }
 
@@ -452,7 +455,7 @@ class DemoMapLoader extends TiledMapLoader {
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
-
+    return;
     if (isCellOutsideOfMap(cell)) {
       final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
       final waterAnimation =
@@ -499,12 +502,12 @@ class DemoMapLoader extends TiledMapLoader {
     }
   }
 
-  Future<void> onBackgroundBuilder(
-      TileDataProvider tile, Vector2 position, Vector2 size, Cell cell) async {
-    final component = await TileComponent.fromProvider(tile);
-    component.currentCell = cell;
-    component.position = position;
-    component.size = size;
+  Future<void> onBackgroundBuilder(CellBuilderContext context) async {
+    final component =
+        await TileComponent.fromProvider(context.tileDataProvider);
+    component.currentCell = context.cell;
+    component.position = context.position;
+    component.size = context.size;
     if (component.sprite != null) {
       addToStaticLayer(component, layerPriority: -1);
     } else if (component.animation != null) {

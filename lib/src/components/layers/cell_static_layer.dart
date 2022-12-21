@@ -6,7 +6,7 @@ import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
-  CellStaticLayer(super.cell) {
+  CellStaticLayer(super.cell, [super.mapLoader]) {
     layerPicture = _getEmptyPicture();
   }
 
@@ -69,6 +69,7 @@ class CellStaticLayer extends CellLayer {
     } catch (e) {}
     layerImage = null;
     layerPicture = null;
+    mapLoader?.staticLayers.remove(currentCell);
     super.onRemove();
   }
 }

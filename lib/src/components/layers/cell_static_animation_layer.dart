@@ -3,7 +3,7 @@ import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
-  CellStaticAnimationLayer(super.cell);
+  CellStaticAnimationLayer(super.cell, [super.mapLoader]);
 
   SpriteAnimationComponent? animationComponent;
   SpriteAnimation? animation;
@@ -78,6 +78,7 @@ class CellStaticAnimationLayer extends CellLayer {
       }
     }
     animationComponent = null;
+    mapLoader?.animationLayers.remove(currentCell);
     super.onRemove();
   }
 }
