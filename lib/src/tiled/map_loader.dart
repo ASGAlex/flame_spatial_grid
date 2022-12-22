@@ -38,10 +38,7 @@ abstract class TiledMapLoader {
   final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
 
   @internal
-  final animationLayers = HashMap<Cell, CellStaticAnimationLayer>();
-
-  @internal
-  final staticLayers = HashMap<Cell, CellStaticLayer>();
+  final layers = HashMap<Cell, HashMap<String, CellLayer>>();
 
   Future<void> init(HasSpatialGridFramework game) async {
     this.game = game;
@@ -115,75 +112,52 @@ abstract class TiledMapLoader {
     }
   }
 
-  void addToStaticLayer(HasGridSupport component,
-      {int layerPriority = 1,
-      bool optimizeCollisions = true,
-      CellStaticLayer? layer}) {
+  void addToLayer({
+    required HasGridSupport component,
+    required bool animated,
+    required String layerName,
+    bool optimizeCollisions = true,
+    int priority = 1,
+  }) {
     final cell = component.currentCell;
     if (cell == null) {
       throw 'Cell must be specified!';
     }
-    if (component is! SpriteComponent) {
-      throw 'Component ${component.runtimeType} must be SpriteComponent!';
-    }
-    final staticLayer = layer ?? (staticLayers[cell] ?? CellStaticLayer(cell));
-    _addToLayer(component,
-        externalLayer: layer != null,
-        layer: staticLayer,
-        layerPriority: layerPriority,
-        optimizeCollisions: optimizeCollisions);
-  }
-
-  void addToAnimatedLayer(HasGridSupport component,
-      {int layerPriority = 1,
-      bool optimizeCollisions = true,
-      CellStaticAnimationLayer? layer}) {
-    final cell = component.currentCell;
-    if (cell == null) {
-      throw 'Cell must be specified!';
-    }
-    if (component is! SpriteAnimationComponent) {
-      throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
-    }
-    final animationLayer =
-        layer ?? (animationLayers[cell] ?? CellStaticAnimationLayer(cell));
-    _addToLayer(component,
-        externalLayer: layer != null,
-        layer: animationLayer,
-        layerPriority: layerPriority,
-        optimizeCollisions: optimizeCollisions);
-  }
-
-  void _addToLayer(HasGridSupport component,
-      {int layerPriority = 1,
-      bool optimizeCollisions = true,
-      required bool externalLayer,
-      required CellLayer layer}) {
-    final cell = component.currentCell;
-    if (cell == null) {
-      throw 'Cell must be specified!';
-    }
-    layer.mapLoader = this;
-    layer.priority = layerPriority;
-    layer.optimizeCollisions = optimizeCollisions;
-    component.position = component.position - cell.rect.topLeft.toVector2();
-    layer.add(component);
-    if (externalLayer) {
-      rootComponent.add(layer);
+    CellLayer? layer = layers[cell]?[layerName];
+    final isNew = layer == null;
+    if (animated) {
+      if (component is! SpriteAnimationComponent) {
+        throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
+      }
+      if (isNew) {
+        layer = CellStaticAnimationLayer(cell);
+      }
     } else {
-      if (layer is CellStaticLayer) {
-        if (staticLayers[cell] == null) {
-          staticLayers[cell] = layer;
-          rootComponent.add(layer);
-        }
-      } else if (layer is CellStaticAnimationLayer) {
-        if (animationLayers[cell] == null) {
-          animationLayers[cell] = layer;
-          rootComponent.add(layer);
-        }
+      if (component is! SpriteComponent) {
+        throw 'Component ${component.runtimeType} must be SpriteComponent!';
+      }
+      if (isNew) {
+        layer = CellStaticLayer(cell);
       }
     }
+
+    component.position = component.position - cell.rect.topLeft.toVector2();
+    layer.add(component);
+
+    if (isNew) {
+      layer.mapLoader = this;
+      layer.priority = priority;
+      layer.optimizeCollisions = optimizeCollisions;
+      if (layers[cell] == null) {
+        layers[cell] = HashMap<String, CellLayer>();
+      }
+      layers[cell]?[layerName] = layer;
+      rootComponent.add(layer);
+    }
   }
+
+  CellLayer? getLayer({required String name, required Cell cell}) =>
+      layers[cell]?[name];
 
   bool isCellOutsideOfMap(Cell cell) {
     final checkList = [

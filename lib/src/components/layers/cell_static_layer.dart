@@ -69,7 +69,7 @@ class CellStaticLayer extends CellLayer {
     } catch (e) {}
     layerImage = null;
     layerPicture = null;
-    mapLoader?.staticLayers.remove(currentCell);
+    mapLoader?.layers.remove(currentCell);
     super.onRemove();
   }
 }
