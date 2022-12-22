@@ -29,6 +29,7 @@ class Cell {
   }
 
   bool _scheduleToBuild = false;
+  bool _remove = false;
   final SpatialGrid spatialGrid;
   final Rect rect;
   late final Vector2 center;
@@ -40,10 +41,34 @@ class Cell {
 
   get broadphase => spatialGrid.game.collisionDetection.broadphase;
 
-  Cell? rawLeft;
-  Cell? rawRight;
-  Cell? rawTop;
-  Cell? rawBottom;
+  Cell? get rawLeft => _rawLeft?._remove == true ? null : _rawLeft;
+
+  Cell? get rawRight => _rawRight?._remove == true ? null : _rawRight;
+
+  Cell? get rawTop => _rawTop?._remove == true ? null : _rawTop;
+
+  Cell? get rawBottom => _rawBottom?._remove == true ? null : _rawBottom;
+
+  set rawLeft(Cell? value) {
+    _rawLeft = value;
+  }
+
+  set rawRight(Cell? value) {
+    _rawRight = value;
+  }
+
+  set rawTop(Cell? value) {
+    _rawTop = value;
+  }
+
+  set rawBottom(Cell? value) {
+    _rawBottom = value;
+  }
+
+  Cell? _rawLeft;
+  Cell? _rawRight;
+  Cell? _rawTop;
+  Cell? _rawBottom;
 
   double beingSuspendedTimeMicroseconds = 0;
 
@@ -138,6 +163,7 @@ class Cell {
   }
 
   void remove() {
+    _remove = true;
     rawLeft?.rawRight = null;
     rawLeft = null;
     rawRight?.rawLeft = null;
@@ -158,8 +184,14 @@ class Cell {
       _checkCell(direction) ??
       Cell(spatialGrid: spatialGrid, rect: _createRectForDirection(direction));
 
-  Cell? _checkCell(_CellCreationContext direction) =>
-      spatialGrid.cells[_createRectForDirection(direction)];
+  Cell? _checkCell(_CellCreationContext direction) {
+    final cell = spatialGrid.cells[_createRectForDirection(direction)];
+    if (cell?._remove == true) {
+      spatialGrid.cells.remove(cell?.rect);
+      return null;
+    }
+    return cell;
+  }
 
   Rect _createRectForDirection(_CellCreationContext creationContext) {
     var newRect = _cachedRects[creationContext];

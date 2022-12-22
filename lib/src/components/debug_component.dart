@@ -1,4 +1,5 @@
 import 'package:flame/components.dart';
+import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/material.dart';
 
@@ -39,10 +40,9 @@ class SpatialGridDebugComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    TextPaint textPaint = TextPaint(
-      style: TextStyle(
-        fontSize: 5.0,
-      ),
+    TextPaint textPaintOK = TextPaint(
+      style: const TextStyle(
+          fontSize: 5.0, color: Colors.purple, fontWeight: FontWeight.bold),
     );
     final fill = getPaint('fill');
     final inactive = getPaint('inactive');
@@ -57,6 +57,26 @@ class SpatialGridDebugComponent extends PositionComponent
         canvas.drawRect(element.key, unloaded);
       }
       canvas.drawRect(element.key, border);
+      if (element.value.rawLeft != null) {
+        final pos = Vector2(element.key.left + 2,
+            element.key.bottom - element.key.size.height / 2);
+        textPaintOK.render(canvas, 'L', pos);
+      }
+      if (element.value.rawRight != null) {
+        final pos = Vector2(element.key.right - 8,
+            element.key.bottom - element.key.size.height / 2);
+        textPaintOK.render(canvas, 'R', pos);
+      }
+      if (element.value.rawTop != null) {
+        final pos = Vector2(
+            element.key.left + element.key.size.width / 2, element.key.top + 2);
+        textPaintOK.render(canvas, 'T', pos);
+      }
+      if (element.value.rawBottom != null) {
+        final pos = Vector2(element.key.left + element.key.size.width / 2,
+            element.key.bottom - 15);
+        textPaintOK.render(canvas, 'B', pos);
+      }
 
       // textPaint.render(canvas, element.value.state.toString(),
       //     element.key.center.toVector2());

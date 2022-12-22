@@ -59,8 +59,8 @@ all collisions are disabled.
     const blockSize = 100.0;
     await initializeSpatialGrid(
         debug: false,
-        activeRadius: 3,
-        unloadRadius: 5,
+        activeRadius: 2,
+        unloadRadius: 3,
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
@@ -94,6 +94,8 @@ all collisions are disabled.
   var _killWater = false;
 
   static const stepSize = 2.0;
+
+  var teleportMode = true;
 
   @override
   KeyEventResult onKeyEvent(
@@ -137,6 +139,9 @@ all collisions are disabled.
       }
       if (key == LogicalKeyboardKey.keyR) {
         removeUnusedCells();
+      }
+      if (key == LogicalKeyboardKey.keyT) {
+        teleportMode = !teleportMode;
       }
     }
     if (_fireBullet && !_playerDisplacement.isZero()) {
@@ -206,7 +211,9 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       print(component.runtimeType);
     }
 
-    player.position = event.localPosition;
+    if (game.teleportMode) {
+      player.position = event.localPosition;
+    }
   }
 }
 
