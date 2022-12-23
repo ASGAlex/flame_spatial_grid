@@ -55,6 +55,8 @@ all collisions are disabled.
   Future<void> onLoad() async {
     super.onLoad();
 
+    final worldData = await WorldData.fromFile('assets/tiles/example.world');
+
     player = world.player;
     const blockSize = 100.0;
     await initializeSpatialGrid(

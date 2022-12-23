@@ -16,7 +16,7 @@
 
 library flame_spatial_grid;
 
-export 'src/collisions/broadphase.dart';
+export 'src/collisions/broadphase.dart' hide ScheduledHitboxOperation;
 export 'src/collisions/collision_detection.dart';
 export 'src/collisions/has_spatial_grid_framework.dart';
 export 'src/components/debug_component.dart';
@@ -31,3 +31,4 @@ export 'src/core/spatial_grid.dart';
 export 'src/tiled/map_loader.dart';
 export 'src/tiled/sprite_loader.dart';
 export 'src/tiled/tile_data_provider.dart';
+export 'src/tiled/world_data.dart';

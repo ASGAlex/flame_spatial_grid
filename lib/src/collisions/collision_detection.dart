@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 
+import 'broadphase.dart';
 import 'collision_optimizer.dart';
 
 class SpatialGridCollisionDetection

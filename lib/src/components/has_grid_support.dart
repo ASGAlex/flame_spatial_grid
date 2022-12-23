@@ -5,6 +5,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
