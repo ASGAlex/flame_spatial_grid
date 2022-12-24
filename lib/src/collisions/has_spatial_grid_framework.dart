@@ -284,6 +284,8 @@ mixin HasSpatialGridFramework on FlameGame
     if (removeCellsPerUpdate > 0) {
       _autoRemoveOldCells(dt);
     }
+
+    SpriteAnimationGlobalController.instance.update(dt);
     super.update(dt);
     collisionDetection.run();
   }

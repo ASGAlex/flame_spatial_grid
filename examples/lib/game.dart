@@ -464,7 +464,7 @@ class DemoMapLoader extends TiledMapLoader {
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
-    // return;
+    return;
     if (isCellOutsideOfMap(cell)) {
       final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
       final waterAnimation =
@@ -487,7 +487,7 @@ class DemoMapLoader extends TiledMapLoader {
 
       rootComponent.add(staticLayer);
 
-      final animationLayer = CellStaticAnimationLayer(cell);
+      final animationLayer = CellStaticAnimationLayer(cell, 'Water');
       animationLayer.priority = 1;
 
       for (var i = 0; i < 200; i++) {

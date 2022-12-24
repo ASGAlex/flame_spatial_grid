@@ -3,9 +3,9 @@ import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
-  CellStaticAnimationLayer(super.cell, [super.mapLoader]);
+  CellStaticAnimationLayer(super.cell, [super.name]);
 
-  SpriteAnimationComponent? animationComponent;
+  SpriteAnimationGlobalComponent? animationComponent;
   SpriteAnimation? animation;
 
   @override
@@ -18,7 +18,7 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   void updateTree(double dt) {
-    animationComponent?.update(dt);
+    // animationComponent?.update(dt);
     super.updateTree(dt);
   }
 
@@ -42,6 +42,9 @@ class CellStaticAnimationLayer extends CellLayer {
       return;
     }
 
+    animationComponent?.playing = false;
+    animationComponent?.removeFromParent();
+
     List<Sprite> newSprites = [];
 
     while (anim.currentIndex < anim.frames.length) {
@@ -57,10 +60,11 @@ class CellStaticAnimationLayer extends CellLayer {
     }
     final spriteAnimation = SpriteAnimation.variableSpriteList(newSprites,
         stepTimes: anim.getVariableStepTimes());
-    animationComponent = SpriteAnimationComponent(
+    animationComponent = SpriteAnimationGlobalComponent(
         animation: spriteAnimation,
         position: correctionTopLeft,
-        size: newSprites.first.image.size);
+        size: newSprites.first.image.size,
+        animationType: name);
   }
 
   @override
@@ -77,6 +81,7 @@ class CellStaticAnimationLayer extends CellLayer {
         element.sprite.image.dispose();
       }
     }
+    animationComponent?.onRemove();
     animationComponent = null;
     mapLoader?.layers.remove(currentCell);
     super.onRemove();

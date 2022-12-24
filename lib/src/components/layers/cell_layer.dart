@@ -12,7 +12,7 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell, [this.mapLoader])
+  CellLayer(Cell cell, [this.name = ''])
       : super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
@@ -35,6 +35,8 @@ abstract class CellLayer extends PositionComponent
 
   @protected
   void compileToSingleLayer();
+
+  final String name;
 
   TiledMapLoader? mapLoader;
 

@@ -159,14 +159,14 @@ abstract class TiledMapLoader {
         throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
       }
       if (isNew) {
-        layer = CellStaticAnimationLayer(cell);
+        layer = CellStaticAnimationLayer(cell, layerName);
       }
     } else {
       if (component is! SpriteComponent) {
         throw 'Component ${component.runtimeType} must be SpriteComponent!';
       }
       if (isNew) {
-        layer = CellStaticLayer(cell);
+        layer = CellStaticLayer(cell, layerName);
       }
     }
 
