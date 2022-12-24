@@ -59,35 +59,24 @@ class TileDataProvider {
 
 class CellBuilderContext {
   CellBuilderContext(this.tileDataProvider, this.position, this.size,
-      this.cellRect, this.spatialGrid)
-      : _originalPosition = position;
+      this.cellRect, this.spatialGrid, this.layerInfo);
 
   final SpatialGrid spatialGrid;
   final Rect cellRect;
   final Vector2 position;
-  final Vector2 _originalPosition;
   final Vector2 size;
   final TileDataProvider tileDataProvider;
+  int? priorityOverride;
+  final LayerInfo layerInfo;
 
   Cell? get cell => spatialGrid.cells[cellRect];
 
   bool remove = false;
+}
 
-  // @override
-  // int get hashCode =>
-  //     Object.hash(cellRect, _originalPosition, tileDataProvider.tile.type);
-  //
-  // @override
-  // bool operator ==(Object other) {
-  //   if (identical(this, other)) {
-  //     return true;
-  //   }
-  //   if (runtimeType != other.runtimeType) {
-  //     return false;
-  //   }
-  //   return other is CellBuilderContext &&
-  //       other.cellRect == cellRect &&
-  //       other.tileDataProvider.tile.type == tileDataProvider.tile.type &&
-  //       other._originalPosition == _originalPosition;
-  // }
+class LayerInfo {
+  LayerInfo(this.name, this.priority);
+
+  final String name;
+  final int priority;
 }

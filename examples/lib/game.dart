@@ -512,24 +512,14 @@ class DemoMapLoader extends TiledMapLoader {
   }
 
   Future<void> onBackgroundBuilder(CellBuilderContext context) async {
-    final component =
-        await TileComponent.fromProvider(context.tileDataProvider);
-    component.currentCell = context.cell;
-    component.position = context.position;
-    component.size = context.size;
-    if (component.sprite != null) {
-      addToLayer(
-          component: component,
-          layerName: 'static',
-          animated: false,
-          priority: -1);
-    } else if (component.animation != null) {
-      addToLayer(
-          component: component,
-          layerName: 'animated',
-          animated: true,
-          priority: -1);
+    var priority = -1;
+    if (context.layerInfo.name == 'bricks') {
+      priority = 100;
     }
+
+    context.priorityOverride = priority;
+
+    super.genericTileBuilder(context);
   }
 }
 //#endregion

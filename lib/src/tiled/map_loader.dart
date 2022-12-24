@@ -24,7 +24,7 @@ abstract class TiledMapLoader {
 
   TileBuilderFunction? get defaultBuilder;
 
-  TileBuilderFunction? get notFoundBuilder;
+  TileBuilderFunction? get notFoundBuilder => genericTileBuilder;
 
   int get basePriority => 0;
 
@@ -111,6 +111,33 @@ abstract class TiledMapLoader {
       for (final context in contextsToRemove) {
         contextList.remove(context);
       }
+    }
+  }
+
+  Future<void> genericTileBuilder(CellBuilderContext context) async {
+    final component =
+        await TileComponent.fromProvider(context.tileDataProvider);
+    component.currentCell = context.cell;
+    component.position = context.position;
+    component.size = context.size;
+    var priority = -100;
+    if (context.priorityOverride != null) {
+      priority = context.priorityOverride!;
+    } else {
+      priority = context.layerInfo.priority;
+    }
+    if (component.sprite != null) {
+      addToLayer(
+          component: component,
+          layerName: 'static-${context.layerInfo.name}',
+          animated: false,
+          priority: priority);
+    } else if (component.animation != null) {
+      addToLayer(
+          component: component,
+          layerName: 'animated-${context.layerInfo.name}',
+          animated: true,
+          priority: priority);
     }
   }
 
@@ -201,11 +228,13 @@ abstract class TiledMapLoader {
           tileMap.map.layers.whereType<TileLayer>().toList(growable: false);
     }
 
+    var layerPriority = 0;
     for (final tileLayer in tileLayers) {
       final tileData = tileLayer.data;
       if (tileData == null) {
         continue;
       }
+      final layerInfo = LayerInfo(tileLayer.name, layerPriority);
       int xOffset = 0;
       int yOffset = 0;
       for (var tileId in tileData) {
@@ -234,7 +263,7 @@ abstract class TiledMapLoader {
             rect = cell.rect;
           }
           final context = CellBuilderContext(
-              tileProcessor, position, size, rect, game.spatialGrid);
+              tileProcessor, position, size, rect, game.spatialGrid, layerInfo);
           var list = HashSet<CellBuilderContext>();
           list = _contextByCellRect[rect] ??= list;
           list.add(context);
@@ -245,6 +274,7 @@ abstract class TiledMapLoader {
           yOffset++;
         }
       }
+      layerPriority++;
     }
 
     if (clear) {
