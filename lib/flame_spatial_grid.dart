@@ -32,3 +32,4 @@ export 'src/tiled/map_loader.dart';
 export 'src/tiled/sprite_loader.dart';
 export 'src/tiled/tile_data_provider.dart';
 export 'src/tiled/world_data.dart';
+export 'src/tiled/world_loader.dart';

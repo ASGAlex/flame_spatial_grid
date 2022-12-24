@@ -11,7 +11,8 @@ enum _CellCreationContext { left, top, right, bottom }
 enum CellState { active, inactive, suspended }
 
 class Cell {
-  Cell({required this.spatialGrid, required this.rect}) {
+  Cell(
+      {required this.spatialGrid, required this.rect, bool suspended = false}) {
     center = rect.center.toVector2();
     spatialGrid.cells[rect] = this;
 
@@ -20,11 +21,16 @@ class Cell {
     rawTop = _checkCell(_CellCreationContext.top);
     rawBottom = _checkCell(_CellCreationContext.bottom);
 
-    state = spatialGrid.getCellState(this);
-    if (state == CellState.suspended) {
+    if (suspended) {
+      state = CellState.suspended;
       _scheduleToBuild = true;
     } else {
-      spatialGrid.cellsScheduledToBuild.add(this);
+      state = spatialGrid.getCellState(this);
+      if (state == CellState.suspended) {
+        _scheduleToBuild = true;
+      } else {
+        spatialGrid.cellsScheduledToBuild.add(this);
+      }
     }
   }
 

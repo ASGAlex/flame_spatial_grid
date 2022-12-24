@@ -72,9 +72,13 @@ all collisions are disabled.
         suspendedCellLifetime: const Duration(seconds: 5),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
-          DemoMapLoader(),
-          DemoMapLoader(Vector2(600, 0)),
-        ]);
+          // DemoMapLoader(),
+          // DemoMapLoader(Vector2(600, 0)),
+        ],
+        worldLoader: WorldLoader(fileName: 'example.world', mapLoader: {
+          'example': DemoMapLoader(),
+          'another_map': DemoMapLoader()
+        }));
     // await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 3;
@@ -187,7 +191,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-      position: Vector2(400, 156), size: Vector2.all(tileSize), priority: 10);
+      position: Vector2(0, 0), size: Vector2.all(tileSize), priority: 10);
 
   @override
   onLoad() async {
@@ -421,16 +425,10 @@ class DemoMapLoader extends TiledMapLoader {
   }
 
   @override
-  Vector2 initialPosition = Vector2(0, 0);
-
-  @override
   TileBuilderFunction? get defaultBuilder => null;
 
   @override
   Vector2 get destTileSize => Vector2.all(8);
-
-  @override
-  String get fileName => 'example.tmx';
 
   @override
   TileBuilderFunction? get notFoundBuilder => onBackgroundBuilder;

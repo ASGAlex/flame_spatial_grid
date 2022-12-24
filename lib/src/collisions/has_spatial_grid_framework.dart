@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/tiled/world_loader.dart';
 
 import 'collision_optimizer.dart';
 
@@ -51,14 +52,17 @@ mixin HasSpatialGridFramework on FlameGame
       required int unloadRadius,
       required HasGridSupport trackedComponent,
       required HasSpatialGridFramework game,
+      bool lazyLoad = true,
       double buildCellsPerUpdate = -1,
       double removeCellsPerUpdate = -1,
       Duration suspendedCellLifetime = Duration.zero,
       CellBuilderFunction? cellBuilder,
-      List<TiledMapLoader>? maps}) async {
+      List<TiledMapLoader>? maps,
+      WorldLoader? worldLoader}) async {
     this.rootComponent = rootComponent ?? this;
     _cellBuilder = cellBuilder;
     this.suspendedCellLifetime = suspendedCellLifetime;
+    this.worldLoader = worldLoader;
     if (maps != null) {
       this.maps = maps;
     }
@@ -67,6 +71,7 @@ mixin HasSpatialGridFramework on FlameGame
         trackedComponent: trackedComponent,
         activeRadius: activeRadius,
         unloadRadius: unloadRadius,
+        lazyLoad: lazyLoad,
         game: game);
 
     _collisionDetection = SpatialGridCollisionDetection(
@@ -81,11 +86,24 @@ mixin HasSpatialGridFramework on FlameGame
       await map.init(this);
       TiledMapLoader.loadedMaps.add(map);
     }
+    if (worldLoader != null) {
+      await worldLoader.init(game);
+    }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
     this.removeCellsPerUpdate = removeCellsPerUpdate;
+
+    if (lazyLoad) {
+      final currentCell = spatialGrid.trackedComponent.currentCell;
+      if (currentCell != null) {
+        spatialGrid.setActiveCell(currentCell);
+      } else {
+        throw "Lazy load initialization error!";
+      }
+    }
   }
 
   List<TiledMapLoader> maps = [];
+  WorldLoader? worldLoader;
   CellBuilderFunction? _cellBuilder;
   double buildCellsPerUpdate = -1;
   double _buildCellsNow = 0;
@@ -103,12 +121,19 @@ mixin HasSpatialGridFramework on FlameGame
   final _cellsForStateUpdate = <Cell>[];
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
-    if (maps.isEmpty) {
+    final worldMaps = worldLoader?.maps;
+    if (maps.isEmpty && (worldMaps == null || worldMaps.isEmpty)) {
       return _cellBuilder?.call(cell, rootComponent);
     }
 
     for (final map in maps) {
       await map.cellBuilder(cell, rootComponent);
+    }
+
+    if (worldMaps != null) {
+      for (final map in worldMaps) {
+        map.cellBuilder(cell, rootComponent);
+      }
     }
   }
 

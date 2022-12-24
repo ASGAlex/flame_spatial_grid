@@ -12,11 +12,13 @@ typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
 abstract class TiledMapLoader {
   static List<TiledMapLoader> loadedMaps = [];
 
-  String get fileName;
+  String fileName = '';
 
   Vector2 get destTileSize;
 
-  Vector2 get initialPosition;
+  Vector2 initialPosition = Vector2.zero();
+
+  bool lazyLoad = true;
 
   Map<String, TileBuilderFunction>? get tileBuilders;
 
@@ -223,12 +225,18 @@ abstract class TiledMapLoader {
               tileMap.map.tileWidth.toDouble());
           final tileProcessor = TileDataProvider(tileData, tileset);
 
-          final cell =
-              game.spatialGrid.createNewCellAtPosition(position + size / 2);
+          Rect rect;
+          if (lazyLoad) {
+            rect = game.spatialGrid.getCellRectAtPosition(position);
+          } else {
+            final cell =
+                game.spatialGrid.createNewCellAtPosition(position + size / 2);
+            rect = cell.rect;
+          }
           final context = CellBuilderContext(
-              tileProcessor, position, size, cell.rect, game.spatialGrid);
+              tileProcessor, position, size, rect, game.spatialGrid);
           var list = HashSet<CellBuilderContext>();
-          list = _contextByCellRect[cell.rect] ??= list;
+          list = _contextByCellRect[rect] ??= list;
           list.add(context);
         }
         xOffset++;

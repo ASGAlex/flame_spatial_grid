@@ -13,18 +13,22 @@ class SpatialGrid {
       {required this.blockSize,
       required this.trackedComponent,
       required this.game,
+      bool lazyLoad = true,
       int? activeRadius,
       int? unloadRadius}) {
     this.activeRadius = (activeRadius ?? 1);
     this.unloadRadius = (unloadRadius ?? 10);
     final cell = Cell(
         spatialGrid: this,
+        suspended: lazyLoad,
         rect: Rect.fromCenter(
             center: trackedComponent.position.toOffset(),
             width: blockSize.width,
             height: blockSize.height));
 
-    setActiveCell(cell);
+    if (!lazyLoad) {
+      setActiveCell(cell);
+    }
     trackedComponent.currentCell = cell;
   }
 
@@ -267,7 +271,7 @@ class SpatialGrid {
     return nearestCell;
   }
 
-  Cell createNewCellAtPosition(Vector2 position) {
+  Rect getCellRectAtPosition(Vector2 position) {
     final nearest = findNearestCellToPosition(position);
     if (nearest == null) {
       throw "There are no cells probably? Position: $position";
@@ -301,6 +305,12 @@ class SpatialGrid {
         center: startPoint.toOffset(),
         width: blockSize.width,
         height: blockSize.height);
+
+    return rect;
+  }
+
+  Cell createNewCellAtPosition(Vector2 position) {
+    final rect = getCellRectAtPosition(position);
 
     final existingCell = cells[rect];
     if (existingCell != null) {
