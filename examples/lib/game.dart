@@ -72,8 +72,7 @@ all collisions are disabled.
         suspendedCellLifetime: const Duration(seconds: 5),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
-          // DemoMapLoader(),
-          // DemoMapLoader(Vector2(600, 0)),
+          DemoMapLoader(Vector2(600, 0)),
         ],
         worldLoader: WorldLoader(fileName: 'example.world', mapLoader: {
           'example': DemoMapLoader(),
@@ -422,6 +421,7 @@ class DemoMapLoader extends TiledMapLoader {
       this.initialPosition = initialPosition;
     }
     preloadTileSets = true;
+    fileName = 'example.tmx';
   }
 
   @override
@@ -464,7 +464,7 @@ class DemoMapLoader extends TiledMapLoader {
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
-    return;
+
     if (isCellOutsideOfMap(cell)) {
       final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
       final waterAnimation =
