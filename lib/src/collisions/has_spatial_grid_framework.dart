@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
@@ -31,6 +32,15 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
+  bool _init = false;
+
+  void gameInitDone() {
+    _init = true;
+    if (trackWindowSize) {
+      setRadiusByWindowDimensions();
+    }
+  }
+
   /// Initialise .
   ///
   /// - [minimumDistance] (optional) - specify minimum distance between objects
@@ -48,8 +58,9 @@ mixin HasSpatialGridFramework on FlameGame
       {bool? debug,
       Component? rootComponent,
       required double blockSize,
-      required int activeRadius,
-      required int unloadRadius,
+      Size? activeRadius,
+      Size? unloadRadius,
+      bool trackWindowSize = true,
       required HasGridSupport trackedComponent,
       required HasSpatialGridFramework game,
       bool lazyLoad = true,
@@ -63,6 +74,7 @@ mixin HasSpatialGridFramework on FlameGame
     _cellBuilder = cellBuilder;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.worldLoader = worldLoader;
+    this.trackWindowSize = trackWindowSize;
     if (maps != null) {
       this.maps = maps;
     }
@@ -73,6 +85,9 @@ mixin HasSpatialGridFramework on FlameGame
         unloadRadius: unloadRadius,
         lazyLoad: lazyLoad,
         game: game);
+    if (trackWindowSize) {
+      setRadiusByWindowDimensions();
+    }
 
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,
@@ -102,6 +117,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
+  var trackWindowSize = true;
   List<TiledMapLoader> maps = [];
   WorldLoader? worldLoader;
   CellBuilderFunction? _cellBuilder;
@@ -150,6 +166,15 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   bool get isSpatialGridDebugEnabled => _isSpatialGridDebugEnabled;
+
+  @override
+  void onGameResize(Vector2 gameSize) {
+    super.onGameResize(gameSize);
+    if (_init && trackWindowSize) {
+      setRadiusByWindowDimensions();
+      spatialGrid.updateCellsStateByRadius();
+    }
+  }
 
   @override
   void onRemove() {
@@ -269,6 +294,24 @@ mixin HasSpatialGridFramework on FlameGame
       }
       cellsToRemove.clear();
     }
+  }
+
+  void setRadiusByWindowDimensions() {
+    try {
+      final camera = children.whereType<CameraComponent>().single;
+
+      final visibleSize = camera.viewport.size / camera.viewfinder.zoom;
+      final cellsXRadius =
+          (visibleSize.x / spatialGrid.blockSize.width / 2).ceil().toDouble();
+      final cellsYRadius =
+          (visibleSize.y / spatialGrid.blockSize.height / 2).ceil().toDouble();
+      spatialGrid.activeRadius = Size(cellsXRadius, cellsYRadius);
+    } catch (e) {}
+  }
+
+  void onAfterZoom() {
+    setRadiusByWindowDimensions();
+    spatialGrid.updateCellsStateByRadius();
   }
 
   @override

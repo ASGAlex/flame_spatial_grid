@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -14,10 +15,11 @@ class SpatialGrid {
       required this.trackedComponent,
       required this.game,
       bool lazyLoad = true,
-      int? activeRadius,
-      int? unloadRadius}) {
-    this.activeRadius = (activeRadius ?? 1);
-    this.unloadRadius = (unloadRadius ?? 10);
+      Size? activeRadius,
+      required Size? unloadRadius}) {
+    this.activeRadius = (activeRadius ?? const Size(2, 2));
+    this.unloadRadius = (unloadRadius ?? const Size(5, 5));
+
     final cell = Cell(
         spatialGrid: this,
         suspended: lazyLoad,
@@ -32,7 +34,6 @@ class SpatialGrid {
     trackedComponent.currentCell = cell;
   }
 
-  @override
   dispose() {
     for (final cell in cells.values) {
       cell.remove();
@@ -51,11 +52,15 @@ class SpatialGrid {
   final Size blockSize;
   final HasGridSupport trackedComponent;
 
-  var activeRadius = 1;
-  var unloadRadius = 3;
+  Size activeRadius = const Size(2, 2);
+  Size unloadRadius = const Size(5, 5);
 
   void setActiveCell(Cell newActiveCell) {
     _currentCell = newActiveCell;
+    updateCellsStateByRadius();
+  }
+
+  void updateCellsStateByRadius() {
     for (final cell in cells.values) {
       cell.tmpState = CellState.suspended;
     }
@@ -69,7 +74,7 @@ class SpatialGrid {
     for (final cell in cellsToActivate) {
       cell.tmpState = CellState.active;
     }
-    newActiveCell.tmpState = CellState.active;
+    _currentCell?.tmpState = CellState.active;
 
     for (final cell in cells.values) {
       cell.state = cell.tmpState;
@@ -78,9 +83,10 @@ class SpatialGrid {
 
   CellState getCellState(Cell cell) {
     final distance = _cellDistanceFromActiveCell(cell);
-    if (distance.x <= activeRadius && distance.y <= activeRadius) {
+    if (distance.x <= activeRadius.width && distance.y <= activeRadius.height) {
       return CellState.active;
-    } else if (distance.x < unloadRadius && distance.y < unloadRadius) {
+    } else if (distance.x < unloadRadius.width &&
+        distance.y < unloadRadius.height) {
       return CellState.inactive;
     }
     return CellState.suspended;
@@ -93,13 +99,13 @@ class SpatialGrid {
     return Vector2(diff.x / blockSize.width, diff.y / blockSize.height);
   }
 
-  Set<Cell> _findCellsInRadius(int radius, {bool create = false}) {
+  Set<Cell> _findCellsInRadius(Size radius, {bool create = false}) {
     final current = _currentCell;
     if (current == null) throw 'current cell cant be null!';
 
     Set<Cell> cells = {};
     var tmpDirection = current;
-    for (var leftCounter = 1; leftCounter <= radius; leftCounter++) {
+    for (var leftCounter = 1; leftCounter <= radius.width; leftCounter++) {
       if (create) {
         tmpDirection = tmpDirection.left;
       } else {
@@ -110,7 +116,9 @@ class SpatialGrid {
       cells.add(tmpDirection);
 
       var topDirection = tmpDirection;
-      for (var topCounter = 1; topCounter <= leftCounter; topCounter++) {
+      for (var topCounter = 1;
+          topCounter <= min(leftCounter, radius.height);
+          topCounter++) {
         if (create) {
           topDirection = topDirection.top;
         } else {
@@ -123,7 +131,7 @@ class SpatialGrid {
 
       var bottomDirection = tmpDirection;
       for (var bottomCounter = 1;
-          bottomCounter <= leftCounter;
+          bottomCounter <= min(leftCounter, radius.height);
           bottomCounter++) {
         if (create) {
           bottomDirection = bottomDirection.bottom;
@@ -137,7 +145,7 @@ class SpatialGrid {
     }
 
     tmpDirection = current;
-    for (var rightCounter = 1; rightCounter <= radius; rightCounter++) {
+    for (var rightCounter = 1; rightCounter <= radius.width; rightCounter++) {
       if (create) {
         tmpDirection = tmpDirection.right;
       } else {
@@ -148,7 +156,9 @@ class SpatialGrid {
       cells.add(tmpDirection);
 
       var topDirection = tmpDirection;
-      for (var topCounter = 1; topCounter <= rightCounter; topCounter++) {
+      for (var topCounter = 1;
+          topCounter <= min(rightCounter, radius.height);
+          topCounter++) {
         if (create) {
           topDirection = topDirection.top;
         } else {
@@ -161,7 +171,7 @@ class SpatialGrid {
 
       var bottomDirection = tmpDirection;
       for (var bottomCounter = 1;
-          bottomCounter <= rightCounter;
+          bottomCounter <= min(rightCounter, radius.height);
           bottomCounter++) {
         if (create) {
           bottomDirection = bottomDirection.bottom;
@@ -175,7 +185,7 @@ class SpatialGrid {
     }
 
     tmpDirection = current;
-    for (var topCounter = 1; topCounter <= radius; topCounter++) {
+    for (var topCounter = 1; topCounter <= radius.height; topCounter++) {
       if (create) {
         tmpDirection = tmpDirection.top;
       } else {
@@ -186,43 +196,9 @@ class SpatialGrid {
       cells.add(tmpDirection);
 
       var leftDirection = tmpDirection;
-      for (var leftCounter = 1; leftCounter <= topCounter; leftCounter++) {
-        if (create) {
-          leftDirection = leftDirection.left;
-        } else {
-          final rawLeft = leftDirection.leftChecked;
-          if (rawLeft == null) break;
-          leftDirection = rawLeft;
-        }
-        cells.add(leftDirection);
-      }
-
-      var rightDirection = tmpDirection;
-      for (var rightCounter = 1; rightCounter <= topCounter; rightCounter++) {
-        if (create) {
-          rightDirection = rightDirection.right;
-        } else {
-          final rawRight = rightDirection.rightChecked;
-          if (rawRight == null) break;
-          rightDirection = rawRight;
-        }
-        cells.add(rightDirection);
-      }
-    }
-
-    tmpDirection = current;
-    for (var bottomCounter = 1; bottomCounter <= radius; bottomCounter++) {
-      if (create) {
-        tmpDirection = tmpDirection.bottom;
-      } else {
-        final rawBottom = tmpDirection.bottomChecked;
-        if (rawBottom == null) break;
-        tmpDirection = rawBottom;
-      }
-      cells.add(tmpDirection);
-
-      var leftDirection = tmpDirection;
-      for (var leftCounter = 1; leftCounter <= bottomCounter; leftCounter++) {
+      for (var leftCounter = 1;
+          leftCounter <= min(topCounter, radius.width);
+          leftCounter++) {
         if (create) {
           leftDirection = leftDirection.left;
         } else {
@@ -235,7 +211,49 @@ class SpatialGrid {
 
       var rightDirection = tmpDirection;
       for (var rightCounter = 1;
-          rightCounter <= bottomCounter;
+          rightCounter <= min(topCounter, radius.width);
+          rightCounter++) {
+        if (create) {
+          rightDirection = rightDirection.right;
+        } else {
+          final rawRight = rightDirection.rightChecked;
+          if (rawRight == null) break;
+          rightDirection = rawRight;
+        }
+        cells.add(rightDirection);
+      }
+    }
+
+    tmpDirection = current;
+    for (var bottomCounter = 1;
+        bottomCounter <= radius.height;
+        bottomCounter++) {
+      if (create) {
+        tmpDirection = tmpDirection.bottom;
+      } else {
+        final rawBottom = tmpDirection.bottomChecked;
+        if (rawBottom == null) break;
+        tmpDirection = rawBottom;
+      }
+      cells.add(tmpDirection);
+
+      var leftDirection = tmpDirection;
+      for (var leftCounter = 1;
+          leftCounter <= min(leftCounter, radius.width);
+          leftCounter++) {
+        if (create) {
+          leftDirection = leftDirection.left;
+        } else {
+          final rawLeft = leftDirection.leftChecked;
+          if (rawLeft == null) break;
+          leftDirection = rawLeft;
+        }
+        cells.add(leftDirection);
+      }
+
+      var rightDirection = tmpDirection;
+      for (var rightCounter = 1;
+          rightCounter <= min(rightCounter, radius.width);
           rightCounter++) {
         if (create) {
           rightDirection = rightDirection.right;

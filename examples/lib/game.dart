@@ -55,21 +55,19 @@ all collisions are disabled.
   Future<void> onLoad() async {
     super.onLoad();
 
-    final worldData = await WorldData.fromFile('assets/tiles/example.world');
-
     player = world.player;
     const blockSize = 100.0;
     await initializeSpatialGrid(
         debug: false,
-        activeRadius: 2,
-        unloadRadius: 3,
+        activeRadius: const Size(3, 2),
+        unloadRadius: const Size(10, 10),
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
         game: this,
         buildCellsPerUpdate: 1,
         removeCellsPerUpdate: 0.25,
-        suspendedCellLifetime: const Duration(seconds: 5),
+        suspendedCellLifetime: const Duration(minutes: 1),
         // cellBuilder: demoMapLoader.cellBuilder,
         maps: [
           DemoMapLoader(Vector2(600, 0)),
@@ -86,6 +84,7 @@ all collisions are disabled.
     cameraComponent.follow(player);
 
     add(FpsTextComponent());
+    gameInitDone();
   }
 
   final elapsedMicroseconds = <double>[];
@@ -168,6 +167,9 @@ all collisions are disabled.
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
+    if (!isSpatialGridDebugEnabled) {
+      onAfterZoom();
+    }
   }
 
   @override
@@ -175,6 +177,9 @@ all collisions are disabled.
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
+    if (!isSpatialGridDebugEnabled) {
+      onAfterZoom();
+    }
   }
 
   @override
