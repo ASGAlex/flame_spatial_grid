@@ -233,6 +233,7 @@ mixin HasSpatialGridFramework on FlameGame
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = spatialGrid.cellsScheduledToBuild.first;
         spatialGrid.cellsScheduledToBuild.remove(cell);
+        if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
         _cellsForStateUpdate.add(cell);
       }
@@ -240,9 +241,11 @@ mixin HasSpatialGridFramework on FlameGame
       _buildCellsNow -= cellsToProcess;
     } else {
       for (final cell in spatialGrid.cellsScheduledToBuild) {
+        if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
         _cellsForStateUpdate.add(cell);
       }
+      spatialGrid.cellsScheduledToBuild.clear();
     }
   }
 

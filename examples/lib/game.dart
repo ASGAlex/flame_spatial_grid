@@ -166,7 +166,7 @@ all collisions are disabled.
   void onScroll(PointerScrollInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 5.0);
     if (!isSpatialGridDebugEnabled) {
       onAfterZoom();
     }
@@ -176,7 +176,7 @@ all collisions are disabled.
   void onScaleUpdate(ScaleUpdateInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.05, 5.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 5.0);
     if (!isSpatialGridDebugEnabled) {
       onAfterZoom();
     }

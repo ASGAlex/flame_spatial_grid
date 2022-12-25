@@ -113,7 +113,7 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void renderTree(Canvas canvas) {
-    if (isVisible) {
+    if (isVisible && currentCell?.state == CellState.active) {
       decorator.applyChain(render, canvas);
     }
   }

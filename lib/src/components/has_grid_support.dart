@@ -135,7 +135,7 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void renderTree(Canvas canvas) {
-    if (isVisible) {
+    if (isVisible && currentCell?.state == CellState.active) {
       super.renderTree(canvas);
     }
     if (debugMode) {
