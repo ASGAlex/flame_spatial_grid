@@ -34,7 +34,7 @@ abstract class CellLayer extends PositionComponent
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
   @protected
-  void compileToSingleLayer();
+  Future compileToSingleLayer();
 
   final String name;
 
@@ -54,8 +54,8 @@ abstract class CellLayer extends PositionComponent
     return Size(width, height);
   }
 
-  @override
-  Future<void>? add(Component component) {
+  @protected
+  void updateCorrections(Component component) {
     if (component is PositionComponent) {
       if (component.position.x < correctionTopLeft.x) {
         correctionTopLeft.x = component.position.x;
@@ -72,6 +72,16 @@ abstract class CellLayer extends PositionComponent
         correctionBottomRight.y = bottomRightPosition.y;
       }
     }
+  }
+
+  void resetCorrections() {
+    correctionTopLeft.setZero();
+    correctionBottomRight.setZero();
+  }
+
+  @override
+  Future<void>? add(Component component) {
+    updateCorrections(component);
 
     if (component is HasGridSupport) {
       component.transform.addListener(onChildrenUpdate);

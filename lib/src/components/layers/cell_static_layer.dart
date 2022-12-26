@@ -2,14 +2,17 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
+import 'package:flame/palette.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
   CellStaticLayer(super.cell, [super.name]) {
     layerPicture = _getEmptyPicture();
+    paint.isAntiAlias = false;
   }
 
+  final paint = Paint();
   Picture? layerPicture;
   Image? layerImage;
 
@@ -18,13 +21,15 @@ class CellStaticLayer extends CellLayer {
   Picture _getEmptyPicture() {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
+    final transparentPaint = BasicPalette.transparent.paint();
+    canvas.drawPaint(transparentPaint);
     return recorder.endRecording();
   }
 
   @override
   void render(Canvas canvas) {
     if (renderAsImage && layerImage != null) {
-      canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), Paint());
+      canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
     } else {
       if (layerPicture != null) {
         canvas.drawPicture(layerPicture!);
@@ -33,7 +38,7 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
-  void compileToSingleLayer() async {
+  Future compileToSingleLayer() async {
     final cell = currentCell;
     if (cell == null) return;
 

@@ -24,6 +24,7 @@ export 'src/components/has_grid_support.dart';
 export 'src/components/layers/cell_layer.dart';
 export 'src/components/layers/cell_static_animation_layer.dart';
 export 'src/components/layers/cell_static_layer.dart';
+export 'src/components/layers/cell_trail_layer.dart';
 export 'src/components/on_demand_actions.dart';
 export 'src/components/sprite_animation_global.dart';
 export 'src/components/tile_component.dart';

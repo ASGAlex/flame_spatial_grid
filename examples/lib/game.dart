@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -148,15 +149,23 @@ all collisions are disabled.
         teleportMode = !teleportMode;
       }
     }
-    if (_fireBullet && !_playerDisplacement.isZero()) {
-      final bullet = Bullet(
-          position: player.position,
-          displacement: _playerDisplacement * 30,
-          killWater: _killWater);
-      bullet.currentCell = player.currentCell;
-      world.add(bullet);
+    if (!_playerDisplacement.isZero()) {
+      final step = PlayerStep(player);
+      final stepCell = step.currentCell;
+      if (stepCell != null) {
+        final layer = CellTrailLayer.getLayerForCell(stepCell);
+        layer?.add(step);
+      }
+      if (_fireBullet) {
+        final bullet = Bullet(
+            position: player.position,
+            displacement: _playerDisplacement * 30,
+            killWater: _killWater);
+        bullet.currentCell = player.currentCell;
+        world.add(bullet);
+        _fireBullet = false;
+      }
       _playerDisplacement.setZero();
-      _fireBullet = false;
     }
 
     return KeyEventResult.handled;
@@ -216,7 +225,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     });
 
     final list = componentsAtPoint(tapPosition);
-    for (var component in list) {
+    for (final component in list) {
       if (component is! HasGridSupport) continue;
       print(component.runtimeType);
     }
@@ -285,6 +294,29 @@ class Player extends SpriteComponent
     canMoveTop = true;
     canMoveBottom = true;
     super.onCollisionEnd(other);
+  }
+}
+
+class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
+  PlayerStep(Player player) {
+    paint.color = Colors.white38;
+    // paint.style = PaintingStyle.fill;
+    paint.strokeWidth = 1;
+    paint.isAntiAlias = false;
+    final playerCell = player.currentCell;
+    if (playerCell != null) {
+      position = player.position +
+          player.size -
+          Vector2(player.size.x / 2, 0) -
+          playerCell.rect.topLeft.toVector2();
+      currentCell = playerCell;
+    }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    canvas.drawPoints(
+        PointMode.points, const [Offset(1, 0), Offset(4, 2)], paint);
   }
 }
 
@@ -430,7 +462,7 @@ class DemoMapLoader extends TiledMapLoader {
   }
 
   @override
-  TileBuilderFunction? get defaultBuilder => null;
+  TileBuilderFunction? get defaultBuilder => everyCellBuilder;
 
   @override
   Vector2 get destTileSize => Vector2.all(8);
@@ -469,6 +501,13 @@ class DemoMapLoader extends TiledMapLoader {
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     await super.cellBuilder(cell, rootComponent);
+
+    final existing = CellTrailLayer.getLayerForCell(cell);
+    if (existing == null) {
+      final trailLayer = CellTrailLayer(cell,
+          fadeOutStep: 0.9, fadeOutTimeout: const Duration(milliseconds: 500));
+      rootComponent.add(trailLayer);
+    }
 
     if (isCellOutsideOfMap(cell)) {
       final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
@@ -515,6 +554,8 @@ class DemoMapLoader extends TiledMapLoader {
       rootComponent.add(animationLayer);
     }
   }
+
+  Future<void> everyCellBuilder(CellBuilderContext context) async {}
 
   Future<void> onBackgroundBuilder(CellBuilderContext context) async {
     var priority = -1;
