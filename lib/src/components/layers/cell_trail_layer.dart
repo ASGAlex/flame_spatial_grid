@@ -13,7 +13,10 @@ class CellTrailLayer extends CellStaticLayer {
   static CellTrailLayer? getLayerForCell(Cell cell) => _instances[cell];
 
   CellTrailLayer(super.cell,
-      {double fadeOutOpacity = 1, this.fadeOutTimeout = Duration.zero}) {
+      {super.name,
+      double fadeOutOpacity = 1,
+      this.fadeOutTimeout = Duration.zero,
+      this.operationsLimitToSavePicture = 50}) {
     _fadeOutDecorator.opacity = fadeOutOpacity;
   }
 
@@ -28,10 +31,10 @@ class CellTrailLayer extends CellStaticLayer {
   Duration fadeOutTimeout;
   double _fadeOutDt = 0;
 
-  double _operationsLimitToSavePicture = 50;
+  double operationsLimitToSavePicture;
   double _operationsCount = 0;
 
-  bool _imageRrenderInProgress = false;
+  bool _imageRenderInProgress = false;
 
   bool get doFadeOut => _fadeOutDt * 1000000 >= fadeOutTimeout.inMicroseconds;
 
@@ -74,9 +77,9 @@ class CellTrailLayer extends CellStaticLayer {
     newComponents.clear();
     _operationsCount++;
     layerPicture = recorder.endRecording();
-    if (_operationsCount >= _operationsLimitToSavePicture &&
-        _imageRrenderInProgress == false) {
-      _imageRrenderInProgress = true;
+    if (_operationsCount >= operationsLimitToSavePicture &&
+        _imageRenderInProgress == false) {
+      _imageRenderInProgress = true;
       layerPicture
           ?.toImage(layerCalculatedSize.width.toInt(),
               layerCalculatedSize.height.toInt())
@@ -88,10 +91,10 @@ class CellTrailLayer extends CellStaticLayer {
         print('save: $_operationsCount');
         _operationsCount = 0;
 
-        _imageRrenderInProgress = false;
+        _imageRenderInProgress = false;
       });
     } else {
-      _imageRrenderInProgress = false;
+      _imageRenderInProgress = false;
     }
   }
 

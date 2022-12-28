@@ -9,6 +9,8 @@ import 'package:meta/meta.dart';
 
 typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
 
+enum MapLayerType { static, animated, trail }
+
 abstract class TiledMapLoader {
   static List<TiledMapLoader> loadedMaps = [];
 
@@ -130,20 +132,20 @@ abstract class TiledMapLoader {
       addToLayer(
           component: component,
           layerName: 'static-${context.layerInfo.name}',
-          animated: false,
+          layerType: MapLayerType.static,
           priority: priority);
     } else if (component.animation != null) {
       addToLayer(
           component: component,
           layerName: 'animated-${context.layerInfo.name}',
-          animated: true,
+          layerType: MapLayerType.animated,
           priority: priority);
     }
   }
 
   void addToLayer({
     required HasGridSupport component,
-    required bool animated,
+    required MapLayerType layerType,
     required String layerName,
     bool optimizeCollisions = true,
     int priority = 1,
@@ -154,20 +156,28 @@ abstract class TiledMapLoader {
     }
     CellLayer? layer = layers[cell]?[layerName];
     final isNew = layer == null;
-    if (animated) {
-      if (component is! SpriteAnimationComponent) {
-        throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
-      }
-      if (isNew) {
-        layer = CellStaticAnimationLayer(cell, layerName);
-      }
-    } else {
-      if (component is! SpriteComponent) {
-        throw 'Component ${component.runtimeType} must be SpriteComponent!';
-      }
-      if (isNew) {
-        layer = CellStaticLayer(cell, layerName);
-      }
+    switch (layerType) {
+      case MapLayerType.static:
+        if (component is! SpriteComponent) {
+          throw 'Component ${component.runtimeType} must be SpriteComponent!';
+        }
+        if (isNew) {
+          layer = CellStaticLayer(cell, name: layerName);
+        }
+        break;
+      case MapLayerType.animated:
+        if (component is! SpriteAnimationComponent) {
+          throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
+        }
+        if (isNew) {
+          layer = CellStaticAnimationLayer(cell, name: layerName);
+        }
+        break;
+      case MapLayerType.trail:
+        if (isNew) {
+          layer = CellTrailLayer(cell, name: layerName);
+        }
+        break;
     }
 
     component.position = component.position - cell.rect.topLeft.toVector2();

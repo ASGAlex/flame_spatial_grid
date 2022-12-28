@@ -12,7 +12,7 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell, [this.name = ''])
+  CellLayer(Cell cell, {this.name = ''})
       : super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {

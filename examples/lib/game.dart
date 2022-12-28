@@ -481,7 +481,10 @@ class DemoMapLoader extends TiledMapLoader {
     brick.currentCell = context.cell;
     // rootComponent.add(brick);
     addToLayer(
-        component: brick, animated: false, layerName: 'Brick', priority: 2);
+        component: brick,
+        layerType: MapLayerType.static,
+        layerName: 'Brick',
+        priority: 2);
   }
 
   Future<void> onBuildWater(CellBuilderContext context) async {
@@ -493,7 +496,10 @@ class DemoMapLoader extends TiledMapLoader {
         context: context);
     water.currentCell = context.cell;
     addToLayer(
-        component: water, animated: true, layerName: 'Water', priority: 1);
+        component: water,
+        layerType: MapLayerType.animated,
+        layerName: 'Water',
+        priority: 1);
   }
 
   static const blockSize = 100.0;
@@ -532,7 +538,7 @@ class DemoMapLoader extends TiledMapLoader {
 
       rootComponent.add(staticLayer);
 
-      final animationLayer = CellStaticAnimationLayer(cell, 'Water');
+      final animationLayer = CellStaticAnimationLayer(cell, name: 'Water');
       animationLayer.priority = 1;
 
       for (var i = 0; i < 200; i++) {

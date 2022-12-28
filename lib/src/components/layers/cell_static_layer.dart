@@ -7,7 +7,7 @@ import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
-  CellStaticLayer(super.cell, [super.name]) {
+  CellStaticLayer(super.cell, {super.name}) {
     layerPicture = _getEmptyPicture();
     paint.isAntiAlias = false;
   }
