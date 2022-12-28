@@ -65,16 +65,15 @@ all collisions are disabled.
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
-        game: this,
         buildCellsPerUpdate: 1,
         removeCellsPerUpdate: 0.25,
         suspendedCellLifetime: const Duration(minutes: 1),
-        cellBuilderNoMap: DemoMapLoader.noMapCellBuilder,
+        cellBuilderNoMap: noMapCellBuilder,
         maps: [
           DemoMapLoader(Vector2(600, 0)),
         ],
         worldLoader: WorldLoader(fileName: 'example.world', mapLoader: {
-          'example': DemoMapLoader()..isDefaultMapInstance = true,
+          'example': DemoMapLoader(),
           'another_map': DemoMapLoader()
         }));
     // await demoMapLoader.init(this);
@@ -153,8 +152,11 @@ all collisions are disabled.
       final step = PlayerStep(player);
       final stepCell = step.currentCell;
       if (stepCell != null) {
-        final layer = CellTrailLayer.getLayerForCell(stepCell);
-        layer?.add(step);
+        layersManager.addComponent(
+            component: step,
+            layerType: MapLayerType.trail,
+            layerName: 'trail',
+            optimizeCollisions: false);
       }
       if (_fireBullet) {
         final bullet = Bullet(
@@ -198,6 +200,52 @@ all collisions are disabled.
     // sw.stop();
     // print(sw.elapsedMicroseconds);
   }
+
+  Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
+    final map = TiledMapLoader.loadedMaps.whereType<DemoMapLoader>().first;
+
+    final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
+    final waterAnimation =
+        map.getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+
+    for (var i = 0; i < 200; i++) {
+      final random = Random();
+      final diffX = random.nextInt((map.blockSize / 2 - 25).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final diffY = random.nextInt((map.blockSize / 2 - 25).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final brick = Brick(position: position, sprite: spriteBrick);
+      brick.currentCell = cell;
+
+      layersManager.addComponent(
+          component: brick,
+          layerType: MapLayerType.static,
+          layerName: 'Brick',
+          absolutePosition: false,
+          priority: 2);
+    }
+
+    for (var i = 0; i < 200; i++) {
+      final random = Random();
+      final diffX = random.nextInt((map.blockSize / 2 - 20).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final diffY = random.nextInt((map.blockSize / 2 - 20).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final water = Water(
+        position: position,
+        animation: waterAnimation,
+      );
+      water.currentCell = cell;
+      layersManager.addComponent(
+          component: water,
+          layerType: MapLayerType.animated,
+          layerName: 'Water',
+          absolutePosition: false,
+          priority: 1);
+    }
+  }
 }
 
 class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
@@ -224,7 +272,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       }
     });
 
-    final list = componentsAtPoint(tapPosition);
+    final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {
       if (component is! HasGridSupport) continue;
       print(component.runtimeType);
@@ -304,10 +352,7 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
     paint.isAntiAlias = false;
     final playerCell = player.currentCell;
     if (playerCell != null) {
-      position = player.position +
-          player.size -
-          Vector2(player.size.x / 2, 0) -
-          playerCell.rect.topLeft.toVector2();
+      position = player.position + player.size - Vector2(player.size.x / 2, 0);
       size = Vector2(5, 3);
       currentCell = playerCell;
     }
@@ -462,7 +507,7 @@ class DemoMapLoader extends TiledMapLoader {
   }
 
   @override
-  TileBuilderFunction? get defaultBuilder => everyCellBuilder;
+  TileBuilderFunction? get cellPostBuilder => null;
 
   @override
   Vector2 get destTileSize => Vector2.all(8);
@@ -479,8 +524,7 @@ class DemoMapLoader extends TiledMapLoader {
     final brick = Brick(
         position: context.position, sprite: spriteBrick, context: context);
     brick.currentCell = context.cell;
-    // rootComponent.add(brick);
-    addToLayer(
+    game.layersManager.addComponent(
         component: brick,
         layerType: MapLayerType.static,
         layerName: 'Brick',
@@ -495,77 +539,27 @@ class DemoMapLoader extends TiledMapLoader {
         animation: waterAnimation,
         context: context);
     water.currentCell = context.cell;
-    addToLayer(
+    game.layersManager.addComponent(
         component: water,
         layerType: MapLayerType.animated,
         layerName: 'Water',
         priority: 1);
   }
 
-  static const blockSize = 100.0;
-
-  static void _addTrailLayer(Cell cell, Component rootComponent) {
-    final trailLayer = CellTrailLayer(cell,
-        fadeOutOpacity: 0.8, fadeOutTimeout: const Duration(milliseconds: 250));
-    TiledMapLoader.addLayer(trailLayer, cell);
-  }
+  final blockSize = 100.0;
 
   @override
   Future<void> cellBuilder(Cell cell, Component rootComponent) {
-    _addTrailLayer(cell, rootComponent);
+    if (game.layersManager.getLayer(name: 'trail', cell: cell) == null) {
+      final trailLayer = CellTrailLayer(cell,
+          fadeOutOpacity: 0.8,
+          fadeOutTimeout: const Duration(milliseconds: 250),
+          name: 'trail');
+      trailLayer.optimizeCollisions = false;
+      game.layersManager.addLayer(trailLayer);
+    }
     return super.cellBuilder(cell, rootComponent);
   }
-
-  static Future<void> noMapCellBuilder(
-      Cell cell, Component rootComponent) async {
-    final map = TiledMapLoader.defaultMap;
-    if (map == null) return;
-
-    _addTrailLayer(cell, rootComponent);
-
-    final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
-    final waterAnimation =
-        map.getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
-    final staticLayer = CellStaticLayer(cell);
-    staticLayer.optimizeCollisions = true;
-    staticLayer.priority = 2;
-    for (var i = 0; i < 200; i++) {
-      final random = Random();
-      final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-      final brick = Brick(position: position, sprite: spriteBrick);
-      brick.currentCell = cell;
-      staticLayer.add(brick);
-    }
-
-    rootComponent.add(staticLayer);
-
-    final animationLayer = CellStaticAnimationLayer(cell, name: 'Water');
-    animationLayer.priority = 1;
-
-    for (var i = 0; i < 200; i++) {
-      final random = Random();
-      final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-      final water = Water(
-        position: position,
-        animation: waterAnimation,
-      );
-      water.currentCell = cell;
-      animationLayer.add(water);
-    }
-
-    animationLayer.optimizeCollisions = true;
-    rootComponent.add(animationLayer);
-  }
-
-  Future<void> everyCellBuilder(CellBuilderContext context) async {}
 
   Future<void> onBackgroundBuilder(CellBuilderContext context) async {
     var priority = -1;

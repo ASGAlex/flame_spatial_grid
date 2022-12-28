@@ -1,4 +1,3 @@
-import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -8,9 +7,6 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellTrailLayer extends CellStaticLayer {
   final newComponents = <Component>[];
-  static final _instances = HashMap<Cell, CellTrailLayer>();
-
-  static CellTrailLayer? getLayerForCell(Cell cell) => _instances[cell];
 
   CellTrailLayer(super.cell,
       {super.name,
@@ -108,21 +104,6 @@ class CellTrailLayer extends CellStaticLayer {
   void update(double dt) {
     _fadeOutDt += dt;
     super.update(dt);
-  }
-
-  @override
-  void onMount() {
-    final cell = currentCell;
-    if (cell != null) {
-      _instances[cell] = this;
-    }
-    super.onMount();
-  }
-
-  @override
-  void onRemove() {
-    _instances.remove(this);
-    super.onRemove();
   }
 }
 

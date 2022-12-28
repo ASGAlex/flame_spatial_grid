@@ -77,7 +77,6 @@ class CellStaticAnimationLayer extends CellLayer {
     }
     animationComponent?.onRemove();
     animationComponent = null;
-    mapLoader?.layers.remove(currentCell);
     super.onRemove();
   }
 }

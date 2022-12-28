@@ -38,8 +38,6 @@ abstract class CellLayer extends PositionComponent
 
   final String name;
 
-  TiledMapLoader? mapLoader;
-
   Size get layerCalculatedSize {
     final cell = currentCell;
     if (cell == null) throw 'layer should be connected with any cell!';
@@ -125,15 +123,7 @@ abstract class CellLayer extends PositionComponent
   void onRemove() {
     final cell = currentCell;
     if (cell != null) {
-      for (final map in game.maps) {
-        map.removeLayer(name: name, cell: cell);
-      }
-      final worldMaps = game.worldLoader?.maps;
-      if (worldMaps != null) {
-        for (final map in worldMaps) {
-          map.removeLayer(name: name, cell: cell);
-        }
-      }
+      game.layersManager.removeLayer(name: name, cell: cell);
     }
     super.onRemove();
   }

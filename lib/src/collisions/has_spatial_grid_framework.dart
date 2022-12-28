@@ -20,6 +20,7 @@ mixin HasSpatialGridFramework on FlameGame
   bool _isSpatialGridDebugEnabled = false;
   TiledMapLoader? defaultMap;
   bool _init = false;
+  late final LayersManager layersManager;
 
   @override
   SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
@@ -62,7 +63,6 @@ mixin HasSpatialGridFramework on FlameGame
       Size? unloadRadius,
       bool trackWindowSize = true,
       required HasGridSupport trackedComponent,
-      required HasSpatialGridFramework game,
       bool lazyLoad = true,
       double buildCellsPerUpdate = -1,
       double removeCellsPerUpdate = -1,
@@ -70,6 +70,7 @@ mixin HasSpatialGridFramework on FlameGame
       CellBuilderFunction? cellBuilderNoMap,
       List<TiledMapLoader>? maps,
       WorldLoader? worldLoader}) async {
+    layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
     _cellBuilderNoMap = cellBuilderNoMap;
     this.suspendedCellLifetime = suspendedCellLifetime;
@@ -84,7 +85,7 @@ mixin HasSpatialGridFramework on FlameGame
         activeRadius: activeRadius,
         unloadRadius: unloadRadius,
         lazyLoad: lazyLoad,
-        game: game);
+        game: this);
     if (trackWindowSize) {
       setRadiusByWindowDimensions();
     }
@@ -100,13 +101,9 @@ mixin HasSpatialGridFramework on FlameGame
     for (final map in this.maps) {
       await map.init(this);
       TiledMapLoader.loadedMaps.add(map);
-      if (map.isDefaultMapInstance) {
-        defaultMap = map;
-        TiledMapLoader.defaultMap = map;
-      }
     }
     if (worldLoader != null) {
-      await worldLoader.init(game);
+      await worldLoader.init(this);
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
     this.removeCellsPerUpdate = removeCellsPerUpdate;

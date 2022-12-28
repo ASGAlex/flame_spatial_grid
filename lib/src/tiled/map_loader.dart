@@ -24,15 +24,13 @@ abstract class TiledMapLoader {
 
   Map<String, TileBuilderFunction>? get tileBuilders;
 
-  TileBuilderFunction? get defaultBuilder;
+  TileBuilderFunction? get cellPostBuilder;
 
   TileBuilderFunction? get notFoundBuilder => genericTileBuilder;
 
   int get basePriority => 0;
 
-  TiledComponent? _tiledComponent;
-
-  late HasSpatialGridFramework game;
+  late final HasSpatialGridFramework game;
 
   Component get rootComponent => game.rootComponent;
 
@@ -41,25 +39,16 @@ abstract class TiledMapLoader {
 
   final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
 
-  @internal
-  final layers = HashMap<Cell, HashMap<String, CellLayer>>();
-
-  static TiledMapLoader? defaultMap;
-  var isDefaultMapInstance = false;
-
   Future<void> init(HasSpatialGridFramework game) async {
     this.game = game;
 
-    _tiledComponent = await TiledComponent.load(fileName, destTileSize,
+    final tiledComponent = await TiledComponent.load(fileName, destTileSize,
         priority: basePriority);
-    final renderableTiledMap = _tiledComponent?.tileMap;
-    if (renderableTiledMap == null) return;
-    final widthInTiles = _tiledComponent?.tileMap.map.width;
-    final heightInTiles = _tiledComponent?.tileMap.map.height;
-    if (widthInTiles != null && heightInTiles != null) {
-      mapRect = Rect.fromLTWH(initialPosition.x, initialPosition.y,
-          widthInTiles * destTileSize.x, heightInTiles * destTileSize.y);
-    }
+    final renderableTiledMap = tiledComponent.tileMap;
+    final widthInTiles = tiledComponent.tileMap.map.width;
+    final heightInTiles = tiledComponent.tileMap.map.height;
+    mapRect = Rect.fromLTWH(initialPosition.x, initialPosition.y,
+        widthInTiles * destTileSize.x, heightInTiles * destTileSize.y);
     if (preloadTileSets) {
       await _preloadTileSets(renderableTiledMap.map);
     }
@@ -109,7 +98,7 @@ abstract class TiledMapLoader {
         }
       }
 
-      await defaultBuilder?.call(context);
+      await cellPostBuilder?.call(context);
     }
 
     if (contextsToRemove.isNotEmpty) {
@@ -132,84 +121,18 @@ abstract class TiledMapLoader {
       priority = context.layerInfo.priority;
     }
     if (component.sprite != null) {
-      addToLayer(
+      game.layersManager.addComponent(
           component: component,
           layerName: 'static-${context.layerInfo.name}',
           layerType: MapLayerType.static,
           priority: priority);
     } else if (component.animation != null) {
-      addToLayer(
+      game.layersManager.addComponent(
           component: component,
           layerName: 'animated-${context.layerInfo.name}',
           layerType: MapLayerType.animated,
           priority: priority);
     }
-  }
-
-  void addToLayer({
-    required HasGridSupport component,
-    required MapLayerType layerType,
-    required String layerName,
-    bool optimizeCollisions = true,
-    int priority = 1,
-  }) {
-    final cell = component.currentCell;
-    if (cell == null) {
-      throw 'Cell must be specified!';
-    }
-    CellLayer? layer = layers[cell]?[layerName];
-    final isNew = layer == null;
-    switch (layerType) {
-      case MapLayerType.static:
-        if (component is! SpriteComponent) {
-          throw 'Component ${component.runtimeType} must be SpriteComponent!';
-        }
-        if (isNew) {
-          layer = CellStaticLayer(cell, name: layerName);
-        }
-        break;
-      case MapLayerType.animated:
-        if (component is! SpriteAnimationComponent) {
-          throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
-        }
-        if (isNew) {
-          layer = CellStaticAnimationLayer(cell, name: layerName);
-        }
-        break;
-      case MapLayerType.trail:
-        if (isNew) {
-          layer = CellTrailLayer(cell, name: layerName);
-        }
-        break;
-    }
-
-    component.position = component.position - cell.rect.topLeft.toVector2();
-    layer.add(component);
-
-    if (isNew) {
-      addLayer(layer, cell, loader: this);
-      layer.priority = priority;
-      layer.optimizeCollisions = optimizeCollisions;
-    }
-  }
-
-  static addLayer(CellLayer layer, Cell cell, {TiledMapLoader? loader}) {
-    final map = loader ?? TiledMapLoader.defaultMap;
-    if (map == null) throw 'Default map instance is required!';
-
-    layer.mapLoader = map;
-    if (map.layers[cell] == null) {
-      map.layers[cell] = HashMap<String, CellLayer>();
-    }
-    map.layers[cell]?[layer.name] = layer;
-    map.rootComponent.add(layer);
-  }
-
-  CellLayer? getLayer({required String name, required Cell cell}) =>
-      layers[cell]?[name];
-
-  void removeLayer({required String name, required Cell cell}) {
-    layers[cell]?.remove(name);
   }
 
   bool isCellOutsideOfMap(Cell cell) {

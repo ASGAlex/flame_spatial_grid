@@ -7,16 +7,14 @@ class WorldLoader {
   final String fileName;
   WorldData? worldData;
   final Map<String, TiledMapLoader> mapLoader;
+  late final HasSpatialGridFramework game;
 
   Future init(HasSpatialGridFramework game) async {
+    this.game = game;
     worldData = await WorldData.fromFile('assets/tiles/$fileName');
     final futures = <Future>[];
     for (final map in maps) {
       futures.add(map.init(game));
-      if (map.isDefaultMapInstance) {
-        game.defaultMap = map;
-        TiledMapLoader.defaultMap = map;
-      }
     }
 
     await Future.wait(futures);
