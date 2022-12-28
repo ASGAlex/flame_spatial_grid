@@ -331,7 +331,6 @@ mixin HasSpatialGridFramework on FlameGame
       _autoRemoveOldCells(dt);
     }
 
-    CellTrailLayer.updateTrailsCounter(dt);
     SpriteAnimationGlobalController.instance.update(dt);
     super.update(dt);
     collisionDetection.run();

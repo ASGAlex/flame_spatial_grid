@@ -3,76 +3,109 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame/palette.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellTrailLayer extends CellStaticLayer {
+  final newComponents = <Component>[];
   static final _instances = HashMap<Cell, CellTrailLayer>();
-
-  static updateTrailsCounter(double dt) {
-    var c = 0;
-    for (final layer in _instances.values) {
-      if (!layer.isVisible) {
-        layer._dtElapsedWhileInvisible += dt;
-        continue;
-      }
-      c++;
-      if (layer.newComponents.isNotEmpty) {
-        layer.isUpdateNeeded = true;
-      }
-      final fadeOutStep = layer._fadeOutStep;
-      if (fadeOutStep == null) continue;
-      final fadeOutTimeout = layer.fadeOutTimeout?.inMicroseconds;
-      if (fadeOutTimeout == null) continue;
-      if (layer._dtElapsedWhileInvisible != 0) {
-        layer._dtSumBetweenFadeOut += (dt + layer._dtElapsedWhileInvisible);
-        layer._dtElapsedWhileInvisible = 0;
-      } else {
-        layer._dtSumBetweenFadeOut += dt;
-      }
-      if (layer._dtSumBetweenFadeOut * 1000000 >= fadeOutTimeout) {
-        layer._doFadeOutSteps =
-            (layer._dtSumBetweenFadeOut * 1000000) / fadeOutTimeout;
-        layer._dtSumBetweenFadeOut = 0;
-        layer._doFadeOut = true;
-        if (!layer.isUpdateNeeded) {
-          layer.isUpdateNeeded = true;
-        }
-      }
-    }
-    // print(c);
-  }
 
   static CellTrailLayer? getLayerForCell(Cell cell) => _instances[cell];
 
-  CellTrailLayer(super.cell, {double? fadeOutStep, this.fadeOutTimeout}) {
-    this.fadeOutStep = fadeOutStep;
+  CellTrailLayer(super.cell,
+      {double fadeOutOpacity = 1, this.fadeOutTimeout = Duration.zero}) {
+    _fadeOutDecorator.opacity = fadeOutOpacity;
   }
 
-  var componentsSaveToImageTreshold = 20;
-  var _componentsCounter = 0;
-  Duration? fadeOutTimeout;
-  double _dtSumBetweenFadeOut = 0;
-  double? _fadeOutStep;
-  double _doFadeOutSteps = 0;
+  bool get isFadeOut => fadeOutOpacity < 1 && fadeOutTimeout != Duration.zero;
 
-  double? get fadeOutStep => _fadeOutStep;
+  double get fadeOutOpacity => _fadeOutDecorator.opacity;
 
-  bool _renderInProgress = false;
-  bool _doFadeOut = false;
+  set fadeOutOpacity(value) {
+    _fadeOutDecorator.opacity = value;
+  }
 
-  final newComponents = <Component>[];
+  Duration fadeOutTimeout;
+  double _fadeOutDt = 0;
 
-  set fadeOutStep(double? value) {
-    _fadeOutStep = value;
-    if (value != null) {
-      paint.isAntiAlias = false;
-      paint.color = paint.color.withOpacity(value);
+  double _operationsLimitToSavePicture = 50;
+  double _operationsCount = 0;
+
+  bool _imageRrenderInProgress = false;
+
+  bool get doFadeOut => _fadeOutDt * 1000000 >= fadeOutTimeout.inMicroseconds;
+
+  final _fadeOutDecorator = _FadeOutDecorator();
+
+  @override
+  bool get isUpdateNeeded => true;
+
+  @override
+  Future<void>? add(Component component) {
+    newComponents.add(component);
+    updateCorrections(component);
+    return null;
+  }
+
+  @override
+  void remove(Component component) {}
+
+  @override
+  Future compileToSingleLayer() async {
+    final cell = currentCell;
+    if (cell == null) return;
+
+    if (newComponents.isEmpty && !doFadeOut) {
+      return;
+    }
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+    if (doFadeOut) {
+      _fadeOutDecorator.applyChain(_drawOldPicture, canvas);
+      _fadeOutDt = 0;
+    } else {
+      _drawOldPicture(canvas);
+    }
+
+    for (final component in newComponents) {
+      if (component is! HasGridSupport) continue;
+      component.decorator.applyChain(component.render, canvas);
+    }
+    newComponents.clear();
+    _operationsCount++;
+    layerPicture = recorder.endRecording();
+    if (_operationsCount >= _operationsLimitToSavePicture &&
+        _imageRrenderInProgress == false) {
+      _imageRrenderInProgress = true;
+      layerPicture
+          ?.toImage(layerCalculatedSize.width.toInt(),
+              layerCalculatedSize.height.toInt())
+          .then((newImage) {
+        final recorder = PictureRecorder();
+        final canvas = Canvas(recorder);
+        canvas.drawImage(newImage, correctionTopLeft.toOffset(), Paint());
+        layerPicture = recorder.endRecording();
+        print('save: $_operationsCount');
+        _operationsCount = 0;
+
+        _imageRrenderInProgress = false;
+      });
+    } else {
+      _imageRrenderInProgress = false;
     }
   }
 
-  double _dtElapsedWhileInvisible = 0;
+  _drawOldPicture(Canvas canvas) {
+    if (layerPicture != null) {
+      canvas.drawPicture(layerPicture!);
+    }
+  }
+
+  @override
+  void update(double dt) {
+    _fadeOutDt += dt;
+    super.update(dt);
+  }
 
   @override
   void onMount() {
@@ -88,108 +121,24 @@ class CellTrailLayer extends CellStaticLayer {
     _instances.remove(this);
     super.onRemove();
   }
+}
 
-  @override
-  bool get renderAsImage => false;
+class _FadeOutDecorator extends Decorator {
+  final _paint = Paint();
 
-  Picture? _drawNewComponents() {
-    if (newComponents.isEmpty) return null;
-    var recorder = PictureRecorder();
-    var canvas = Canvas(recorder);
+  double _opacity = 1;
 
-    final transparentPaint = BasicPalette.transparent.paint();
-    canvas.drawPaint(transparentPaint);
-    final decorator = Transform2DDecorator();
-    decorator.transform2d.position = (correctionTopLeft * -1);
-    for (final component in newComponents) {
-      if (component is! HasGridSupport) continue;
-      decorator.applyChain((canvas) {
-        component.decorator.applyChain(component.render, canvas);
-      }, canvas);
-    }
-    _componentsCounter += newComponents.length;
-    newComponents.clear();
-    final picture = recorder.endRecording();
-    return picture;
+  set opacity(double value) {
+    _opacity = value;
+    _paint.color = _paint.color.withOpacity(value);
   }
 
+  double get opacity => _opacity;
+
   @override
-  Future compileToSingleLayer() async {
-    if (!isVisible) {
-      return;
-    }
-    final cell = currentCell;
-    if (cell == null) return;
-
-    if (_renderInProgress) return;
-    if (layerPicture == null) return;
-    _renderInProgress = true;
-
-    final pictureUpdate = _drawNewComponents();
-
-    final recorder = PictureRecorder();
-    final canvas = Canvas(recorder);
-
-    final transparentPaint = BasicPalette.transparent.paint();
-    canvas.drawPaint(transparentPaint);
-
-    var oldPictureNotRendered = true;
-    if (_doFadeOut) {
-      var selectedPaint;
-      final fos = fadeOutStep;
-      if (_doFadeOutSteps > 1 && fos != null) {
-        selectedPaint = BasicPalette.white.paint()..isAntiAlias = false;
-        selectedPaint.color =
-            selectedPaint.color.withOpacity(fos / _doFadeOutSteps);
-        _doFadeOutSteps = 0;
-      } else {
-        selectedPaint = paint;
-      }
-      canvas.saveLayer(null, selectedPaint);
-      canvas.drawPaint(transparentPaint);
-      canvas.drawPicture(layerPicture!);
-      canvas.restore();
-      _doFadeOut = false;
-      oldPictureNotRendered = false;
-    }
-
-    if (pictureUpdate != null) {
-      if (oldPictureNotRendered) {
-        canvas.drawPicture(layerPicture!);
-      }
-      canvas.drawPicture(pictureUpdate);
-    }
-
-    layerPicture = recorder.endRecording();
-    pictureUpdate?.dispose();
-
-    if (_componentsCounter >= componentsSaveToImageTreshold ||
-        !oldPictureNotRendered) {
-      _componentsCounter = 0;
-      layerPicture
-          ?.toImageSafe(layerCalculatedSize.width.toInt() + 10,
-              layerCalculatedSize.height.toInt() + 10)
-          .then((updatedImage) {
-        final recorder = PictureRecorder();
-        final canvas = Canvas(recorder);
-
-        final transparentPaint = BasicPalette.transparent.paint();
-        canvas.drawPaint(transparentPaint);
-        canvas.drawImage(updatedImage, const Offset(0, 0), Paint());
-        layerPicture = recorder.endRecording();
-        _renderInProgress = false;
-      });
-    } else {
-      _renderInProgress = false;
-    }
+  void apply(void Function(Canvas) draw, Canvas canvas) {
+    canvas.saveLayer(null, _paint);
+    draw(canvas);
+    canvas.restore();
   }
-
-  @override
-  Future<void>? add(Component component) {
-    newComponents.add(component);
-    return null;
-  }
-
-  @override
-  void remove(Component component) {}
 }

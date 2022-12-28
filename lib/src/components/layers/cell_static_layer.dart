@@ -44,19 +44,27 @@ class CellStaticLayer extends CellLayer {
 
     var recorder = PictureRecorder();
     var canvas = Canvas(recorder);
-    final decorator = Transform2DDecorator();
-    decorator.transform2d.position = (correctionTopLeft * -1);
-    for (final component in children) {
-      if (component is! HasGridSupport) continue;
-      decorator.applyChain((canvas) {
-        component.decorator.applyChain(component.render, canvas);
-      }, canvas);
-    }
-    layerPicture = recorder.endRecording();
     if (renderAsImage) {
-      layerImage = await layerPicture?.toImageSafe(
-          layerCalculatedSize.width.toInt(),
-          layerCalculatedSize.height.toInt());
+      final decorator = Transform2DDecorator();
+      decorator.transform2d.position = (correctionTopLeft * -1);
+      for (final component in children) {
+        if (component is! HasGridSupport) continue;
+        decorator.applyChain((canvas) {
+          component.decorator.applyChain(component.render, canvas);
+        }, canvas);
+      }
+      layerPicture = recorder.endRecording();
+      if (renderAsImage) {
+        layerImage = await layerPicture?.toImageSafe(
+            layerCalculatedSize.width.toInt(),
+            layerCalculatedSize.height.toInt());
+      }
+    } else {
+      for (final component in children) {
+        if (component is! HasGridSupport) continue;
+        component.decorator.applyChain(component.render, canvas);
+      }
+      layerPicture = recorder.endRecording();
     }
   }
 

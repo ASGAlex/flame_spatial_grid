@@ -17,12 +17,6 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   @override
-  void updateTree(double dt) {
-    // animationComponent?.update(dt);
-    super.updateTree(dt);
-  }
-
-  @override
   void render(Canvas canvas) {
     animationComponent?.renderTree(canvas);
     if (debugMode) {

@@ -300,7 +300,6 @@ class Player extends SpriteComponent
 class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
   PlayerStep(Player player) {
     paint.color = Colors.white38;
-    // paint.style = PaintingStyle.fill;
     paint.strokeWidth = 1;
     paint.isAntiAlias = false;
     final playerCell = player.currentCell;
@@ -309,6 +308,7 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
           player.size -
           Vector2(player.size.x / 2, 0) -
           playerCell.rect.topLeft.toVector2();
+      size = Vector2(5, 3);
       currentCell = playerCell;
     }
   }
@@ -505,7 +505,8 @@ class DemoMapLoader extends TiledMapLoader {
     final existing = CellTrailLayer.getLayerForCell(cell);
     if (existing == null) {
       final trailLayer = CellTrailLayer(cell,
-          fadeOutStep: 0.9, fadeOutTimeout: const Duration(milliseconds: 500));
+          fadeOutOpacity: 0.8,
+          fadeOutTimeout: const Duration(milliseconds: 250));
       rootComponent.add(trailLayer);
     }
 

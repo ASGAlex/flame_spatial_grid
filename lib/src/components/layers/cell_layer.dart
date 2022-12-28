@@ -114,8 +114,8 @@ abstract class CellLayer extends PositionComponent
         if (optimizeCollisions) {
           collisionOptimizer.optimize();
           isUpdateNeeded = true;
+          super.updateTree(dt);
         }
-        super.updateTree(dt);
         compileToSingleLayer();
       }
     }
