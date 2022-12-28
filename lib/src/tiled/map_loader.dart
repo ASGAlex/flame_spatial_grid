@@ -44,6 +44,9 @@ abstract class TiledMapLoader {
   @internal
   final layers = HashMap<Cell, HashMap<String, CellLayer>>();
 
+  static TiledMapLoader? defaultMap;
+  var isDefaultMapInstance = false;
+
   Future<void> init(HasSpatialGridFramework game) async {
     this.game = game;
 
@@ -184,19 +187,30 @@ abstract class TiledMapLoader {
     layer.add(component);
 
     if (isNew) {
-      layer.mapLoader = this;
+      addLayer(layer, cell, loader: this);
       layer.priority = priority;
       layer.optimizeCollisions = optimizeCollisions;
-      if (layers[cell] == null) {
-        layers[cell] = HashMap<String, CellLayer>();
-      }
-      layers[cell]?[layerName] = layer;
-      rootComponent.add(layer);
     }
+  }
+
+  static addLayer(CellLayer layer, Cell cell, {TiledMapLoader? loader}) {
+    final map = loader ?? TiledMapLoader.defaultMap;
+    if (map == null) throw 'Default map instance is required!';
+
+    layer.mapLoader = map;
+    if (map.layers[cell] == null) {
+      map.layers[cell] = HashMap<String, CellLayer>();
+    }
+    map.layers[cell]?[layer.name] = layer;
+    map.rootComponent.add(layer);
   }
 
   CellLayer? getLayer({required String name, required Cell cell}) =>
       layers[cell]?[name];
+
+  void removeLayer({required String name, required Cell cell}) {
+    layers[cell]?.remove(name);
+  }
 
   bool isCellOutsideOfMap(Cell cell) {
     final checkList = [

@@ -18,6 +18,8 @@ mixin HasSpatialGridFramework on FlameGame
   late Component rootComponent;
   SpatialGridDebugComponent? _spatialGridDebug;
   bool _isSpatialGridDebugEnabled = false;
+  TiledMapLoader? defaultMap;
+  bool _init = false;
 
   @override
   SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
@@ -31,8 +33,6 @@ mixin HasSpatialGridFramework on FlameGame
     }
     _collisionDetection = cd;
   }
-
-  bool _init = false;
 
   void gameInitDone() {
     _init = true;
@@ -67,11 +67,11 @@ mixin HasSpatialGridFramework on FlameGame
       double buildCellsPerUpdate = -1,
       double removeCellsPerUpdate = -1,
       Duration suspendedCellLifetime = Duration.zero,
-      CellBuilderFunction? cellBuilder,
+      CellBuilderFunction? cellBuilderNoMap,
       List<TiledMapLoader>? maps,
       WorldLoader? worldLoader}) async {
     this.rootComponent = rootComponent ?? this;
-    _cellBuilder = cellBuilder;
+    _cellBuilderNoMap = cellBuilderNoMap;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
@@ -100,6 +100,10 @@ mixin HasSpatialGridFramework on FlameGame
     for (final map in this.maps) {
       await map.init(this);
       TiledMapLoader.loadedMaps.add(map);
+      if (map.isDefaultMapInstance) {
+        defaultMap = map;
+        TiledMapLoader.defaultMap = map;
+      }
     }
     if (worldLoader != null) {
       await worldLoader.init(game);
@@ -120,7 +124,7 @@ mixin HasSpatialGridFramework on FlameGame
   var trackWindowSize = true;
   List<TiledMapLoader> maps = [];
   WorldLoader? worldLoader;
-  CellBuilderFunction? _cellBuilder;
+  CellBuilderFunction? _cellBuilderNoMap;
   double buildCellsPerUpdate = -1;
   double _buildCellsNow = 0;
   double removeCellsPerUpdate = -1;
@@ -139,17 +143,26 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     final worldMaps = worldLoader?.maps;
     if (maps.isEmpty && (worldMaps == null || worldMaps.isEmpty)) {
-      return _cellBuilder?.call(cell, rootComponent);
+      return _cellBuilderNoMap?.call(cell, rootComponent);
     }
 
+    var cellOnMap = false;
     for (final map in maps) {
+      if (map.isCellOutsideOfMap(cell)) continue;
+      cellOnMap = true;
       await map.cellBuilder(cell, rootComponent);
     }
 
     if (worldMaps != null) {
       for (final map in worldMaps) {
+        if (map.isCellOutsideOfMap(cell)) continue;
+        cellOnMap = true;
         map.cellBuilder(cell, rootComponent);
       }
+    }
+
+    if (!cellOnMap) {
+      return _cellBuilderNoMap?.call(cell, rootComponent);
     }
   }
 

@@ -13,6 +13,10 @@ class WorldLoader {
     final futures = <Future>[];
     for (final map in maps) {
       futures.add(map.init(game));
+      if (map.isDefaultMapInstance) {
+        game.defaultMap = map;
+        TiledMapLoader.defaultMap = map;
+      }
     }
 
     await Future.wait(futures);

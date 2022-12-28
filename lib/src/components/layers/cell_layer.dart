@@ -122,6 +122,23 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
+  void onRemove() {
+    final cell = currentCell;
+    if (cell != null) {
+      for (final map in game.maps) {
+        map.removeLayer(name: name, cell: cell);
+      }
+      final worldMaps = game.worldLoader?.maps;
+      if (worldMaps != null) {
+        for (final map in worldMaps) {
+          map.removeLayer(name: name, cell: cell);
+        }
+      }
+    }
+    super.onRemove();
+  }
+
+  @override
   void renderTree(Canvas canvas) {
     if (isVisible && currentCell?.state == CellState.active) {
       decorator.applyChain(render, canvas);

@@ -69,12 +69,12 @@ all collisions are disabled.
         buildCellsPerUpdate: 1,
         removeCellsPerUpdate: 0.25,
         suspendedCellLifetime: const Duration(minutes: 1),
-        // cellBuilder: demoMapLoader.cellBuilder,
+        cellBuilderNoMap: DemoMapLoader.noMapCellBuilder,
         maps: [
           DemoMapLoader(Vector2(600, 0)),
         ],
         worldLoader: WorldLoader(fileName: 'example.world', mapLoader: {
-          'example': DemoMapLoader(),
+          'example': DemoMapLoader()..isDefaultMapInstance = true,
           'another_map': DemoMapLoader()
         }));
     // await demoMapLoader.init(this);
@@ -504,62 +504,65 @@ class DemoMapLoader extends TiledMapLoader {
 
   static const blockSize = 100.0;
 
+  static void _addTrailLayer(Cell cell, Component rootComponent) {
+    final trailLayer = CellTrailLayer(cell,
+        fadeOutOpacity: 0.8, fadeOutTimeout: const Duration(milliseconds: 250));
+    TiledMapLoader.addLayer(trailLayer, cell);
+  }
+
   @override
-  Future<void> cellBuilder(Cell cell, Component rootComponent) async {
-    await super.cellBuilder(cell, rootComponent);
+  Future<void> cellBuilder(Cell cell, Component rootComponent) {
+    _addTrailLayer(cell, rootComponent);
+    return super.cellBuilder(cell, rootComponent);
+  }
 
-    final existing = CellTrailLayer.getLayerForCell(cell);
-    if (existing == null) {
-      final trailLayer = CellTrailLayer(cell,
-          fadeOutOpacity: 0.8,
-          fadeOutTimeout: const Duration(milliseconds: 250));
-      rootComponent.add(trailLayer);
+  static Future<void> noMapCellBuilder(
+      Cell cell, Component rootComponent) async {
+    final map = TiledMapLoader.defaultMap;
+    if (map == null) return;
+
+    _addTrailLayer(cell, rootComponent);
+
+    final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
+    final waterAnimation =
+        map.getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+    final staticLayer = CellStaticLayer(cell);
+    staticLayer.optimizeCollisions = true;
+    staticLayer.priority = 2;
+    for (var i = 0; i < 200; i++) {
+      final random = Random();
+      final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final brick = Brick(position: position, sprite: spriteBrick);
+      brick.currentCell = cell;
+      staticLayer.add(brick);
     }
 
-    if (isCellOutsideOfMap(cell)) {
-      final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
-      final waterAnimation =
-          getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
-      final staticLayer = CellStaticLayer(cell);
-      staticLayer.optimizeCollisions = true;
-      staticLayer.priority = 2;
-      for (var i = 0; i < 200; i++) {
-        final random = Random();
-        final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-            (random.nextBool() ? -1 : 1);
-        final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-            (random.nextBool() ? -1 : 1);
-        final position =
-            (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-        final brick = Brick(position: position, sprite: spriteBrick);
-        brick.currentCell = cell;
-        staticLayer.add(brick);
-      }
+    rootComponent.add(staticLayer);
 
-      rootComponent.add(staticLayer);
+    final animationLayer = CellStaticAnimationLayer(cell, name: 'Water');
+    animationLayer.priority = 1;
 
-      final animationLayer = CellStaticAnimationLayer(cell, name: 'Water');
-      animationLayer.priority = 1;
-
-      for (var i = 0; i < 200; i++) {
-        final random = Random();
-        final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-            (random.nextBool() ? -1 : 1);
-        final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-            (random.nextBool() ? -1 : 1);
-        final position =
-            (cell.rect.size / 2).toVector2().translate(diffX, diffY);
-        final water = Water(
-          position: position,
-          animation: waterAnimation,
-        );
-        water.currentCell = cell;
-        animationLayer.add(water);
-      }
-
-      animationLayer.optimizeCollisions = true;
-      rootComponent.add(animationLayer);
+    for (var i = 0; i < 200; i++) {
+      final random = Random();
+      final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+          (random.nextBool() ? -1 : 1);
+      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final water = Water(
+        position: position,
+        animation: waterAnimation,
+      );
+      water.currentCell = cell;
+      animationLayer.add(water);
     }
+
+    animationLayer.optimizeCollisions = true;
+    rootComponent.add(animationLayer);
   }
 
   Future<void> everyCellBuilder(CellBuilderContext context) async {}
