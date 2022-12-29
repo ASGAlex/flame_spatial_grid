@@ -103,7 +103,7 @@ all collisions are disabled.
 
   final _fadeOutConfig = FadeOutConfig(
       fadeOutTimeout: const Duration(milliseconds: 250),
-      operationsLimitToSavePicture: 100,
+      operationsLimitToSavePicture: 15,
       transparencyPerStep: 0.05);
 
   @override
