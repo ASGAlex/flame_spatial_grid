@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -45,8 +46,8 @@ abstract class CellLayer extends PositionComponent
     var height = cell.rect.height;
     if (correctionBottomRight != Vector2.zero()) {
       final diff = correctionBottomRight - correctionTopLeft;
-      width = diff.x.ceil().toDouble();
-      height = diff.y.ceil().toDouble();
+      width = max(diff.x.ceil().toDouble(), width);
+      height = max(diff.y.ceil().toDouble(), height);
     }
 
     return Size(width, height);

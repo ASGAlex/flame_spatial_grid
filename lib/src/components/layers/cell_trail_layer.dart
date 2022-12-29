@@ -31,6 +31,9 @@ class CellTrailLayer extends CellStaticLayer {
   bool get isUpdateNeeded => true;
 
   @override
+  bool get renderAsImage => false;
+
+  @override
   Future<void>? add(Component component) {
     newComponents.add(component);
     updateCorrections(component);
@@ -76,9 +79,9 @@ class CellTrailLayer extends CellStaticLayer {
     if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&
         _imageRenderInProgress == false) {
       _imageRenderInProgress = true;
+      final imageSize = layerCalculatedSize;
       layerPicture
-          ?.toImage(layerCalculatedSize.width.toInt(),
-              layerCalculatedSize.height.toInt())
+          ?.toImage(imageSize.width.toInt(), imageSize.height.toInt())
           .then((newImage) {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
