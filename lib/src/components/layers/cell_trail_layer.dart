@@ -48,7 +48,9 @@ class CellTrailLayer extends CellStaticLayer {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
     if (doFadeOut) {
-      fadeOutConfig.decorator.applyChain(_drawOldPicture, canvas);
+      fadeOutConfig
+          .createDecorator(_fadeOutDt)
+          .applyChain(_drawOldPicture, canvas);
       _fadeOutDt = 0;
     } else {
       _drawOldPicture(canvas);
@@ -92,6 +94,11 @@ class CellTrailLayer extends CellStaticLayer {
     _fadeOutDt += dt;
     super.update(dt);
   }
+
+  @override
+  void onResume(double dtElapsedWhileSuspended) {
+    _fadeOutDt += dtElapsedWhileSuspended;
+  }
 }
 
 class FadeOutConfig {
@@ -111,7 +118,6 @@ class FadeOutConfig {
     assert(
         value >= 0 && value <= 1, 'Transparency must be between 0.0 and 1.0');
     _transparencyPerStep = value;
-    _fadeOutDecorator.opacity = 1 - value;
   }
 
   double operationsLimitToSavePicture;
@@ -119,17 +125,26 @@ class FadeOutConfig {
   bool get isFadeOut =>
       transparencyPerStep > 0 && fadeOutTimeout != Duration.zero;
 
-  final _fadeOutDecorator = _FadeOutDecorator();
-
-  Decorator get decorator => _fadeOutDecorator;
+  Decorator createDecorator(double dt) {
+    final steps = (dt * 1000000) / fadeOutTimeout.inMicroseconds;
+    final opacity = 1 - transparencyPerStep * steps;
+    return _FadeOutDecorator(opacity);
+  }
 }
 
 class _FadeOutDecorator extends Decorator {
+  _FadeOutDecorator(double opacity) {
+    this.opacity = opacity;
+  }
+
   final _paint = Paint();
 
   double _opacity = 1;
 
   set opacity(double value) {
+    if (value <= 0) {
+      value = 0;
+    }
     _opacity = value;
     _paint.color = _paint.color.withOpacity(value);
   }
