@@ -102,9 +102,9 @@ all collisions are disabled.
   var teleportMode = true;
 
   final _fadeOutConfig = FadeOutConfig(
-      fadeOutTimeout: const Duration(milliseconds: 250),
-      operationsLimitToSavePicture: 15,
-      transparencyPerStep: 0.05);
+      fadeOutTimeout: const Duration(seconds: 1),
+      operationsLimitToSavePicture: 5,
+      transparencyPerStep: 0.1);
 
   @override
   KeyEventResult onKeyEvent(
