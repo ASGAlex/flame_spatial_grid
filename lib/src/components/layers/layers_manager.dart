@@ -32,7 +32,7 @@ class LayersManager {
   CellLayer? getLayer({required String name, required Cell cell}) =>
       layers[cell]?[name];
 
-  addComponent({
+  CellLayer addComponent({
     required HasGridSupport component,
     required MapLayerType layerType,
     required String layerName,
@@ -80,5 +80,7 @@ class LayersManager {
       layer.priority = priority;
       layer.optimizeCollisions = optimizeCollisions;
     }
+
+    return layer;
   }
 }

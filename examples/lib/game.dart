@@ -101,6 +101,10 @@ all collisions are disabled.
 
   var teleportMode = true;
 
+  final _fadeOutConfig = FadeOutConfig(
+      fadeOutTimeout: const Duration(milliseconds: 250),
+      transparencyPerStep: 0.05);
+
   @override
   KeyEventResult onKeyEvent(
     RawKeyEvent event,
@@ -152,11 +156,12 @@ all collisions are disabled.
       final step = PlayerStep(player);
       final stepCell = step.currentCell;
       if (stepCell != null) {
-        layersManager.addComponent(
+        final layer = layersManager.addComponent(
             component: step,
             layerType: MapLayerType.trail,
             layerName: 'trail',
-            optimizeCollisions: false);
+            optimizeCollisions: false) as CellTrailLayer;
+        layer.fadeOutConfig = _fadeOutConfig;
       }
       if (_fireBullet) {
         final bullet = Bullet(
@@ -547,19 +552,6 @@ class DemoMapLoader extends TiledMapLoader {
   }
 
   final blockSize = 100.0;
-
-  @override
-  Future<void> cellBuilder(Cell cell, Component rootComponent) {
-    if (game.layersManager.getLayer(name: 'trail', cell: cell) == null) {
-      final trailLayer = CellTrailLayer(cell,
-          fadeOutOpacity: 0.8,
-          fadeOutTimeout: const Duration(milliseconds: 250),
-          name: 'trail');
-      trailLayer.optimizeCollisions = false;
-      game.layersManager.addLayer(trailLayer);
-    }
-    return super.cellBuilder(cell, rootComponent);
-  }
 
   Future<void> onBackgroundBuilder(CellBuilderContext context) async {
     var priority = -1;

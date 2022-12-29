@@ -8,33 +8,21 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 class CellTrailLayer extends CellStaticLayer {
   final newComponents = <Component>[];
 
-  CellTrailLayer(super.cell,
-      {super.name,
-      double fadeOutOpacity = 1,
-      this.fadeOutTimeout = Duration.zero,
-      this.operationsLimitToSavePicture = 50}) {
-    _fadeOutDecorator.opacity = fadeOutOpacity;
+  CellTrailLayer(super.cell, {super.name, FadeOutConfig? fadeOutConfig}) {
+    this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
 
-  bool get isFadeOut => fadeOutOpacity < 1 && fadeOutTimeout != Duration.zero;
+  bool get isFadeOut => fadeOutConfig.isFadeOut;
 
-  double get fadeOutOpacity => _fadeOutDecorator.opacity;
+  late FadeOutConfig fadeOutConfig;
 
-  set fadeOutOpacity(value) {
-    _fadeOutDecorator.opacity = value;
-  }
-
-  Duration fadeOutTimeout;
   double _fadeOutDt = 0;
-
-  double operationsLimitToSavePicture;
   double _operationsCount = 0;
 
   bool _imageRenderInProgress = false;
 
-  bool get doFadeOut => _fadeOutDt * 1000000 >= fadeOutTimeout.inMicroseconds;
-
-  final _fadeOutDecorator = _FadeOutDecorator();
+  bool get doFadeOut =>
+      _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
 
   @override
   bool get isUpdateNeeded => true;
@@ -60,7 +48,7 @@ class CellTrailLayer extends CellStaticLayer {
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
     if (doFadeOut) {
-      _fadeOutDecorator.applyChain(_drawOldPicture, canvas);
+      fadeOutConfig.decorator.applyChain(_drawOldPicture, canvas);
       _fadeOutDt = 0;
     } else {
       _drawOldPicture(canvas);
@@ -73,7 +61,7 @@ class CellTrailLayer extends CellStaticLayer {
     newComponents.clear();
     _operationsCount++;
     layerPicture = recorder.endRecording();
-    if (_operationsCount >= operationsLimitToSavePicture &&
+    if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&
         _imageRenderInProgress == false) {
       _imageRenderInProgress = true;
       layerPicture
@@ -82,9 +70,8 @@ class CellTrailLayer extends CellStaticLayer {
           .then((newImage) {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
-        canvas.drawImage(newImage, correctionTopLeft.toOffset(), Paint());
+        canvas.drawImage(newImage, const Offset(0, 0), Paint());
         layerPicture = recorder.endRecording();
-        print('save: $_operationsCount');
         _operationsCount = 0;
 
         _imageRenderInProgress = false;
@@ -105,6 +92,36 @@ class CellTrailLayer extends CellStaticLayer {
     _fadeOutDt += dt;
     super.update(dt);
   }
+}
+
+class FadeOutConfig {
+  FadeOutConfig(
+      {double transparencyPerStep = 0,
+      this.fadeOutTimeout = Duration.zero,
+      this.operationsLimitToSavePicture = 50}) {
+    this.transparencyPerStep = transparencyPerStep;
+  }
+
+  Duration fadeOutTimeout;
+  double _transparencyPerStep = 1;
+
+  double get transparencyPerStep => _transparencyPerStep;
+
+  set transparencyPerStep(double value) {
+    assert(
+        value >= 0 && value <= 1, 'Transparency must be between 0.0 and 1.0');
+    _transparencyPerStep = value;
+    _fadeOutDecorator.opacity = 1 - value;
+  }
+
+  double operationsLimitToSavePicture;
+
+  bool get isFadeOut =>
+      transparencyPerStep > 0 && fadeOutTimeout != Duration.zero;
+
+  final _fadeOutDecorator = _FadeOutDecorator();
+
+  Decorator get decorator => _fadeOutDecorator;
 }
 
 class _FadeOutDecorator extends Decorator {
