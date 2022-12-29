@@ -14,8 +14,11 @@ class CellTrailLayer extends CellStaticLayer {
 
   bool get isFadeOut => fadeOutConfig.isFadeOut;
 
+  bool get noTrail => _calculatedOpacity < 0.01;
+
   late FadeOutConfig fadeOutConfig;
 
+  double _calculatedOpacity = 1;
   double _fadeOutDt = 0;
   double _operationsCount = 0;
 
@@ -42,23 +45,30 @@ class CellTrailLayer extends CellStaticLayer {
     final cell = currentCell;
     if (cell == null) return;
 
-    if (newComponents.isEmpty && !doFadeOut) {
+    if ((newComponents.isEmpty && noTrail) ||
+        (newComponents.isEmpty && !doFadeOut)) {
       return;
     }
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
     if (doFadeOut) {
-      fadeOutConfig
-          .createDecorator(_fadeOutDt)
-          .applyChain(_drawOldPicture, canvas);
+      final fadeOutDecorator =
+          fadeOutConfig.createDecorator(_fadeOutDt) as _FadeOutDecorator;
+      _calculatedOpacity = _calculatedOpacity * fadeOutDecorator.opacity;
+
+      fadeOutDecorator.applyChain(_drawOldPicture, canvas);
+
       _fadeOutDt = 0;
     } else {
       _drawOldPicture(canvas);
     }
 
-    for (final component in newComponents) {
-      if (component is! HasGridSupport) continue;
-      component.decorator.applyChain(component.render, canvas);
+    if (newComponents.isNotEmpty) {
+      for (final component in newComponents) {
+        if (component is! HasGridSupport) continue;
+        component.decorator.applyChain(component.render, canvas);
+      }
+      _calculatedOpacity = 1;
     }
     newComponents.clear();
     _operationsCount++;
@@ -91,7 +101,14 @@ class CellTrailLayer extends CellStaticLayer {
 
   @override
   void update(double dt) {
-    _fadeOutDt += dt;
+    if (noTrail) {
+      layerPicture?.dispose();
+      layerPicture = null;
+      layerImage?.dispose();
+      layerImage = null;
+    } else {
+      _fadeOutDt += dt;
+    }
     super.update(dt);
   }
 
@@ -128,18 +145,19 @@ class FadeOutConfig {
   Decorator createDecorator(double dt) {
     final steps = (dt * 1000000) / fadeOutTimeout.inMicroseconds;
     final opacity = 1 - transparencyPerStep * steps;
-    return _FadeOutDecorator(opacity);
+    return _FadeOutDecorator(opacity, steps);
   }
 }
 
 class _FadeOutDecorator extends Decorator {
-  _FadeOutDecorator(double opacity) {
+  _FadeOutDecorator(double opacity, this.steps) {
     this.opacity = opacity;
   }
 
   final _paint = Paint();
 
   double _opacity = 1;
+  final double steps;
 
   set opacity(double value) {
     if (value <= 0) {
