@@ -69,6 +69,7 @@ class CellTrailLayer extends CellStaticLayer {
     if (newComponents.isNotEmpty) {
       for (final component in newComponents) {
         if (component is! HasGridSupport) continue;
+        // component.render(canvas);
         component.decorator.applyChain(component.render, canvas);
       }
       _calculatedOpacity = 1;
@@ -94,6 +95,24 @@ class CellTrailLayer extends CellStaticLayer {
     } else {
       _imageRenderInProgress = false;
     }
+  }
+
+  @override
+  void render(Canvas canvas) {
+    if (layerPicture != null) {
+      canvas.drawPicture(layerPicture!);
+    }
+    if (debugMode) {
+      _renderDebugCell(canvas);
+    }
+  }
+
+  _renderDebugCell(Canvas canvas) {
+    final cell = currentCell;
+    if (cell == null) return;
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y);
+    canvas.drawRect(
+        rect, Paint()..color = const Color.fromRGBO(255, 255, 255, 0.2));
   }
 
   _drawOldPicture(Canvas canvas) {

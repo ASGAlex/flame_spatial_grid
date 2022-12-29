@@ -50,8 +50,6 @@ clusters are suspended: components are not rendering, update() not work and
 all collisions are disabled.
   ''';
 
-  // final demoMapLoader = DemoMapLoader();
-
   @override
   Future<void> onLoad() async {
     super.onLoad();
@@ -78,7 +76,7 @@ all collisions are disabled.
         }));
     // await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
-    cameraComponent.viewfinder.zoom = 3;
+    cameraComponent.viewfinder.zoom = 5;
     add(world);
     add(cameraComponent);
     cameraComponent.follow(player);
@@ -183,7 +181,7 @@ all collisions are disabled.
   void onScroll(PointerScrollInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 5.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 8.0);
     if (!isSpatialGridDebugEnabled) {
       onAfterZoom();
     }
@@ -193,7 +191,7 @@ all collisions are disabled.
   void onScaleUpdate(ScaleUpdateInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 5.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 8.0);
     if (!isSpatialGridDebugEnabled) {
       onAfterZoom();
     }
@@ -358,16 +356,16 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
     paint.isAntiAlias = false;
     final playerCell = player.currentCell;
     if (playerCell != null) {
-      position = player.position + player.size - Vector2(player.size.x / 2, 0);
-      size = Vector2(5, 3);
+      position = player.position;
+      size = player.size;
       currentCell = playerCell;
     }
   }
 
   @override
   void render(Canvas canvas) {
-    canvas.drawPoints(
-        PointMode.points, const [Offset(1, 0), Offset(4, 2)], paint);
+    canvas.drawPoints(PointMode.points,
+        [Offset(1.5, size.y - 1), Offset(6.5, size.y)], paint);
   }
 }
 
