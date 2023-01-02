@@ -58,14 +58,21 @@ class TileDataProvider {
 }
 
 class CellBuilderContext {
-  CellBuilderContext(this.tileDataProvider, this.position, this.size,
-      this.cellRect, this.spatialGrid, this.layerInfo);
+  CellBuilderContext(
+      {this.tileDataProvider,
+      this.tiledObject,
+      required this.position,
+      required this.size,
+      required this.cellRect,
+      required this.spatialGrid,
+      required this.layerInfo});
 
   final SpatialGrid spatialGrid;
   final Rect cellRect;
   final Vector2 position;
   final Vector2 size;
-  final TileDataProvider tileDataProvider;
+  final TileDataProvider? tileDataProvider;
+  final TiledObject? tiledObject;
   int? priorityOverride;
   final LayerInfo layerInfo;
 

@@ -520,8 +520,11 @@ class DemoMapLoader extends TiledMapLoader {
   TileBuilderFunction? get notFoundBuilder => onBackgroundBuilder;
 
   @override
-  Map<String, TileBuilderFunction> get tileBuilders =>
-      {'Brick': onBuildBrick, 'Water': onBuildWater};
+  Map<String, TileBuilderFunction> get tileBuilders => {
+        'Brick': onBuildBrick,
+        'Water': onBuildWater,
+        'TestObject': onBuildTestObject
+      };
 
   Future<void> onBuildBrick(CellBuilderContext context) async {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
@@ -548,6 +551,32 @@ class DemoMapLoader extends TiledMapLoader {
         layerType: MapLayerType.animated,
         layerName: 'Water',
         priority: 1);
+  }
+
+  Future<void> onBuildTestObject(CellBuilderContext context) async {
+    final waterAnimation =
+        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+
+    final stepSize = waterAnimation?.getSprite().srcSize.x;
+    if (stepSize == null) return;
+    for (var y = context.position.y;
+        y < context.position.y + context.size.y;
+        y += stepSize) {
+      for (var x = context.position.x;
+          x < context.position.x + context.size.x;
+          x += stepSize) {
+        final water = Water(
+            position: Vector2(x, y),
+            animation: waterAnimation,
+            context: context);
+        water.currentCell = context.cell;
+        game.layersManager.addComponent(
+            component: water,
+            layerType: MapLayerType.animated,
+            layerName: 'Water',
+            priority: 1);
+      }
+    }
   }
 
   final blockSize = 100.0;

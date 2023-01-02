@@ -89,8 +89,9 @@ abstract class TiledMapLoader {
       if (context.remove) {
         contextsToRemove.add(context);
       } else {
-        final tileType = context.tileDataProvider.tile.type;
-        final processor = tileBuilders?[tileType];
+        final builderType =
+            context.tileDataProvider?.tile.type ?? context.tiledObject?.type;
+        final processor = tileBuilders?[builderType];
         if (processor != null) {
           await processor(context);
         } else {
@@ -109,8 +110,9 @@ abstract class TiledMapLoader {
   }
 
   Future<void> genericTileBuilder(CellBuilderContext context) async {
-    final component =
-        await TileComponent.fromProvider(context.tileDataProvider);
+    final provider = context.tileDataProvider;
+    if (provider == null) return;
+    final component = await TileComponent.fromProvider(provider);
     component.currentCell = context.cell;
     component.position = context.position;
     component.size = context.size;
@@ -158,49 +160,88 @@ abstract class TiledMapLoader {
 
   bool isCellInsideOfMap(Cell cell) => !isCellOutsideOfMap(cell);
 
-  void _processTileType(
-      {required RenderableTiledMap tileMap,
-      List<String>? layersToLoad,
-      bool clear = true}) {
-    List<TileLayer>? tileLayers = <TileLayer>[];
+  List<Layer> _getLayers(
+      RenderableTiledMap tileMap, List<String>? layersToLoad) {
+    List<Layer> layers = <Layer>[];
     if (layersToLoad != null) {
       for (final layer in layersToLoad) {
-        final tileLayer = tileMap.getLayer<TileLayer>(layer);
+        final tileLayer = tileMap.getLayer<Layer>(layer);
         if (tileLayer != null) {
-          tileLayers.add(tileLayer);
+          layers.add(tileLayer);
         }
       }
     } else {
-      tileLayers =
-          tileMap.map.layers.whereType<TileLayer>().toList(growable: false);
+      layers = tileMap.map.layers.toList(growable: false);
     }
 
+    return layers;
+  }
+
+  void _processTileType<T extends Layer>(
+      {required RenderableTiledMap tileMap,
+      List<String>? layersToLoad,
+      bool clear = true}) {
+    List<Layer> layers = _getLayers(tileMap, layersToLoad);
+
     var layerPriority = 0;
-    for (final tileLayer in tileLayers) {
-      final tileData = tileLayer.data;
-      if (tileData == null) {
-        continue;
-      }
-      final layerInfo = LayerInfo(tileLayer.name, layerPriority);
-      int xOffset = 0;
-      int yOffset = 0;
-      for (var tileId in tileData) {
-        if (tileId != 0) {
-          final tileset = tileMap.map.tilesetByTileGId(tileId);
+    for (final layer in layers) {
+      if (layer is TileLayer) {
+        final tileData = layer.data;
+        if (tileData == null) {
+          continue;
+        }
+        final layerInfo = LayerInfo(layer.name, layerPriority);
+        int xOffset = 0;
+        int yOffset = 0;
+        for (var tileId in tileData) {
+          if (tileId != 0) {
+            final tileset = tileMap.map.tilesetByTileGId(tileId);
 
-          final firstGid = tileset.firstGid;
-          if (firstGid != null) {
-            tileId = tileId - firstGid;
+            final firstGid = tileset.firstGid;
+            if (firstGid != null) {
+              tileId = tileId - firstGid;
+            }
+            final tileData = tileset.tiles[tileId];
+            final position = Vector2(xOffset.toDouble() * tileMap.map.tileWidth,
+                    yOffset.toDouble() * tileMap.map.tileWidth) +
+                initialPosition;
+
+            final size = Vector2(tileMap.map.tileWidth.toDouble(),
+                tileMap.map.tileWidth.toDouble());
+            final tileProcessor = TileDataProvider(tileData, tileset);
+
+            Rect rect;
+            if (lazyLoad) {
+              rect = game.spatialGrid.getCellRectAtPosition(position);
+            } else {
+              final cell =
+                  game.spatialGrid.createNewCellAtPosition(position + size / 2);
+              rect = cell.rect;
+            }
+            final context = CellBuilderContext(
+                tileDataProvider: tileProcessor,
+                position: position,
+                size: size,
+                cellRect: rect,
+                spatialGrid: game.spatialGrid,
+                layerInfo: layerInfo);
+            var list = HashSet<CellBuilderContext>();
+            list = _contextByCellRect[rect] ??= list;
+            list.add(context);
           }
-          final tileData = tileset.tiles[tileId];
-          final position = Vector2(xOffset.toDouble() * tileMap.map.tileWidth,
-                  yOffset.toDouble() * tileMap.map.tileWidth) +
+          xOffset++;
+          if (xOffset == layer.width) {
+            xOffset = 0;
+            yOffset++;
+          }
+        }
+        layerPriority++;
+      } else if (layer is ObjectGroup) {
+        final layerInfo = LayerInfo(layer.name, layerPriority);
+        for (final object in layer.objects) {
+          final position = Vector2(object.x.toDouble(), object.y.toDouble()) +
               initialPosition;
-
-          final size = Vector2(tileMap.map.tileWidth.toDouble(),
-              tileMap.map.tileWidth.toDouble());
-          final tileProcessor = TileDataProvider(tileData, tileset);
-
+          final size = Vector2(object.width, object.height);
           Rect rect;
           if (lazyLoad) {
             rect = game.spatialGrid.getCellRectAtPosition(position);
@@ -209,23 +250,23 @@ abstract class TiledMapLoader {
                 game.spatialGrid.createNewCellAtPosition(position + size / 2);
             rect = cell.rect;
           }
+
           final context = CellBuilderContext(
-              tileProcessor, position, size, rect, game.spatialGrid, layerInfo);
+              tiledObject: object,
+              position: position,
+              size: size,
+              cellRect: rect,
+              spatialGrid: game.spatialGrid,
+              layerInfo: layerInfo);
           var list = HashSet<CellBuilderContext>();
           list = _contextByCellRect[rect] ??= list;
           list.add(context);
         }
-        xOffset++;
-        if (xOffset == tileLayer.width) {
-          xOffset = 0;
-          yOffset++;
-        }
       }
-      layerPriority++;
     }
 
     if (clear) {
-      for (final layer in tileLayers) {
+      for (final layer in layers) {
         tileMap.map.layers.remove(layer);
       }
       for (final rl in tileMap.renderableLayers) {
