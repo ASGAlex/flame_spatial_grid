@@ -35,10 +35,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   ExternalBroadphaseCheck broadphaseCheck;
   ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
-  final _broadphaseCheckCache = <T, Map<T, bool>>{};
+  final _broadphaseCheckCache = HashMap<Type, HashMap<Type, bool>>();
 
   final _potentials = HashSet<CollisionProspect<T>>();
-  final _potentialsTmp = <List<ShapeHitbox>>[];
 
   @internal
   final scheduledOperations = <ScheduledHitboxOperation>[];
@@ -74,7 +73,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   HashSet<CollisionProspect<T>> querySubset(
       HashSet<CollisionProspect<ShapeHitbox>> potentials) {
     _potentials.clear();
-    _potentialsTmp.clear();
+    // _potentialsTmp.clear();
     for (final tuple in potentials) {
       RectangleHitbox componentHitbox;
       GroupHitbox groupBox;
@@ -100,14 +99,12 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       _compareItemWithPotentials(componentHitbox, hitboxes);
     }
 
-    _runExternalBroadphaseCheck();
     return _potentials;
   }
 
   @override
   HashSet<CollisionProspect<T>> query() {
     _potentials.clear();
-    _potentialsTmp.clear();
 
     for (final activeItem in activeCollisions) {
       final asShapeItem = activeItem as ShapeHitbox;
@@ -131,15 +128,14 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           asShapeItem, potentiallyCollide.toList(growable: false));
     }
 
-    _runExternalBroadphaseCheck();
-
     return _potentials;
   }
 
   void _compareItemWithPotentials(
       ShapeHitbox asShapeItem, List<ShapeHitbox> potentials) {
     for (final potential in potentials) {
-      final checkCache = _broadphaseCheckCache[asShapeItem]?[potential];
+      final checkCache = _broadphaseCheckCache[asShapeItem.runtimeType]
+          ?[potential.runtimeType];
       if (checkCache == false) {
         continue;
       }
@@ -160,25 +156,24 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
 
-      _potentialsTmp.add([asShapeItem, potential]);
+      _runExternalBroadphaseCheck(asShapeItem, potential);
     }
   }
 
-  void _runExternalBroadphaseCheck() {
-    if (_potentialsTmp.isNotEmpty) {
-      for (var i = 0; i < _potentialsTmp.length; i++) {
-        final item0 = _potentialsTmp[i].first;
-        final item1 = _potentialsTmp[i].last;
-        if (broadphaseCheck(item0, item1)) {
-          _potentials.add(CollisionProspect(item0 as T, item1 as T));
-        } else {
-          if (_broadphaseCheckCache[item0 as T] == null) {
-            _broadphaseCheckCache[item0 as T] = {};
-          }
-          _broadphaseCheckCache[item0 as T]![item1 as T] = false;
-        }
-      }
+  void _runExternalBroadphaseCheck(ShapeHitbox item0, ShapeHitbox item1) {
+    final canToCollide = broadphaseCheck(item0, item1);
+    if (canToCollide) {
+      _potentials.add(CollisionProspect(item0 as T, item1 as T));
     }
+    if (_broadphaseCheckCache[item0.runtimeType] == null) {
+      _broadphaseCheckCache[item0.runtimeType] = HashMap<Type, bool>();
+    }
+    _broadphaseCheckCache[item0.runtimeType]?[item1.runtimeType] = canToCollide;
+
+    if (_broadphaseCheckCache[item1.runtimeType] == null) {
+      _broadphaseCheckCache[item1.runtimeType] = HashMap<Type, bool>();
+    }
+    _broadphaseCheckCache[item1.runtimeType]?[item0.runtimeType] = canToCollide;
   }
 
   void clear() {

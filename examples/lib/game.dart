@@ -168,7 +168,8 @@ all collisions are disabled.
             displacement: _playerDisplacement * 30,
             killWater: _killWater);
         bullet.currentCell = player.currentCell;
-        world.add(bullet);
+        world.bullets.add(bullet);
+        print(world.bullets.children.length);
         _fireBullet = false;
       }
       _playerDisplacement.setZero();
@@ -258,9 +259,12 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   final Player player = Player(
       position: Vector2(0, 0), size: Vector2.all(tileSize), priority: 10);
 
+  final bullets = Component();
+
   @override
   onLoad() async {
     add(player);
+    add(bullets);
   }
 
   @override
@@ -416,7 +420,7 @@ class Bullet extends PositionComponent
 
   @override
   bool onComponentTypeCheck(PositionComponent other) {
-    if (other is Player /* || other is Water*/) {
+    if (other is Player || other is Bullet) {
       return false;
     }
     return super.onComponentTypeCheck(other);
