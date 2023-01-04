@@ -39,7 +39,7 @@ abstract class TiledMapLoader {
 
   final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
 
-  Future<void> init(HasSpatialGridFramework game) async {
+  Future<TiledComponent> init(HasSpatialGridFramework game) async {
     this.game = game;
 
     final tiledComponent = await TiledComponent.load(fileName, destTileSize,
@@ -54,6 +54,8 @@ abstract class TiledMapLoader {
     }
 
     _processTileType(tileMap: renderableTiledMap);
+
+    return tiledComponent;
   }
 
   static final _preloadedTileSet =

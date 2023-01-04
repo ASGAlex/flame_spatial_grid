@@ -10,10 +10,11 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   Future<void>? add(Component component) {
-    if (component is SpriteAnimationComponent) {
-      animation ??= component.animation;
-    }
-    return super.add(component);
+    return super.add(component)?.then((value) {
+      if (component is SpriteAnimationComponent) {
+        animation ??= component.animation;
+      }
+    });
   }
 
   @override
