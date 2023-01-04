@@ -13,6 +13,9 @@ class LayersManager {
 
   HasSpatialGridFramework game;
 
+  @internal
+  final Component layersRootComponent = Component();
+
   addLayer(CellLayer layer) {
     final cell = layer.currentCell;
     if (cell == null) {
@@ -22,11 +25,14 @@ class LayersManager {
       layers[cell] = HashMap<String, CellLayer>();
     }
     layers[cell]?[layer.name] = layer;
-    game.rootComponent.add(layer);
+    layersRootComponent.add(layer);
   }
 
   void removeLayer({required String name, required Cell cell}) {
-    layers[cell]?.remove(name);
+    final layer = layers[cell]?.remove(name);
+    if (layer != null) {
+      layersRootComponent.remove(layer);
+    }
   }
 
   CellLayer? getLayer({required String name, required Cell cell}) =>

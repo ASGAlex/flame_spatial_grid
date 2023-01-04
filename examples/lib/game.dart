@@ -82,7 +82,7 @@ all collisions are disabled.
     cameraComponent.follow(player);
 
     add(FpsTextComponent());
-    gameInitDone();
+    gameInitializationDone();
   }
 
   final elapsedMicroseconds = <double>[];

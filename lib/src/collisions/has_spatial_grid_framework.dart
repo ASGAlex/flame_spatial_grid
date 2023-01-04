@@ -19,7 +19,7 @@ mixin HasSpatialGridFramework on FlameGame
   SpatialGridDebugComponent? _spatialGridDebug;
   bool _isSpatialGridDebugEnabled = false;
   TiledMapLoader? defaultMap;
-  bool _init = false;
+  bool _gameInitializationFinished = false;
   late final LayersManager layersManager;
 
   @override
@@ -35,8 +35,8 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
-  void gameInitDone() {
-    _init = true;
+  void gameInitializationDone() {
+    _gameInitializationFinished = true;
     if (trackWindowSize) {
       setRadiusByWindowDimensions();
     }
@@ -72,6 +72,7 @@ mixin HasSpatialGridFramework on FlameGame
       WorldLoader? worldLoader}) async {
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
+    this.rootComponent.add(layersManager.layersRootComponent);
     _cellBuilderNoMap = cellBuilderNoMap;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.worldLoader = worldLoader;
@@ -180,7 +181,7 @@ mixin HasSpatialGridFramework on FlameGame
   @override
   void onGameResize(Vector2 gameSize) {
     super.onGameResize(gameSize);
-    if (_init && trackWindowSize) {
+    if (_gameInitializationFinished && trackWindowSize) {
       setRadiusByWindowDimensions();
       spatialGrid.updateCellsStateByRadius();
     }
