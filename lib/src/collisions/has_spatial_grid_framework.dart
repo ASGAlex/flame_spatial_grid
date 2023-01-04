@@ -62,7 +62,8 @@ mixin HasSpatialGridFramework on FlameGame
       Size? activeRadius,
       Size? unloadRadius,
       bool trackWindowSize = true,
-      required HasGridSupport trackedComponent,
+      HasGridSupport? trackedComponent,
+      Vector2? initialPosition,
       bool lazyLoad = true,
       double buildCellsPerUpdate = -1,
       double removeCellsPerUpdate = -1,
@@ -83,6 +84,7 @@ mixin HasSpatialGridFramework on FlameGame
     spatialGrid = SpatialGrid(
         blockSize: Size.square(blockSize),
         trackedComponent: trackedComponent,
+        initialPosition: initialPosition,
         activeRadius: activeRadius,
         unloadRadius: unloadRadius,
         lazyLoad: lazyLoad,
@@ -110,9 +112,9 @@ mixin HasSpatialGridFramework on FlameGame
     this.removeCellsPerUpdate = removeCellsPerUpdate;
 
     if (lazyLoad) {
-      final currentCell = spatialGrid.trackedComponent.currentCell;
+      final currentCell = spatialGrid.currentCell;
       if (currentCell != null) {
-        spatialGrid.setActiveCell(currentCell);
+        spatialGrid.currentCell = currentCell;
       } else {
         throw "Lazy load initialization error!";
       }

@@ -181,7 +181,7 @@ mixin HasGridSupport on PositionComponent {
       newCell.bottom;
       currentCell = newCell;
       if (isTracked) {
-        spatialGrid.setActiveCell(newCell);
+        spatialGrid.currentCell = newCell;
       }
       return true; //cell changed;
     }

@@ -12,26 +12,35 @@ typedef CellBuilderFunction = Future<void> Function(
 class SpatialGrid {
   SpatialGrid(
       {required this.blockSize,
-      required this.trackedComponent,
+      HasGridSupport? trackedComponent,
+      Vector2? initialPosition,
       required this.game,
       bool lazyLoad = true,
       Size? activeRadius,
       required Size? unloadRadius}) {
     this.activeRadius = (activeRadius ?? const Size(2, 2));
     this.unloadRadius = (unloadRadius ?? const Size(5, 5));
+    final position =
+        trackedComponent?.position ?? initialPosition ?? Vector2(0, 0);
 
     final cell = Cell(
         spatialGrid: this,
         suspended: lazyLoad,
         rect: Rect.fromCenter(
-            center: trackedComponent.position.toOffset(),
+            center: position.toOffset(),
             width: blockSize.width,
             height: blockSize.height));
 
     if (!lazyLoad) {
-      setActiveCell(cell);
+      currentCell = cell;
+    } else {
+      _currentCell = cell;
     }
-    trackedComponent.currentCell = cell;
+
+    if (trackedComponent != null) {
+      trackedComponent.currentCell = cell;
+      this.trackedComponent = trackedComponent;
+    }
   }
 
   dispose() {
@@ -46,19 +55,33 @@ class SpatialGrid {
   final cells = HashMap<Rect, Cell>();
   Cell? _currentCell;
 
+  Cell? get currentCell => _currentCell;
+
+  set currentCell(Cell? value) {
+    if (value == null) return;
+    _currentCell = value;
+    updateCellsStateByRadius();
+  }
+
   @internal
   final cellsScheduledToBuild = HashSet<Cell>();
 
   final Size blockSize;
-  final HasGridSupport trackedComponent;
+
+  HasGridSupport? _trackedComponent;
+
+  HasGridSupport? get trackedComponent => _trackedComponent;
+
+  set trackedComponent(HasGridSupport? value) {
+    _trackedComponent = value;
+    final newCell = _trackedComponent?.currentCell;
+    if (newCell != null && newCell != _currentCell) {
+      currentCell = newCell;
+    }
+  }
 
   Size activeRadius = const Size(2, 2);
   Size unloadRadius = const Size(5, 5);
-
-  void setActiveCell(Cell newActiveCell) {
-    _currentCell = newActiveCell;
-    updateCellsStateByRadius();
-  }
 
   void updateCellsStateByRadius() {
     for (final cell in cells.values) {
