@@ -132,7 +132,7 @@ all collisions are disabled.
       if (key == LogicalKeyboardKey.space) {
         _fireBullet = true;
       }
-      if (key == LogicalKeyboardKey.keyT) {
+      if (key == LogicalKeyboardKey.keyC) {
         final collisionType = player.boundingBox.collisionType;
         if (collisionType == CollisionType.active) {
           player.boundingBox.collisionType = CollisionType.inactive;

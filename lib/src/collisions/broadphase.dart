@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
@@ -7,8 +8,8 @@ import 'package:meta/meta.dart';
 import 'collision_optimizer.dart';
 
 typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
-  HasGridSupport activeItem,
-  HasGridSupport potential,
+  ShapeHitbox activeItem,
+  ShapeHitbox potential,
 );
 
 /// Performs Quad Tree broadphase check.
@@ -20,8 +21,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     super.items,
     required this.spatialGrid,
     required this.broadphaseCheck,
-    required this.minimumDistanceCheck,
-  });
+    ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
+  }) {
+    this.minimumDistanceCheck = minimumDistanceCheck ?? _minimumDistanceCheck;
+  }
 
   final SpatialGrid spatialGrid;
 
@@ -34,8 +37,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       <Cell, Map<GroupHitbox, OptimizedCollisionList>>{};
 
   ExternalBroadphaseCheck broadphaseCheck;
-  ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
-  final _broadphaseCheckCache = HashMap<Type, HashMap<Type, bool>>();
+  late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
+
+  @internal
+  final broadphaseCheckCache = HashMap<T, HashMap<T, bool>>();
 
   final _potentials = HashSet<CollisionProspect<T>>();
 
@@ -73,7 +78,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   HashSet<CollisionProspect<T>> querySubset(
       HashSet<CollisionProspect<ShapeHitbox>> potentials) {
     _potentials.clear();
-    // _potentialsTmp.clear();
     for (final tuple in potentials) {
       RectangleHitbox componentHitbox;
       GroupHitbox groupBox;
@@ -134,9 +138,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   void _compareItemWithPotentials(
       ShapeHitbox asShapeItem, List<ShapeHitbox> potentials) {
     for (final potential in potentials) {
-      final checkCache = _broadphaseCheckCache[asShapeItem.runtimeType]
-          ?[potential.runtimeType];
-      if (checkCache == false) {
+      var canToCollide = broadphaseCheckCache[asShapeItem]?[potential];
+      if (canToCollide == false) {
         continue;
       }
 
@@ -144,41 +147,60 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           asShapeItem.parent != null) {
         continue;
       }
-      final activeWithGridSupport = asShapeItem.parentWithGridSupport;
-      final potentialWithGridSupport = potential.parentWithGridSupport;
-      if (activeWithGridSupport != null && potentialWithGridSupport != null) {
-        final distanceCloseEnough = minimumDistanceCheck.call(
-          activeWithGridSupport,
-          potentialWithGridSupport,
-        );
-        if (distanceCloseEnough == false) {
-          continue;
-        }
+      final distanceCloseEnough = minimumDistanceCheck.call(
+        asShapeItem,
+        potential,
+      );
+      if (distanceCloseEnough == false) {
+        continue;
       }
 
-      _runExternalBroadphaseCheck(asShapeItem, potential);
+      canToCollide ??= _runExternalBroadphaseCheck(asShapeItem, potential);
+      if (canToCollide) {
+        _potentials.add(CollisionProspect(asShapeItem as T, potential as T));
+      }
     }
   }
 
-  void _runExternalBroadphaseCheck(ShapeHitbox item0, ShapeHitbox item1) {
+  bool _minimumDistanceCheck(
+    ShapeHitbox activeItem,
+    ShapeHitbox potential,
+  ) {
+    final activeItemCenter = activeItem.aabbCenter;
+    final potentialCenter = potential.aabbCenter;
+    final minDistanceX = max(activeItem.size.x, potential.size.x);
+    final minDistanceY = max(activeItem.size.y, potential.size.y);
+    if ((activeItemCenter.x - potentialCenter.x).abs() < minDistanceX &&
+        (activeItemCenter.y - potentialCenter.y).abs() < minDistanceY) {
+      return true;
+    }
+    return false;
+  }
+
+  bool _runExternalBroadphaseCheck(ShapeHitbox item0, ShapeHitbox item1) {
+    if (item0 is GroupHitbox || item1 is GroupHitbox) {
+      return true;
+    }
     final canToCollide = broadphaseCheck(item0, item1);
     if (canToCollide) {
       _potentials.add(CollisionProspect(item0 as T, item1 as T));
     }
-    if (_broadphaseCheckCache[item0.runtimeType] == null) {
-      _broadphaseCheckCache[item0.runtimeType] = HashMap<Type, bool>();
+    if (broadphaseCheckCache[item0 as T] == null) {
+      broadphaseCheckCache[item0 as T] = HashMap<T, bool>();
     }
-    _broadphaseCheckCache[item0.runtimeType]?[item1.runtimeType] = canToCollide;
+    broadphaseCheckCache[item0 as T]![item1 as T] = canToCollide;
 
-    if (_broadphaseCheckCache[item1.runtimeType] == null) {
-      _broadphaseCheckCache[item1.runtimeType] = HashMap<Type, bool>();
+    if (broadphaseCheckCache[item1 as T] == null) {
+      broadphaseCheckCache[item1 as T] = HashMap<T, bool>();
     }
-    _broadphaseCheckCache[item1.runtimeType]?[item0.runtimeType] = canToCollide;
+    broadphaseCheckCache[item1 as T]![item0 as T] = canToCollide;
+
+    return canToCollide;
   }
 
   void clear() {
     activeCollisions.clear();
-    _broadphaseCheckCache.clear();
+    broadphaseCheckCache.clear();
   }
 }
 

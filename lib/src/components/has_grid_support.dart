@@ -75,6 +75,11 @@ mixin HasGridSupport on PositionComponent {
 
   double get minDistance => sqrt(_minDistanceQuad);
 
+  double _minDistanceX = 0;
+  double get minDistanceX => _minDistanceX;
+  double _minDistanceY = 0;
+  double get minDistanceY => _minDistanceY;
+
   set isSuspended(bool suspend) {
     if (suspendNotifier.value != suspend) {
       if (suspend) {
@@ -91,6 +96,7 @@ mixin HasGridSupport on PositionComponent {
   void onSpatialGridSupportComponentMounted() {}
 
   @override
+  @mustCallSuper
   onLoad() {
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
@@ -101,6 +107,8 @@ mixin HasGridSupport on PositionComponent {
     _minDistanceQuad =
         (pow(boundingBox.width / 2, 2) + pow(boundingBox.height / 2, 2))
             .toDouble();
+    _minDistanceX = boundingBox.width / 2;
+    _minDistanceY = boundingBox.height / 2;
   }
 
   @override

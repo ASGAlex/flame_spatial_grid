@@ -1,5 +1,4 @@
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -96,7 +95,6 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,
       onComponentTypeCheck: onComponentTypeCheck,
-      minimumDistanceCheck: minimumDistanceCheck,
     );
 
     isSpatialGridDebugEnabled = debug ?? false;
@@ -197,30 +195,18 @@ mixin HasSpatialGridFramework on FlameGame
     super.onRemove();
   }
 
-  bool minimumDistanceCheck(
-      HasGridSupport activeItem, HasGridSupport potential) {
-    final minimumDistance =
-        max(activeItem.minDistanceQuad, potential.minDistanceQuad);
-    final activeItemCenter = activeItem.boundingBox.aabbCenter;
-    final potentialCenter = activeItem.boundingBox.aabbCenter;
-    return !(pow((activeItemCenter.x - potentialCenter.x).abs(), 2) >
-            minimumDistance ||
-        pow((activeItemCenter.y - potentialCenter.y).abs(), 2) >
-            minimumDistance);
-  }
-
   bool onComponentTypeCheck(PositionComponent one, PositionComponent another) {
     var checkParent = false;
-    if (one is CollisionCallbacks) {
-      if (!(one as CollisionCallbacks).onComponentTypeCheck(another)) {
+    if (one is GenericCollisionCallbacks) {
+      if (!(one as GenericCollisionCallbacks).onComponentTypeCheck(another)) {
         return false;
       }
     } else {
       checkParent = true;
     }
 
-    if (another is CollisionCallbacks) {
-      if (!(another as CollisionCallbacks).onComponentTypeCheck(one)) {
+    if (another is GenericCollisionCallbacks) {
+      if (!(another as GenericCollisionCallbacks).onComponentTypeCheck(one)) {
         return false;
       }
     } else {

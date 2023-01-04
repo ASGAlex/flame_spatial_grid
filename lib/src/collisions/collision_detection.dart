@@ -11,7 +11,7 @@ class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
   SpatialGridCollisionDetection(
       {required ExternalBroadphaseCheck onComponentTypeCheck,
-      required ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck,
+      ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
       required this.spatialGrid})
       : super(
             broadphase: SpatialGridBroadphase<ShapeHitbox>(
@@ -103,8 +103,15 @@ class SpatialGridCollisionDetection
           .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
     }
 
+    final checkCache = broadphase.broadphaseCheckCache[hitbox];
+    if (checkCache != null) {
+      for (final entry in checkCache.entries) {
+        broadphase.broadphaseCheckCache[entry.key]?.remove(hitbox);
+      }
+      broadphase.broadphaseCheckCache.remove(hitbox);
+    }
+
     hitbox.clearGridComponentParent();
-    //super.remove(hitbox);
   }
 
   @override
