@@ -12,8 +12,8 @@ import 'package:meta/meta.dart';
 mixin HasGridSupport on PositionComponent {
   static final _componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
-  // TODO: pass into ShapeHitbox
-  static final _cachedCenters = HashMap<ShapeHitbox, Vector2>();
+  @internal
+  static final cachedCenters = HashMap<ShapeHitbox, Vector2>();
 
   static final _defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
@@ -159,7 +159,7 @@ mixin HasGridSupport on PositionComponent {
 
   @internal
   bool updateTransform() {
-    _cachedCenters.remove(boundingBox);
+    cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
     current ??=
@@ -217,10 +217,10 @@ mixin HasGridSupport on PositionComponent {
 
 extension SpatialGridRectangleHitbox on RectangleHitbox {
   Vector2 get aabbCenter {
-    var cache = HasGridSupport._cachedCenters[this];
+    var cache = HasGridSupport.cachedCenters[this];
     if (cache == null) {
-      HasGridSupport._cachedCenters[this] = aabb.center;
-      cache = HasGridSupport._cachedCenters[this];
+      HasGridSupport.cachedCenters[this] = aabb.center;
+      cache = HasGridSupport.cachedCenters[this];
     }
     return cache!;
   }
@@ -235,10 +235,10 @@ extension SpatialGridRectangleHitbox on RectangleHitbox {
 extension SpatialGridShapeHitbox on ShapeHitbox {
   // TODO: pass into ShapeHitbox?
   Vector2 get aabbCenter {
-    var cache = HasGridSupport._cachedCenters[this];
+    var cache = HasGridSupport.cachedCenters[this];
     if (cache == null) {
-      HasGridSupport._cachedCenters[this] = aabb.center;
-      cache = HasGridSupport._cachedCenters[this];
+      HasGridSupport.cachedCenters[this] = aabb.center;
+      cache = HasGridSupport.cachedCenters[this];
     }
     return cache!;
   }

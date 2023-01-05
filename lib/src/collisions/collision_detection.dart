@@ -131,9 +131,13 @@ class SpatialGridCollisionDetection
   }
 
   void _updateTransform(ShapeHitbox item) {
+    HasGridSupport.cachedCenters.remove(item);
+    item.aabbCenter;
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent == null) return;
-    withGridSupportComponent.updateTransform();
+    if (item == withGridSupportComponent.boundingBox) {
+      withGridSupportComponent.updateTransform();
+    }
   }
 
   void _runForPotentials(HashSet<CollisionProspect<ShapeHitbox>> potentials) {
