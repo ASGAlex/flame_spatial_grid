@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -40,6 +41,7 @@ class CollisionOptimizer {
     for (final optimized in _createdCollisionLists) {
       optimized.boundingBox.removeFromParent();
       collisionsListByGroup.remove(optimized.boundingBox);
+      parentLayer.remove(optimized.boundingBox);
     }
     _createdCollisionLists.clear();
     _alreadyProcessed.clear();
@@ -74,7 +76,9 @@ class CollisionOptimizer {
     exception.add(hitbox);
     for (final otherChild in gridChildrenActiveOrPassive) {
       if (exception.contains(otherChild.boundingBox)) continue;
-      if (hitbox.toRect().overlapsSpecial(otherChild.boundingBox.toRect())) {
+      if (hitbox
+          .toRectSpecial()
+          .overlapsSpecial(otherChild.boundingBox.toRectSpecial())) {
         hitboxes.add(otherChild.boundingBox);
         _alreadyProcessed.add(otherChild.boundingBox);
         hitboxes
@@ -132,11 +136,10 @@ class OptimizedCollisionList {
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
       if (rect == Rect.zero) {
-        rect = (hitbox.parent as PositionComponent).toRect();
+        rect = hitbox.toRectSpecial();
         continue;
       }
-      rect =
-          rect.expandToInclude((hitbox.parent as PositionComponent).toRect());
+      rect = rect.expandToInclude(hitbox.toRectSpecial());
     }
     _boundingBox = GroupHitbox(
         // parentLayer: parentLayer,
@@ -147,10 +150,27 @@ class OptimizedCollisionList {
   }
 }
 
+extension ToRectSpecial on PositionComponent {
+  Rect toRectSpecial() {
+    final parentPosition = (parent as PositionComponent).position;
+    return Rect.fromLTWH(parentPosition.x + position.x,
+        parentPosition.y + position.y, size.x, size.y);
+  }
+}
+
 class GroupHitbox extends RectangleHitbox {
   GroupHitbox({super.position, super.size}) {
     isSolid = true;
   }
 
   bool hasParent = true;
+
+  @override
+  void renderDebugMode(Canvas canvas) {
+    canvas.drawRect(
+        Rect.fromLTWH(position.x, position.y, size.x, size.y),
+        Paint()
+          ..color = const Color.fromRGBO(0, 0, 255, 1)
+          ..style = PaintingStyle.stroke);
+  }
 }

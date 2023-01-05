@@ -134,6 +134,11 @@ abstract class CellLayer extends PositionComponent
     if (isVisible && currentCell?.state == CellState.active) {
       decorator.applyChain(render, canvas);
     }
+    if (game.isSpatialGridDebugEnabled) {
+      children.whereType<GroupHitbox>().forEach((element) {
+        decorator.applyChain(element.renderDebugMode, canvas);
+      });
+    }
   }
 
   void onChildrenUpdate() {
