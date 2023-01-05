@@ -26,8 +26,7 @@ class SpatialGridCollisionDetection
 
   @override
   void add(ShapeHitbox item) {
-    //super.add(item);
-
+    // ignore: invalid_use_of_internal_member
     item.onAabbChanged = () => _scheduledUpdateAfterTransform.add(item);
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent != null) {
@@ -54,21 +53,23 @@ class SpatialGridCollisionDetection
       HasGridSupport component, ShapeHitbox hitbox) {
     switch (hitbox.collisionType) {
       case CollisionType.active:
-        broadphase.scheduledOperations
-            .add(ScheduledHitboxOperation.addActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(ScheduledHitboxOperation.addActive(
+            hitbox: hitbox, cell: component.currentCell));
         broadphase.scheduledOperations.add(
             ScheduledHitboxOperation.removePassive(
                 hitbox: hitbox, cell: component.currentCell));
         break;
       case CollisionType.passive:
-        broadphase.scheduledOperations
-            .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removeActive(
+                hitbox: hitbox, cell: component.currentCell));
         broadphase.scheduledOperations.add(ScheduledHitboxOperation.addPassive(
             hitbox: hitbox, cell: component.currentCell));
         break;
       case CollisionType.inactive:
-        broadphase.scheduledOperations
-            .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removeActive(
+                hitbox: hitbox, cell: component.currentCell));
         broadphase.scheduledOperations.add(
             ScheduledHitboxOperation.removePassive(
                 hitbox: hitbox, cell: component.currentCell));
