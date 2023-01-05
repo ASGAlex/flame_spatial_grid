@@ -117,11 +117,23 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      final cellsToCheck =
-          asShapeItem.parentWithGridSupport?.currentCell?.neighboursAndMe;
+      var cellsToCheck = <Cell>[];
+      final withGridSupport = asShapeItem.parentWithGridSupport;
+      if (withGridSupport == null) continue;
+
+      if (withGridSupport.isOutOfCellBounds) {
+        cellsToCheck = withGridSupport.currentCell?.neighboursAndMe ?? [];
+      } else {
+        final cell = withGridSupport.currentCell;
+        if (cell != null) {
+          cellsToCheck = [cell];
+        } else {
+          cellsToCheck = [];
+        }
+      }
 
       final potentiallyCollide = HashSet<ShapeHitbox>();
-      if (cellsToCheck == null) continue;
+      if (cellsToCheck.isEmpty) continue;
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
@@ -138,8 +150,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   void _compareItemWithPotentials(
       ShapeHitbox asShapeItem, List<ShapeHitbox> potentials) {
     for (final potential in potentials) {
-      var canToCollide = broadphaseCheckCache[asShapeItem]?[potential];
-      if (canToCollide == false) {
+      final canToCollide = broadphaseCheckCache[asShapeItem]?[potential] ??
+          _runExternalBroadphaseCheck(asShapeItem, potential);
+      if (!canToCollide) {
         continue;
       }
 
@@ -155,10 +168,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      canToCollide ??= _runExternalBroadphaseCheck(asShapeItem, potential);
-      if (canToCollide) {
-        _potentials.add(CollisionProspect(asShapeItem as T, potential as T));
-      }
+      _potentials.add(CollisionProspect(asShapeItem as T, potential as T));
     }
   }
 
@@ -182,9 +192,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       return true;
     }
     final canToCollide = broadphaseCheck(item0, item1);
-    if (canToCollide) {
-      _potentials.add(CollisionProspect(item0 as T, item1 as T));
-    }
     if (broadphaseCheckCache[item0 as T] == null) {
       broadphaseCheckCache[item0 as T] = HashMap<T, bool>();
     }

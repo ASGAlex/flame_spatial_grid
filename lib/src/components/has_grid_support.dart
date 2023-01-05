@@ -76,9 +76,15 @@ mixin HasGridSupport on PositionComponent {
   double get minDistance => sqrt(_minDistanceQuad);
 
   double _minDistanceX = 0;
+
   double get minDistanceX => _minDistanceX;
   double _minDistanceY = 0;
+
   double get minDistanceY => _minDistanceY;
+
+  bool _outOfCellBounds = false;
+
+  get isOutOfCellBounds => _outOfCellBounds;
 
   set isSuspended(bool suspend) {
     if (suspendNotifier.value != suspend) {
@@ -191,8 +197,10 @@ mixin HasGridSupport on PositionComponent {
       if (isTracked) {
         spatialGrid.currentCell = newCell;
       }
+      _outOfCellBounds = !boundingBox.isFullyInsideRect(newCell.rect);
       return true; //cell changed;
     }
+    _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
     return false; //cell not changed;
   }
 
@@ -215,6 +223,12 @@ extension SpatialGridRectangleHitbox on RectangleHitbox {
       cache = HasGridSupport._cachedCenters[this];
     }
     return cache!;
+  }
+
+  bool isFullyInsideRect(Rect rect) {
+    final boundingRect = aabb.toRect();
+    return rect.topLeft < boundingRect.topLeft &&
+        rect.bottomRight > boundingRect.bottomRight;
   }
 }
 
