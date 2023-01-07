@@ -34,46 +34,18 @@ class SpatialGridCollisionDetection
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
         if (item.isMounted) {
-          _onSpatialGridCollisionTypeChange(withGridSupportComponent, item);
+          broadphase.updateHitboxIndexes(item);
         }
       };
 
       item.collisionTypeNotifier.addListener(listenerCollisionType);
       _listenerCollisionType[item] = listenerCollisionType;
 
-      _onSpatialGridCollisionTypeChange(withGridSupportComponent, item);
+      broadphase.updateHitboxIndexes(item);
 
       item.defaultCollisionType; //init defaults with current value;
 
       withGridSupportComponent.onSpatialGridSupportComponentMounted();
-    }
-  }
-
-  void _onSpatialGridCollisionTypeChange(
-      HasGridSupport component, ShapeHitbox hitbox) {
-    switch (hitbox.collisionType) {
-      case CollisionType.active:
-        broadphase.scheduledOperations.add(ScheduledHitboxOperation.addActive(
-            hitbox: hitbox, cell: component.currentCell));
-        broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removePassive(
-                hitbox: hitbox, cell: component.currentCell));
-        break;
-      case CollisionType.passive:
-        broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removeActive(
-                hitbox: hitbox, cell: component.currentCell));
-        broadphase.scheduledOperations.add(ScheduledHitboxOperation.addPassive(
-            hitbox: hitbox, cell: component.currentCell));
-        break;
-      case CollisionType.inactive:
-        broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removeActive(
-                hitbox: hitbox, cell: component.currentCell));
-        broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removePassive(
-                hitbox: hitbox, cell: component.currentCell));
-        break;
     }
   }
 
@@ -98,10 +70,15 @@ class SpatialGridCollisionDetection
         spatialGridSupportComponent.suspendNotifier
             .removeListener(listenerComponentInCellSuspend);
       }
-      broadphase.scheduledOperations.add(ScheduledHitboxOperation.removePassive(
-          hitbox: hitbox, cell: spatialGridSupportComponent.currentCell));
-      broadphase.scheduledOperations
-          .add(ScheduledHitboxOperation.removeActive(hitbox: hitbox));
+      final currentCell = spatialGridSupportComponent.currentCell;
+      if (currentCell != null) {
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+                hitbox: hitbox, cell: currentCell));
+        broadphase.scheduledOperations.add(
+            ScheduledHitboxOperation.removeActive(
+                hitbox: hitbox, cell: currentCell));
+      }
     }
 
     final checkCache = broadphase.broadphaseCheckCache[hitbox];
@@ -121,14 +98,32 @@ class SpatialGridCollisionDetection
     items.forEach(remove);
   }
 
-  final Set<CollisionProspect<ShapeHitbox>> _lastPotentials = {};
+  final HashSet<CollisionProspect<ShapeHitbox>> _lastPotentials =
+      HashSet<CollisionProspect<ShapeHitbox>>();
 
   @override
   void run() {
     _scheduledUpdateAfterTransform.forEach(_updateTransform);
     _scheduledUpdateAfterTransform.clear();
     broadphase.update();
-    _runForPotentials(broadphase.query());
+    final allPotentials = broadphase.query();
+    final repeatBroadphaseForItems = _runForPotentials(allPotentials);
+    if (repeatBroadphaseForItems.isNotEmpty) {
+      final additionalPotentials =
+          broadphase.querySubset(repeatBroadphaseForItems);
+      _runForPotentials(additionalPotentials);
+      allPotentials.addAll(additionalPotentials);
+    }
+    // Handles callbacks for an ended collision that the broadphase didn't
+    // reports as a potential collision anymore.
+    _lastPotentials.difference(allPotentials).forEach((tuple) {
+      if (tuple.a.collidingWith(tuple.b)) {
+        handleCollisionEnd(tuple.a, tuple.b);
+      }
+    });
+    _lastPotentials
+      ..clear()
+      ..addAll(allPotentials);
   }
 
   void _updateTransform(ShapeHitbox item) {
@@ -141,7 +136,8 @@ class SpatialGridCollisionDetection
     }
   }
 
-  void _runForPotentials(HashSet<CollisionProspect<ShapeHitbox>> potentials) {
+  HashSet<CollisionProspect<ShapeHitbox>> _runForPotentials(
+      HashSet<CollisionProspect<ShapeHitbox>> potentials) {
     final repeatBroadphaseForItems = HashSet<CollisionProspect<ShapeHitbox>>();
     for (final tuple in potentials) {
       final itemA = tuple.a;
@@ -165,20 +161,6 @@ class SpatialGridCollisionDetection
         handleCollisionEnd(itemA, itemB);
       }
     }
-
-    // Handles callbacks for an ended collision that the broadphase didn't
-    // reports as a potential collision anymore.
-    _lastPotentials.difference(potentials).forEach((tuple) {
-      if (tuple.a.collidingWith(tuple.b)) {
-        handleCollisionEnd(tuple.a, tuple.b);
-      }
-    });
-    _lastPotentials
-      ..clear()
-      ..addAll(potentials);
-
-    if (repeatBroadphaseForItems.isNotEmpty) {
-      _runForPotentials(broadphase.querySubset(repeatBroadphaseForItems));
-    }
+    return repeatBroadphaseForItems;
   }
 }

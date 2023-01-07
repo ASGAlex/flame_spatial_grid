@@ -5,7 +5,6 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -41,16 +40,8 @@ mixin HasGridSupport on PositionComponent {
       if (previousCell != null) {
         previousCell.components.remove(this);
       }
-      if (hitbox.collisionType == CollisionType.inactive) {
-        if (previousCell != null) {
-          spatialGrid.game.collisionDetection.broadphase.scheduledOperations
-              .add(ScheduledHitboxOperation.removePassive(
-                  hitbox: hitbox, cell: previousCell));
-        }
-        spatialGrid.game.collisionDetection.broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.addPassive(
-                hitbox: hitbox, cell: _currentCell));
-      }
+      final broadphase = spatialGrid.game.collisionDetection.broadphase;
+      broadphase.updateHitboxIndexes(hitbox, previousCell);
     }
   }
 
@@ -64,7 +55,9 @@ mixin HasGridSupport on PositionComponent {
 
   bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
 
-  final boundingBox = RectangleHitbox()..collisionType = CollisionType.inactive;
+  final boundingBox =
+      RectangleHitbox(position: Vector2.zero(), size: Vector2.zero())
+        ..collisionType = CollisionType.inactive;
 
   @internal
   double dtElapsedWhileSuspended = 0;
@@ -104,9 +97,24 @@ mixin HasGridSupport on PositionComponent {
   @override
   @mustCallSuper
   onLoad() {
+    boundingBox.size.setFrom(Rect.fromLTWH(0, 0, size.x, size.y).toVector2());
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
     return null;
+  }
+
+  @override
+  Future<void>? add(Component component) {
+    if (component != boundingBox && component is ShapeHitbox) {
+      final currentRect = boundingBox.shouldFillParent
+          ? Rect.fromLTWH(0, 0, size.x, size.y)
+          : boundingBox.toRect();
+      final addRect = component.toRect();
+      final newRect = currentRect.expandToInclude(addRect);
+      boundingBox.position.setFrom(newRect.topLeft.toVector2());
+      boundingBox.size.setFrom(newRect.size.toVector2());
+    }
+    return super.add(component);
   }
 
   void _onBoundingBoxTransform() {
