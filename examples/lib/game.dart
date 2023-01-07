@@ -98,6 +98,7 @@ all collisions are disabled.
   var _killWater = false;
 
   var teleportMode = true;
+  var isAIEnabled = true;
 
   final fadeOutConfig = FadeOutConfig(
       fadeOutTimeout: const Duration(seconds: 1),
@@ -149,6 +150,13 @@ all collisions are disabled.
       }
       if (key == LogicalKeyboardKey.keyT) {
         teleportMode = !teleportMode;
+      }
+      if (key == LogicalKeyboardKey.keyI) {
+        isAIEnabled = !isAIEnabled;
+        final npcList = world.children.whereType<Npc>();
+        for (final npc in npcList) {
+          npc.vector.setZero();
+        }
       }
     }
     if (!_playerDisplacement.isZero()) {
@@ -534,7 +542,7 @@ class Npc extends Player {
   void update(double dt) {
     dtElapsed++;
     if (dtElapsed >= dtMax) {
-      vector.setValues(0, 0);
+      vector.setZero();
       dtElapsed = 0;
     }
     if (vector.isZero()) {
@@ -550,13 +558,14 @@ class Npc extends Player {
   }
 
   _createNewVector() {
-    return;
-    final rand = Random();
-    final xSign = rand.nextBool() ? -1 : 1;
-    final ySign = rand.nextBool() ? -1 : 1;
-    final xValue = rand.nextDouble();
-    final yValue = rand.nextDouble();
-    vector.setValues(xValue * xSign, yValue * ySign);
+    if (game.isAIEnabled) {
+      final rand = Random();
+      final xSign = rand.nextBool() ? -1 : 1;
+      final ySign = rand.nextBool() ? -1 : 1;
+      final xValue = rand.nextDouble();
+      final yValue = rand.nextDouble();
+      vector.setValues(xValue * xSign, yValue * ySign);
+    }
   }
 
   @override
