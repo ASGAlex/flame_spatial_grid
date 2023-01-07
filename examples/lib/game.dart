@@ -11,6 +11,8 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
+//#region World
+
 const tileSize = 8.0;
 
 class SpatialGridExample extends FlameGame
@@ -291,7 +293,100 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 }
 
-//#region Player
+class DemoMapLoader extends TiledMapLoader {
+  DemoMapLoader([Vector2? initialPosition]) {
+    if (initialPosition != null) {
+      this.initialPosition = initialPosition;
+    }
+    preloadTileSets = true;
+    fileName = 'example.tmx';
+  }
+
+  @override
+  TileBuilderFunction? get cellPostBuilder => null;
+
+  @override
+  Vector2 get destTileSize => Vector2.all(8);
+
+  @override
+  TileBuilderFunction? get notFoundBuilder => onBackgroundBuilder;
+
+  @override
+  Map<String, TileBuilderFunction> get tileBuilders => {
+        'Brick': onBuildBrick,
+        'Water': onBuildWater,
+        'TestObject': onBuildTestObject
+      };
+
+  Future<void> onBuildBrick(CellBuilderContext context) async {
+    final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
+    final brick = Brick(
+        position: context.position, sprite: spriteBrick, context: context);
+    brick.currentCell = context.cell;
+    game.layersManager.addComponent(
+        component: brick,
+        layerType: MapLayerType.static,
+        layerName: 'Brick',
+        priority: 2);
+  }
+
+  Future<void> onBuildWater(CellBuilderContext context) async {
+    final waterAnimation =
+        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+    final water = Water(
+        position: context.position,
+        animation: waterAnimation,
+        context: context);
+    water.currentCell = context.cell;
+    game.layersManager.addComponent(
+        component: water,
+        layerType: MapLayerType.animated,
+        layerName: 'Water',
+        priority: 1);
+  }
+
+  Future<void> onBuildTestObject(CellBuilderContext context) async {
+    final waterAnimation =
+        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+
+    final stepSize = waterAnimation?.getSprite().srcSize.x;
+    if (stepSize == null) return;
+    for (var y = context.position.y;
+        y < context.position.y + context.size.y;
+        y += stepSize) {
+      for (var x = context.position.x;
+          x < context.position.x + context.size.x;
+          x += stepSize) {
+        final water = Water(
+            position: Vector2(x, y),
+            animation: waterAnimation,
+            context: context);
+        water.currentCell = context.cell;
+        game.layersManager.addComponent(
+            component: water,
+            layerType: MapLayerType.animated,
+            layerName: 'Water',
+            priority: 1);
+      }
+    }
+  }
+
+  final blockSize = 100.0;
+
+  Future<void> onBackgroundBuilder(CellBuilderContext context) async {
+    var priority = -1;
+    if (context.layerInfo.name == 'bricks') {
+      priority = 100;
+    }
+
+    context.priorityOverride = priority;
+
+    super.genericTileBuilder(context);
+  }
+}
+//#endregion
+
+//#region Player NPC
 
 class Player extends SpriteComponent
     with
@@ -629,95 +724,4 @@ extension Vector2Ext on Vector2 {
   }
 }
 
-class DemoMapLoader extends TiledMapLoader {
-  DemoMapLoader([Vector2? initialPosition]) {
-    if (initialPosition != null) {
-      this.initialPosition = initialPosition;
-    }
-    preloadTileSets = true;
-    fileName = 'example.tmx';
-  }
-
-  @override
-  TileBuilderFunction? get cellPostBuilder => null;
-
-  @override
-  Vector2 get destTileSize => Vector2.all(8);
-
-  @override
-  TileBuilderFunction? get notFoundBuilder => onBackgroundBuilder;
-
-  @override
-  Map<String, TileBuilderFunction> get tileBuilders => {
-        'Brick': onBuildBrick,
-        'Water': onBuildWater,
-        'TestObject': onBuildTestObject
-      };
-
-  Future<void> onBuildBrick(CellBuilderContext context) async {
-    final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
-    final brick = Brick(
-        position: context.position, sprite: spriteBrick, context: context);
-    brick.currentCell = context.cell;
-    game.layersManager.addComponent(
-        component: brick,
-        layerType: MapLayerType.static,
-        layerName: 'Brick',
-        priority: 2);
-  }
-
-  Future<void> onBuildWater(CellBuilderContext context) async {
-    final waterAnimation =
-        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
-    final water = Water(
-        position: context.position,
-        animation: waterAnimation,
-        context: context);
-    water.currentCell = context.cell;
-    game.layersManager.addComponent(
-        component: water,
-        layerType: MapLayerType.animated,
-        layerName: 'Water',
-        priority: 1);
-  }
-
-  Future<void> onBuildTestObject(CellBuilderContext context) async {
-    final waterAnimation =
-        getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
-
-    final stepSize = waterAnimation?.getSprite().srcSize.x;
-    if (stepSize == null) return;
-    for (var y = context.position.y;
-        y < context.position.y + context.size.y;
-        y += stepSize) {
-      for (var x = context.position.x;
-          x < context.position.x + context.size.x;
-          x += stepSize) {
-        final water = Water(
-            position: Vector2(x, y),
-            animation: waterAnimation,
-            context: context);
-        water.currentCell = context.cell;
-        game.layersManager.addComponent(
-            component: water,
-            layerType: MapLayerType.animated,
-            layerName: 'Water',
-            priority: 1);
-      }
-    }
-  }
-
-  final blockSize = 100.0;
-
-  Future<void> onBackgroundBuilder(CellBuilderContext context) async {
-    var priority = -1;
-    if (context.layerInfo.name == 'bricks') {
-      priority = 100;
-    }
-
-    context.priorityOverride = priority;
-
-    super.genericTileBuilder(context);
-  }
-}
 //#endregion
