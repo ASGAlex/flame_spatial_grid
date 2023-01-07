@@ -159,7 +159,6 @@ all collisions are disabled.
             killWater: _killWater);
         bullet.currentCell = player.currentCell;
         world.bullets.add(bullet);
-        print(world.bullets.children.length);
         _fireBullet = false;
       }
       _playerDisplacement.setZero();
@@ -251,6 +250,8 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   final bullets = Component();
 
+  var npcCount = 0;
+
   @override
   onLoad() async {
     add(player);
@@ -260,11 +261,14 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   void spawnNpcTeam() {
     for (var i = 1; i <= 40; i++) {
+      final position = Vector2(-100, 0)..add(Vector2(10.0 * i, 0));
+      final cell = game.spatialGrid.createNewCellAtPosition(position);
       add(Npc(
-          position: Vector2(-100, 0)..add(Vector2(10.0 * i, 0)),
+          position: position,
           size: Vector2.all(tileSize),
           priority: player.priority)
-        ..currentCell = player.currentCell);
+        ..currentCell = cell);
+      npcCount++;
     }
   }
 
@@ -498,8 +502,6 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
 }
 
 class Npc extends Player {
-  static int npcCount = 0;
-
   Npc({required super.position, required super.size, required super.priority}) {
     final matrix = [
       -0.5,
@@ -524,7 +526,6 @@ class Npc extends Player {
       0.000
     ];
     paint.colorFilter = ColorFilter.matrix(matrix);
-    npcCount++;
   }
 
   final speed = 8;
@@ -550,6 +551,7 @@ class Npc extends Player {
   }
 
   _createNewVector() {
+    return;
     final rand = Random();
     final xSign = rand.nextBool() ? -1 : 1;
     final ySign = rand.nextBool() ? -1 : 1;
@@ -563,12 +565,13 @@ class Npc extends Player {
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
+    if (isRemoving) return;
     if (other is GameCollideable) {
       vector.setValues(0, 0);
     } else if (other is Bullet) {
       removeFromParent();
-      npcCount--;
-      if (npcCount == 0) {
+      game.world.npcCount--;
+      if (game.world.npcCount == 0) {
         game.world.spawnNpcTeam();
       }
     }
@@ -584,7 +587,6 @@ class Npc extends Player {
       final recorderCanvas = Canvas(recorder);
       recorderCanvas.saveLayer(null, paint);
       super.render(recorderCanvas);
-      // recorderCanvas.restore();
       coloredSprite = await recorder.endRecording().toImageSafe(8, 8);
     } else {
       canvas.drawImage(coloredSprite!, Offset.zero, paint);
