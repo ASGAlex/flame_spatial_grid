@@ -261,13 +261,10 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   void spawnNpcTeam() {
     for (var i = 1; i <= 40; i++) {
-      final position = Vector2(-100, 0)..add(Vector2(10.0 * i, 0));
-      final cell = game.spatialGrid.createNewCellAtPosition(position);
       add(Npc(
-          position: position,
+          position: Vector2(-100, 0)..add(Vector2(10.0 * i, 0)),
           size: Vector2.all(tileSize),
-          priority: player.priority)
-        ..currentCell = cell);
+          priority: player.priority));
       npcCount++;
     }
   }
@@ -540,13 +537,15 @@ class Npc extends Player {
       vector.setValues(0, 0);
       dtElapsed = 0;
     }
-    if (vector == Vector2.zero()) {
+    if (vector.isZero()) {
       _createNewVector();
     }
 
     final dtSpeed = speed * dt;
     final newStep = vector * dtSpeed;
-    position.add(newStep);
+    if (!vector.isZero()) {
+      position.add(newStep);
+    }
     super.update(dt);
   }
 

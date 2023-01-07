@@ -172,9 +172,8 @@ mixin HasGridSupport on PositionComponent {
     var current = currentCell;
     current ??=
         currentCell = spatialGrid.findExistingCellByPosition(componentCenter);
-    if (current == null) {
-      throw 'Cell did not found at position $componentCenter';
-    }
+    current ??=
+        currentCell = spatialGrid.createNewCellAtPosition(componentCenter);
     if (current.rect.containsPoint(componentCenter) != true) {
       Cell? newCell;
       //look close neighbours
@@ -197,10 +196,6 @@ mixin HasGridSupport on PositionComponent {
       //coordinates
       newCell ??= spatialGrid.createNewCellAtPosition(componentCenter);
 
-      newCell.left;
-      newCell.right;
-      newCell.top;
-      newCell.bottom;
       currentCell = newCell;
       if (isTracked) {
         spatialGrid.currentCell = newCell;

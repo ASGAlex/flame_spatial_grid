@@ -41,9 +41,10 @@ class SpatialGridCollisionDetection
       item.collisionTypeNotifier.addListener(listenerCollisionType);
       _listenerCollisionType[item] = listenerCollisionType;
 
-      broadphase.updateHitboxIndexes(item);
-
       item.defaultCollisionType; //init defaults with current value;
+      withGridSupportComponent.updateTransform();
+
+      broadphase.updateHitboxIndexes(item);
 
       withGridSupportComponent.onSpatialGridSupportComponentMounted();
     }
