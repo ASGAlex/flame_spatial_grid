@@ -95,11 +95,9 @@ all collisions are disabled.
   var _fireBullet = false;
   var _killWater = false;
 
-  static const stepSize = 2.0;
-
   var teleportMode = true;
 
-  final _fadeOutConfig = FadeOutConfig(
+  final fadeOutConfig = FadeOutConfig(
       fadeOutTimeout: const Duration(seconds: 1),
       operationsLimitToSavePicture: 5,
       transparencyPerStep: 0.1);
@@ -111,20 +109,20 @@ all collisions are disabled.
   ) {
     for (final key in keysPressed) {
       if (key == LogicalKeyboardKey.keyW && player.canMoveTop) {
-        _playerDisplacement.setValues(0, -stepSize);
-        player.position = player.position.translate(0, -stepSize);
+        _playerDisplacement.setValues(0, -Player.stepSize);
+        player.position = player.position.translate(0, -Player.stepSize);
       }
       if (key == LogicalKeyboardKey.keyA && player.canMoveLeft) {
-        _playerDisplacement.setValues(-stepSize, 0);
-        player.position = player.position.translate(-stepSize, 0);
+        _playerDisplacement.setValues(-Player.stepSize, 0);
+        player.position = player.position.translate(-Player.stepSize, 0);
       }
       if (key == LogicalKeyboardKey.keyS && player.canMoveBottom) {
-        _playerDisplacement.setValues(0, stepSize);
-        player.position = player.position.translate(0, stepSize);
+        _playerDisplacement.setValues(0, Player.stepSize);
+        player.position = player.position.translate(0, Player.stepSize);
       }
       if (key == LogicalKeyboardKey.keyD && player.canMoveRight) {
-        _playerDisplacement.setValues(stepSize, 0);
-        player.position = player.position.translate(stepSize, 0);
+        _playerDisplacement.setValues(Player.stepSize, 0);
+        player.position = player.position.translate(Player.stepSize, 0);
       }
       if (key == LogicalKeyboardKey.shiftLeft) {
         _killWater = !_killWater;
@@ -152,16 +150,6 @@ all collisions are disabled.
       }
     }
     if (!_playerDisplacement.isZero()) {
-      final step = PlayerStep(player);
-      final stepCell = step.currentCell;
-      if (stepCell != null) {
-        final layer = layersManager.addComponent(
-            component: step,
-            layerType: MapLayerType.trail,
-            layerName: 'trail',
-            optimizeCollisions: false) as CellTrailLayer;
-        layer.fadeOutConfig = _fadeOutConfig;
-      }
       if (_fireBullet) {
         final bullet = Bullet(
             position: player.position,
@@ -257,7 +245,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-      position: Vector2(0, 0), size: Vector2.all(tileSize), priority: 10);
+      position: Vector2(-100, 0), size: Vector2.all(tileSize), priority: 10);
 
   final bullets = Component();
 
@@ -265,6 +253,17 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   onLoad() async {
     add(player);
     add(bullets);
+    spawnNpcTeam();
+  }
+
+  void spawnNpcTeam() {
+    for (var i = 1; i <= 40; i++) {
+      add(Npc(
+          position: Vector2(-100, 0)..add(Vector2(10.0 * i, 0)),
+          size: Vector2.all(tileSize),
+          priority: player.priority)
+        ..currentCell = player.currentCell);
+    }
   }
 
   @override
@@ -295,7 +294,11 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 //#region Player
 
 class Player extends SpriteComponent
-    with CollisionCallbacks, HasGameRef<SpatialGridExample>, HasGridSupport {
+    with
+        CollisionCallbacks,
+        HasGameRef<SpatialGridExample>,
+        HasGridSupport,
+        GameCollideable {
   Player({
     required super.position,
     required super.size,
@@ -310,6 +313,32 @@ class Player extends SpriteComponent
     });
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
+    previousPosition.setFrom(position);
+    position.addListener(_onPositionUpdate);
+  }
+
+  static const stepSize = 2.0;
+  double stepDone = 0;
+  final previousPosition = Vector2.zero();
+
+  _onPositionUpdate() {
+    final diff = position - previousPosition;
+    stepDone += diff.x.abs() / 3 + diff.y.abs() / 3;
+    if (stepDone >= stepSize) {
+      stepDone = 0;
+      final step = PlayerStep(this);
+      final stepCell = step.currentCell;
+      if (stepCell != null) {
+        final layer = game.layersManager.addComponent(
+            component: step,
+            layerType: MapLayerType.trail,
+            layerName: 'trail',
+            optimizeCollisions: false) as CellTrailLayer;
+        layer.fadeOutConfig = game.fadeOutConfig;
+      }
+    }
+
+    previousPosition.setFrom(position);
   }
 
   bool canMoveLeft = true;
@@ -373,6 +402,101 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
   }
 }
 
+class Npc extends Player {
+  static int npcCount = 0;
+
+  Npc({required super.position, required super.size, required super.priority}) {
+    final matrix = [
+      -0.5,
+      0.000,
+      0.000,
+      0.000,
+      0.000,
+      0.8,
+      1.000,
+      0.000,
+      0.000,
+      0.000,
+      -0.5,
+      0.000,
+      1.000,
+      0.000,
+      0.000,
+      0.000,
+      0.000,
+      0.000,
+      1.000,
+      0.000
+    ];
+    paint.colorFilter = ColorFilter.matrix(matrix);
+    npcCount++;
+  }
+
+  final speed = 8;
+  final vector = Vector2.zero();
+  double dtElapsed = 0;
+  final dtMax = 1000;
+
+  @override
+  void update(double dt) {
+    dtElapsed++;
+    if (dtElapsed >= dtMax) {
+      vector.setValues(0, 0);
+      dtElapsed = 0;
+    }
+    if (vector == Vector2.zero()) {
+      _createNewVector();
+    }
+
+    final dtSpeed = speed * dt;
+    final newStep = vector * dtSpeed;
+    position.add(newStep);
+    super.update(dt);
+  }
+
+  _createNewVector() {
+    final rand = Random();
+    final xSign = rand.nextBool() ? -1 : 1;
+    final ySign = rand.nextBool() ? -1 : 1;
+    final xValue = rand.nextDouble();
+    final yValue = rand.nextDouble();
+    vector.setValues(xValue * xSign, yValue * ySign);
+  }
+
+  @override
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
+    if (other is GameCollideable) {
+      vector.setValues(0, 0);
+    } else if (other is Bullet) {
+      removeFromParent();
+      npcCount--;
+      if (npcCount == 0) {
+        game.world.spawnNpcTeam();
+      }
+    }
+    super.onCollisionStart(intersectionPoints, other);
+  }
+
+  Image? coloredSprite;
+
+  @override
+  void render(Canvas canvas) async {
+    if (coloredSprite == null) {
+      final recorder = PictureRecorder();
+      final recorderCanvas = Canvas(recorder);
+      recorderCanvas.saveLayer(null, paint);
+      super.render(recorderCanvas);
+      // recorderCanvas.restore();
+      coloredSprite = await recorder.endRecording().toImageSafe(8, 8);
+    } else {
+      canvas.drawImage(coloredSprite!, Offset.zero, paint);
+    }
+  }
+}
+
 class Bullet extends PositionComponent
     with CollisionCallbacks, HasPaint, HasGridSupport {
   Bullet(
@@ -420,7 +544,7 @@ class Bullet extends PositionComponent
 
   @override
   bool onComponentTypeCheck(PositionComponent other) {
-    if (other is Player || other is Bullet) {
+    if ((other is Player && other is! Npc) || other is Bullet) {
       return false;
     }
     return super.onComponentTypeCheck(other);
