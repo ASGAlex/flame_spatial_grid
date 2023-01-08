@@ -46,10 +46,11 @@ class LayersManager {
     bool optimizeCollisions = true,
     int priority = 1,
   }) {
-    final cell = component.currentCell;
-    if (cell == null) {
-      throw 'Cell must be specified!';
-    }
+    var cell = component.currentCell;
+    cell ??= component.currentCell =
+        game.spatialGrid.findExistingCellByPosition(component.position);
+    cell ??= component.currentCell =
+        game.spatialGrid.createNewCellAtPosition(component.position);
     CellLayer? layer = getLayer(name: layerName, cell: cell);
     final isNew = layer == null;
     switch (layerType) {

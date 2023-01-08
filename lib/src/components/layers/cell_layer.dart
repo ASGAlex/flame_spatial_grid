@@ -23,6 +23,8 @@ abstract class CellLayer extends PositionComponent
 
   bool optimizeCollisions = false;
 
+  bool doUpdateComponentsPriority = false;
+
   @protected
   late final CollisionOptimizer collisionOptimizer;
 
@@ -109,14 +111,31 @@ abstract class CellLayer extends PositionComponent
         dtElapsedWhileSuspended += dt;
         updateSuspendedTree(dtElapsedWhileSuspended);
       } else {
-        super.updateTree(dt);
+        _updateTree(dt);
         if (optimizeCollisions) {
           collisionOptimizer.optimize();
           isUpdateNeeded = true;
-          super.updateTree(dt);
+          _updateTree(dt);
         }
         compileToSingleLayer();
       }
+    }
+  }
+
+  void _updateTree(double dt) {
+    if (doUpdateComponentsPriority) {
+      super.updateTree(dt);
+    } else {
+      _coreUpdateTreeOverride(dt);
+      (updateNotifier as ActionNotifier).isActionNeeded = false;
+    }
+  }
+
+  void _coreUpdateTreeOverride(double dt) {
+    lifecycle.processQueues();
+    update(dt);
+    for (final c in children) {
+      c.updateTree(dt);
     }
   }
 

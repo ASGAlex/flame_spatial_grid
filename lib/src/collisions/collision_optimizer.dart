@@ -13,6 +13,8 @@ class CollisionOptimizer {
   final HasGridSupport parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
 
+  static const maximumItemsInGroup = 25;
+
   List<HasGridSupport> get gridChildren =>
       parentLayer.children.whereType<HasGridSupport>().toList(growable: false);
 
@@ -56,12 +58,34 @@ class CollisionOptimizer {
     for (final child in gridChildrenActiveOrPassive) {
       if (_alreadyProcessed.contains(child.boundingBox)) continue;
       final hitboxes = _findOverlappingRects(child.boundingBox);
-      if (hitboxes.isNotEmpty) {
-        hitboxes.add(child.boundingBox);
-
-        final optimized = OptimizedCollisionList(hitboxes, parentLayer);
-        collisionsListByGroup[optimized.boundingBox] = optimized;
-        _createdCollisionLists.add(optimized);
+      if (hitboxes.length > 1) {
+        if (hitboxes.length > maximumItemsInGroup) {
+          var totalInChunk = 0;
+          var chunk = <ShapeHitbox>{};
+          for (final hbInChunk in hitboxes) {
+            if (totalInChunk == maximumItemsInGroup) {
+              final optimized = OptimizedCollisionList(
+                  HashSet<ShapeHitbox>()..addAll(chunk), parentLayer);
+              collisionsListByGroup[optimized.boundingBox] = optimized;
+              _createdCollisionLists.add(optimized);
+              totalInChunk = 0;
+              chunk = <ShapeHitbox>{};
+            } else {
+              chunk.add(hbInChunk);
+              totalInChunk++;
+            }
+          }
+          if (chunk.isNotEmpty) {
+            final optimized = OptimizedCollisionList(
+                HashSet<ShapeHitbox>()..addAll(chunk), parentLayer);
+            collisionsListByGroup[optimized.boundingBox] = optimized;
+            _createdCollisionLists.add(optimized);
+          }
+        } else {
+          final optimized = OptimizedCollisionList(hitboxes, parentLayer);
+          collisionsListByGroup[optimized.boundingBox] = optimized;
+          _createdCollisionLists.add(optimized);
+        }
         for (final hb in hitboxes) {
           hb.collisionType = CollisionType.inactive;
         }
@@ -69,10 +93,11 @@ class CollisionOptimizer {
     }
   }
 
-  HashSet<ShapeHitbox> _findOverlappingRects(ShapeHitbox hitbox,
+  LinkedHashSet<ShapeHitbox> _findOverlappingRects(ShapeHitbox hitbox,
       [HashSet<ShapeHitbox>? exception]) {
     exception ??= HashSet<ShapeHitbox>();
-    final hitboxes = HashSet<ShapeHitbox>();
+    final hitboxes = LinkedHashSet<ShapeHitbox>();
+    hitboxes.add(hitbox);
     exception.add(hitbox);
     for (final otherChild in gridChildrenActiveOrPassive) {
       if (exception.contains(otherChild.boundingBox)) continue;
@@ -103,15 +128,15 @@ extension RectSpecialOverlap on Rect {
 }
 
 class OptimizedCollisionList {
-  OptimizedCollisionList(HashSet<ShapeHitbox> hitboxes, this.parentLayer) {
+  OptimizedCollisionList(Set<ShapeHitbox> hitboxes, this.parentLayer) {
     _hitboxes = hitboxes;
     _updateBoundingBox();
   }
 
   List<ShapeHitbox> get hitboxes => _hitboxes.toList(growable: false);
-  var _hitboxes = HashSet<ShapeHitbox>();
-  var _boundingBox = GroupHitbox()..hasParent = false;
-  final PositionComponent parentLayer;
+  var _hitboxes = Set<ShapeHitbox>();
+  var _boundingBox = GroupHitbox();
+  final HasGridSupport parentLayer;
 
   GroupHitbox get boundingBox => _boundingBox;
 
@@ -130,9 +155,6 @@ class OptimizedCollisionList {
   }
 
   _updateBoundingBox() {
-    if (_boundingBox.hasParent) {
-      parentLayer.remove(_boundingBox);
-    }
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
       if (rect == Rect.zero) {
@@ -142,7 +164,7 @@ class OptimizedCollisionList {
       rect = rect.expandToInclude(hitbox.toRectSpecial());
     }
     _boundingBox = GroupHitbox(
-        // parentLayer: parentLayer,
+        parentWithGridSupport: parentLayer,
         position: rect.topLeft.toVector2(),
         size: rect.size.toVector2())
       ..collisionType = CollisionType.passive;
@@ -158,12 +180,12 @@ extension ToRectSpecial on PositionComponent {
   }
 }
 
-class GroupHitbox extends RectangleHitbox {
-  GroupHitbox({super.position, super.size}) {
+class GroupHitbox extends BoundingHitbox {
+  GroupHitbox({super.position, super.size, super.parentWithGridSupport}) {
     isSolid = true;
+    collisionType = CollisionType.passive;
+    defaultCollisionType = collisionType;
   }
-
-  bool hasParent = true;
 
   @override
   void renderDebugMode(Canvas canvas) {

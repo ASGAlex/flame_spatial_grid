@@ -9,12 +9,14 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 mixin HasGridSupport on PositionComponent {
-  static final _componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
+  @internal
+  static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
   @internal
   static final cachedCenters = HashMap<ShapeHitbox, Vector2>();
 
-  static final _defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
+  @internal
+  static final defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
   bool isVisible = true;
 
@@ -55,9 +57,15 @@ mixin HasGridSupport on PositionComponent {
 
   bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
 
-  final boundingBox =
-      RectangleHitbox(position: Vector2.zero(), size: Vector2.zero())
-        ..collisionType = CollisionType.inactive;
+  // final boundingBox =
+  //     RectangleHitbox(position: Vector2.zero(), size: Vector2.zero())
+  //       ..collisionType = CollisionType.inactive;
+
+  late final boundingBox = BoundingHitbox(
+      position: Vector2.zero(),
+      size: Vector2.zero(),
+      parentWithGridSupport: this)
+    ..collisionType = CollisionType.inactive;
 
   @internal
   double dtElapsedWhileSuspended = 0;
@@ -167,6 +175,7 @@ mixin HasGridSupport on PositionComponent {
 
   @internal
   bool updateTransform() {
+    boundingBox.aabbCenter = boundingBox.aabb.center;
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
@@ -215,68 +224,5 @@ mixin HasGridSupport on PositionComponent {
       '$runtimeType',
       Vector2(0, 0),
     );
-  }
-}
-
-extension SpatialGridRectangleHitbox on RectangleHitbox {
-  Vector2 get aabbCenter {
-    var cache = HasGridSupport.cachedCenters[this];
-    if (cache == null) {
-      HasGridSupport.cachedCenters[this] = aabb.center;
-      cache = HasGridSupport.cachedCenters[this];
-    }
-    return cache!;
-  }
-
-  bool isFullyInsideRect(Rect rect) {
-    final boundingRect = aabb.toRect();
-    return rect.topLeft < boundingRect.topLeft &&
-        rect.bottomRight > boundingRect.bottomRight;
-  }
-}
-
-extension SpatialGridShapeHitbox on ShapeHitbox {
-  // TODO: pass into ShapeHitbox?
-  Vector2 get aabbCenter {
-    var cache = HasGridSupport.cachedCenters[this];
-    if (cache == null) {
-      HasGridSupport.cachedCenters[this] = aabb.center;
-      cache = HasGridSupport.cachedCenters[this];
-    }
-    return cache!;
-  }
-
-  HasGridSupport? get parentWithGridSupport {
-    var component = HasGridSupport._componentHitboxes[this];
-    if (component == null) {
-      try {
-        component = ancestors().firstWhere(
-          (c) => c is HasGridSupport,
-        ) as HasGridSupport;
-        HasGridSupport._componentHitboxes[this] = component;
-        return component;
-      } catch (e) {
-        return null;
-      }
-    }
-    return component;
-  }
-
-  @internal
-  void clearGridComponentParent() {
-    HasGridSupport._componentHitboxes.remove(this);
-  }
-
-  set defaultCollisionType(CollisionType defaultCollisionType) {
-    HasGridSupport._defaultCollisionType[this] = defaultCollisionType;
-  }
-
-  CollisionType get defaultCollisionType {
-    var cache = HasGridSupport._defaultCollisionType[this];
-    if (cache == null) {
-      HasGridSupport._defaultCollisionType[this] = collisionType;
-      cache = HasGridSupport._defaultCollisionType[this];
-    }
-    return cache!;
   }
 }

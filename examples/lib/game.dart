@@ -204,6 +204,7 @@ all collisions are disabled.
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
+    // return;
     final map = TiledMapLoader.loadedMaps.whereType<DemoMapLoader>().first;
 
     final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
@@ -268,9 +269,11 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam() {
-    for (var i = 1; i <= 40; i++) {
+    for (var i = 1; i <= 80; i++) {
+      final double x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
+      final double y = i <= 40 ? 0 : -20;
       add(Npc(
-          position: Vector2(-100, 0)..add(Vector2(10.0 * i, 0)),
+          position: Vector2(-100, 0)..add(Vector2(x, y)),
           size: Vector2.all(tileSize),
           priority: player.priority));
       npcCount++;
@@ -370,7 +373,6 @@ class DemoMapLoader extends TiledMapLoader {
             position: Vector2(x, y),
             animation: waterAnimation,
             context: context);
-        water.currentCell = context.cell;
         game.layersManager.addComponent(
             component: water,
             layerType: MapLayerType.animated,

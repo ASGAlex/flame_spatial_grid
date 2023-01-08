@@ -90,7 +90,7 @@ class SpatialGridCollisionDetection
       broadphase.broadphaseCheckCache.remove(hitbox);
     }
 
-    hitbox.clearGridComponentParent();
+    hitbox.clearGridComponentCaches();
   }
 
   @override
@@ -128,8 +128,12 @@ class SpatialGridCollisionDetection
   }
 
   void _updateTransform(ShapeHitbox item) {
-    HasGridSupport.cachedCenters.remove(item);
-    item.aabbCenter;
+    if (item is BoundingHitbox) {
+      item.aabbCenter = item.aabb.center;
+    } else {
+      HasGridSupport.cachedCenters.remove(item);
+      item.aabbCenter;
+    }
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent == null) return;
     if (item == withGridSupportComponent.boundingBox) {

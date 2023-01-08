@@ -147,14 +147,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
         final itemsActive = activeCollisionsByCell[cell];
         if (itemsActive != null && itemsActive.isNotEmpty) {
-          for (final active in itemsActive) {
-            final cachedResult = _activePreviouslyChecked[activeItem]?[active];
-            if (cachedResult == true) {
-              result.add(CollisionProspect(asShapeItem as T, active as T));
-            } else {
-              potentiallyCollide.add(active);
-            }
-          }
+          potentiallyCollide.addAll(itemsActive);
         }
       }
       _compareItemWithPotentials(
@@ -169,13 +162,13 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     for (final potential in potentials) {
       if (potential.parent == asShapeItem.parent &&
           asShapeItem.parent != null) {
-        _saveToCheckCache(asShapeItem as T, potential as T, false);
+        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
       final canToCollide = broadphaseCheckCache[asShapeItem]?[potential] ??
           _runExternalBroadphaseCheck(asShapeItem, potential);
       if (!canToCollide) {
-        _saveToCheckCache(asShapeItem as T, potential as T, false);
+        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
 
@@ -184,12 +177,12 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         potential,
       );
       if (distanceCloseEnough == false) {
-        _saveToCheckCache(asShapeItem as T, potential as T, false);
+        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
 
       result.add(CollisionProspect(asShapeItem as T, potential as T));
-      _saveToCheckCache(asShapeItem as T, potential as T, true);
+      // _saveToCheckCache(asShapeItem as T, potential as T, true);
     }
   }
 
