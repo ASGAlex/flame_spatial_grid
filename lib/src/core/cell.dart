@@ -42,7 +42,6 @@ class Cell {
 
   final _state = ValueNotifier<CellState>(CellState.active);
 
-  @internal
   final components = HashSet<HasGridSupport>();
 
   get broadphase => spatialGrid.game.collisionDetection.broadphase;

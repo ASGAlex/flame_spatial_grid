@@ -68,12 +68,14 @@ mixin HasSpatialGridFramework on FlameGame
       double removeCellsPerUpdate = -1,
       Duration suspendedCellLifetime = Duration.zero,
       CellBuilderFunction? cellBuilderNoMap,
+      CellBuilderFunction? onAfterCellBuild,
       List<TiledMapLoader>? maps,
       WorldLoader? worldLoader}) async {
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
     this.rootComponent.add(layersManager.layersRootComponent);
     _cellBuilderNoMap = cellBuilderNoMap;
+    _onAfterCellBuild = onAfterCellBuild;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
@@ -123,6 +125,7 @@ mixin HasSpatialGridFramework on FlameGame
   List<TiledMapLoader> maps = [];
   WorldLoader? worldLoader;
   CellBuilderFunction? _cellBuilderNoMap;
+  CellBuilderFunction? _onAfterCellBuild;
   double buildCellsPerUpdate = -1;
   double _buildCellsNow = 0;
   double removeCellsPerUpdate = -1;
@@ -234,6 +237,7 @@ mixin HasSpatialGridFramework on FlameGame
         spatialGrid.cellsScheduledToBuild.remove(cell);
         if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
+        await _onAfterCellBuild?.call(cell, rootComponent);
         _cellsForStateUpdate.add(cell);
       }
 
@@ -242,6 +246,7 @@ mixin HasSpatialGridFramework on FlameGame
       for (final cell in spatialGrid.cellsScheduledToBuild) {
         if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
+        await _onAfterCellBuild?.call(cell, rootComponent);
         _cellsForStateUpdate.add(cell);
       }
       spatialGrid.cellsScheduledToBuild.clear();

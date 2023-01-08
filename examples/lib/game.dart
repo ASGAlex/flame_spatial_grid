@@ -69,6 +69,7 @@ all collisions are disabled.
         removeCellsPerUpdate: 0.25,
         suspendedCellLifetime: const Duration(minutes: 1),
         cellBuilderNoMap: noMapCellBuilder,
+        onAfterCellBuild: world.onAfterCellBuild,
         maps: [
           DemoMapLoader(Vector2(600, 0)),
         ],
@@ -278,6 +279,15 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
           priority: player.priority));
       npcCount++;
     }
+  }
+
+  Future<void> onAfterCellBuild(Cell cell, Component rootComponent) async {
+    final npcList = cell.components.whereType<Npc>();
+    Future.delayed(const Duration(seconds: 3)).then((value) {
+      for (final npc in npcList) {
+        npc.isAIEnabled = true;
+      }
+    });
   }
 
   @override
@@ -539,6 +549,7 @@ class Npc extends Player {
   final vector = Vector2.zero();
   double dtElapsed = 0;
   final dtMax = 1000;
+  bool isAIEnabled = false;
 
   @override
   void update(double dt) {
@@ -560,7 +571,7 @@ class Npc extends Player {
   }
 
   _createNewVector() {
-    if (game.isAIEnabled) {
+    if (game.isAIEnabled && isAIEnabled) {
       final rand = Random();
       final xSign = rand.nextBool() ? -1 : 1;
       final ySign = rand.nextBool() ? -1 : 1;
