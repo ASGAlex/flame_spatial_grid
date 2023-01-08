@@ -4,7 +4,9 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
 class BoundingHitbox extends RectangleHitbox {
-  BoundingHitbox({super.position, super.size, this.parentWithGridSupport}) {
+  BoundingHitbox(
+      {super.position, super.size, HasGridSupport? parentWithGridSupport}) {
+    _parentWithGridSupport = parentWithGridSupport;
     minDistanceX = size.x;
     minDistanceY = size.y;
     size.addListener(() {
@@ -25,7 +27,23 @@ class BoundingHitbox extends RectangleHitbox {
     _aabbCenter = value!;
   }
 
-  HasGridSupport? parentWithGridSupport;
+  HasGridSupport? _parentWithGridSupport;
+
+  HasGridSupport? get parentWithGridSupport {
+    var component = _parentWithGridSupport;
+    if (component == null) {
+      try {
+        component = ancestors().firstWhere(
+              (c) => c is HasGridSupport,
+        ) as HasGridSupport;
+        _parentWithGridSupport = component;
+      } catch (e) {
+        return null;
+      }
+    }
+    return component;
+  }
+
   CollisionType? _defaultCollisionType;
 
   set defaultCollisionType(CollisionType? value) {
@@ -91,7 +109,7 @@ extension SpatialGridShapeHitbox on ShapeHitbox {
     if (component == null) {
       try {
         component = ancestors().firstWhere(
-          (c) => c is HasGridSupport,
+              (c) => c is HasGridSupport,
         ) as HasGridSupport;
         HasGridSupport.componentHitboxes[this] = component;
         return component;
