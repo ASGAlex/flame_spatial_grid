@@ -23,11 +23,11 @@ class Cell {
 
     if (suspended) {
       state = CellState.suspended;
-      _scheduleToBuild = true;
+      scheduleToBuild = true;
     } else {
       state = spatialGrid.getCellState(this);
       if (state == CellState.suspended) {
-        _scheduleToBuild = true;
+        scheduleToBuild = true;
       } else {
         spatialGrid.cellsScheduledToBuild.add(this);
       }
@@ -36,7 +36,8 @@ class Cell {
 
   bool isCellBuildFinished = false;
 
-  bool _scheduleToBuild = false;
+  @internal
+  bool scheduleToBuild = false;
   bool _remove = false;
   final SpatialGrid spatialGrid;
   final Rect rect;
@@ -106,9 +107,9 @@ class Cell {
     if (_state.value == value) return;
 
     _state.value = value;
-    if (_state.value != CellState.suspended && _scheduleToBuild) {
+    if (_state.value != CellState.suspended && scheduleToBuild) {
       spatialGrid.cellsScheduledToBuild.add(this);
-      _scheduleToBuild = false;
+      scheduleToBuild = false;
     }
     updateComponentsState();
   }

@@ -234,8 +234,11 @@ mixin HasSpatialGridFramework on FlameGame
       final cellsToProcess = _buildCellsNow.floor().toInt();
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = spatialGrid.cellsScheduledToBuild.first;
+        if (cell.state == CellState.suspended) {
+          cell.scheduleToBuild = true;
+          continue;
+        }
         spatialGrid.cellsScheduledToBuild.remove(cell);
-        if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
