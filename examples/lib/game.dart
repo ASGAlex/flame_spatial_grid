@@ -456,17 +456,15 @@ class Player extends SpriteComponent
       final step = PlayerStep(this);
       final stepCell = step.currentCell;
       if (stepCell != null) {
-        game.layersManager
-            .addComponent(
-                component: step,
-                layerType: MapLayerType.trail,
-                layerName: 'trail',
-                optimizeCollisions: false)
-            .then((layer) {
-          if (layer is CellTrailLayer) {
-            layer.fadeOutConfig = game.fadeOutConfig;
-          }
-        });
+        final layer = game.layersManager.addComponent(
+            component: step,
+            layerType: MapLayerType.trail,
+            layerName: 'trail',
+            optimizeCollisions: false);
+
+        if (layer is CellTrailLayer) {
+          layer.fadeOutConfig = game.fadeOutConfig;
+        }
       }
     }
 
