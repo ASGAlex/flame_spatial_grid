@@ -4,11 +4,21 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
 class BoundingHitbox extends RectangleHitbox {
-  BoundingHitbox({super.position, super.size, this.parentWithGridSupport});
+  BoundingHitbox({super.position, super.size, this.parentWithGridSupport}) {
+    minDistanceX = size.x;
+    minDistanceY = size.y;
+    size.addListener(() {
+      minDistanceX = size.x;
+      minDistanceY = size.y;
+    });
+  }
 
   Vector2? _aabbCenter;
 
   Vector2 get aabbCenter => _aabbCenter ??= aabb.center;
+
+  var minDistanceX = 0.0;
+  var minDistanceY = 0.0;
 
   set aabbCenter(Vector2? value) {
     assert(value != null);

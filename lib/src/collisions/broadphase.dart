@@ -137,7 +137,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
 
-      final potentiallyCollide = HashSet<ShapeHitbox>();
+      final potentiallyCollide = <ShapeHitbox>[];
       if (cellsToCheck.isEmpty) continue;
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
@@ -150,8 +150,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           potentiallyCollide.addAll(itemsActive);
         }
       }
-      _compareItemWithPotentials(
-          asShapeItem, potentiallyCollide.toList(growable: false), result);
+      _compareItemWithPotentials(asShapeItem, potentiallyCollide, result);
     }
 
     return result;
@@ -162,13 +161,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     for (final potential in potentials) {
       if (potential.parent == asShapeItem.parent &&
           asShapeItem.parent != null) {
-        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
       final canToCollide = broadphaseCheckCache[asShapeItem]?[potential] ??
           _runExternalBroadphaseCheck(asShapeItem, potential);
       if (!canToCollide) {
-        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
 
@@ -177,20 +174,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         potential,
       );
       if (distanceCloseEnough == false) {
-        // _saveToCheckCache(asShapeItem as T, potential as T, false);
         continue;
       }
 
       result.add(CollisionProspect(asShapeItem as T, potential as T));
-      // _saveToCheckCache(asShapeItem as T, potential as T, true);
-    }
-  }
-
-  void _saveToCheckCache(T item1, T item2, bool result) {
-    if (item1.collisionType == CollisionType.active) {
-      var map = _activePreviouslyChecked[item1];
-      map ??= _activePreviouslyChecked[item1] = HashMap<T, bool>();
-      map[item2] = result;
     }
   }
 
@@ -200,8 +187,15 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   ) {
     final activeItemCenter = activeItem.aabbCenter;
     final potentialCenter = potential.aabbCenter;
-    final minDistanceX = max(activeItem.size.x, potential.size.x);
-    final minDistanceY = max(activeItem.size.y, potential.size.y);
+    var minDistanceX = 0.0;
+    var minDistanceY = 0.0;
+    if (activeItem is BoundingHitbox && potential is BoundingHitbox) {
+      minDistanceX = max(activeItem.minDistanceX, potential.minDistanceX);
+      minDistanceY = max(activeItem.minDistanceY, potential.minDistanceY);
+    } else {
+      minDistanceX = max(activeItem.size.x, potential.size.x);
+      minDistanceY = max(activeItem.size.y, potential.size.y);
+    }
     if ((activeItemCenter.x - potentialCenter.x).abs() < minDistanceX &&
         (activeItemCenter.y - potentialCenter.y).abs() < minDistanceY) {
       return true;
