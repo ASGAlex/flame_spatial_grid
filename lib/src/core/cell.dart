@@ -34,6 +34,8 @@ class Cell {
     }
   }
 
+  bool isCellBuildFinished = false;
+
   bool _scheduleToBuild = false;
   bool _remove = false;
   final SpatialGrid spatialGrid;

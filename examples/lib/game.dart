@@ -61,7 +61,7 @@ all collisions are disabled.
     await initializeSpatialGrid(
         debug: false,
         activeRadius: const Size(3, 2),
-        unloadRadius: const Size(10, 10),
+        unloadRadius: const Size(5, 5),
         blockSize: blockSize,
         trackedComponent: player,
         rootComponent: world,
@@ -273,10 +273,16 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     for (var i = 1; i <= 80; i++) {
       final double x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final double y = i <= 40 ? 0 : -20;
+      final position = Vector2(-100, 0)..add(Vector2(x, y));
+      final cell = game.spatialGrid.findExistingCellByPosition(position) ??
+          game.spatialGrid.createNewCellAtPosition(position);
+      final enableAI = cell.isCellBuildFinished;
       add(Npc(
-          position: Vector2(-100, 0)..add(Vector2(x, y)),
+          position: position,
           size: Vector2.all(tileSize),
-          priority: player.priority));
+          priority: player.priority)
+        ..currentCell = cell
+        ..isAIEnabled = enableAI);
       npcCount++;
     }
   }

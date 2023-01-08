@@ -238,6 +238,7 @@ mixin HasSpatialGridFramework on FlameGame
         if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
+        cell.isCellBuildFinished = true;
         _cellsForStateUpdate.add(cell);
       }
 
@@ -247,6 +248,7 @@ mixin HasSpatialGridFramework on FlameGame
         if (cell.state == CellState.suspended) continue;
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
+        cell.isCellBuildFinished = true;
         _cellsForStateUpdate.add(cell);
       }
       spatialGrid.cellsScheduledToBuild.clear();
