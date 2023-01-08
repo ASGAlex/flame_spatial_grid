@@ -13,7 +13,6 @@ class LayersManager {
 
   HasSpatialGridFramework game;
 
-  @internal
   final Component layersRootComponent = Component();
 
   addLayer(CellLayer layer) {
@@ -64,7 +63,8 @@ class LayersManager {
         break;
       case MapLayerType.animated:
         if (component is! SpriteAnimationComponent) {
-          throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
+          throw 'Component ${component
+              .runtimeType} must be SpriteAnimationComponent!';
         }
         if (isNew) {
           layer = CellStaticAnimationLayer(cell, name: layerName);
