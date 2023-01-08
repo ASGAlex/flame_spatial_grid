@@ -27,6 +27,18 @@ mixin HasGridSupport on PositionComponent {
 
   bool get isSuspended => suspendNotifier.value;
 
+  set isSuspended(bool suspend) {
+    if (suspendNotifier.value != suspend) {
+      if (suspend) {
+        onSuspend();
+      } else {
+        onResume(dtElapsedWhileSuspended);
+        dtElapsedWhileSuspended = 0;
+      }
+    }
+    suspendNotifier.value = suspend;
+  }
+
   Cell? _currentCell;
 
   Cell? get currentCell => _currentCell;
@@ -38,12 +50,14 @@ mixin HasGridSupport on PositionComponent {
     _currentCell = value;
     value?.components.add(this);
 
-    for (final hitbox in hitboxes) {
-      if (previousCell != null) {
-        previousCell.components.remove(this);
-      }
+    if (hitboxes.isNotEmpty) {
       final broadphase = spatialGrid.game.collisionDetection.broadphase;
-      broadphase.updateHitboxIndexes(hitbox, previousCell);
+      for (final hitbox in hitboxes) {
+        if (previousCell != null) {
+          previousCell.components.remove(this);
+        }
+        broadphase.updateHitboxIndexes(hitbox, previousCell);
+      }
     }
   }
 
@@ -56,10 +70,6 @@ mixin HasGridSupport on PositionComponent {
   }
 
   bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
-
-  // final boundingBox =
-  //     RectangleHitbox(position: Vector2.zero(), size: Vector2.zero())
-  //       ..collisionType = CollisionType.inactive;
 
   late final boundingBox = BoundingHitbox(
       position: Vector2.zero(),
@@ -86,18 +96,6 @@ mixin HasGridSupport on PositionComponent {
   bool _outOfCellBounds = false;
 
   get isOutOfCellBounds => _outOfCellBounds;
-
-  set isSuspended(bool suspend) {
-    if (suspendNotifier.value != suspend) {
-      if (suspend) {
-        onSuspend();
-      } else {
-        onResume(dtElapsedWhileSuspended);
-        dtElapsedWhileSuspended = 0;
-      }
-    }
-    suspendNotifier.value = suspend;
-  }
 
   @mustCallSuper
   void onSpatialGridSupportComponentMounted() {}
@@ -174,16 +172,19 @@ mixin HasGridSupport on PositionComponent {
   }
 
   @internal
-  bool updateTransform() {
+  updateTransform() {
     boundingBox.aabbCenter = boundingBox.aabb.center;
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
-    current ??=
-        currentCell = spatialGrid.findExistingCellByPosition(componentCenter);
-    current ??=
-        currentCell = spatialGrid.createNewCellAtPosition(componentCenter);
-    if (current.rect.containsPoint(componentCenter) != true) {
+    current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
+        spatialGrid.createNewCellAtPosition(componentCenter);
+    if (current.rect.containsPoint(componentCenter)) {
+      if (current != _currentCell) {
+        isSuspended = current.state == CellState.suspended;
+      }
+      _currentCell = current;
+    } else {
       Cell? newCell;
       //look close neighbours
       for (final cell in current.neighbours) {
@@ -206,14 +207,12 @@ mixin HasGridSupport on PositionComponent {
       newCell ??= spatialGrid.createNewCellAtPosition(componentCenter);
 
       currentCell = newCell;
+      isSuspended = newCell.state == CellState.suspended;
       if (isTracked) {
         spatialGrid.currentCell = newCell;
       }
-      _outOfCellBounds = !boundingBox.isFullyInsideRect(newCell.rect);
-      return true; //cell changed;
     }
     _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
-    return false; //cell not changed;
   }
 
   @override

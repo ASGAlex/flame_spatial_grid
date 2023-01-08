@@ -551,7 +551,7 @@ class Npc extends Player {
     paint.colorFilter = ColorFilter.matrix(matrix);
   }
 
-  final speed = 8;
+  final speed = 20;
   final vector = Vector2.zero();
   double dtElapsed = 0;
   final dtMax = 1000;
