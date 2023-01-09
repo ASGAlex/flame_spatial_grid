@@ -44,11 +44,9 @@ class CellStaticLayer extends CellLayer {
         }, canvas);
       }
       layerPicture = recorder.endRecording();
-      if (renderAsImage) {
-        layerImage = await layerPicture?.toImageSafe(
-            layerCalculatedSize.width.toInt(),
-            layerCalculatedSize.height.toInt());
-      }
+      layerImage = await layerPicture?.toImageSafe(
+          layerCalculatedSize.width.toInt(),
+          layerCalculatedSize.height.toInt());
     } else {
       for (final component in children) {
         if (component is! HasGridSupport) continue;

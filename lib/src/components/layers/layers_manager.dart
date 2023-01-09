@@ -37,14 +37,14 @@ class LayersManager {
   CellLayer? getLayer({required String name, required Cell cell}) =>
       layers[cell]?[name];
 
-  CellLayer addComponent({
+  Future<CellLayer> addComponent({
     required HasGridSupport component,
     required MapLayerType layerType,
     required String layerName,
     bool absolutePosition = true,
     bool optimizeCollisions = true,
     int priority = 1,
-  }) {
+  }) async {
     var cell = component.currentCell;
     cell ??= component.currentCell =
         game.spatialGrid.findExistingCellByPosition(component.position);
@@ -80,7 +80,7 @@ class LayersManager {
     if (absolutePosition) {
       component.position = component.position - cell.rect.topLeft.toVector2();
     }
-    layer.add(component);
+    await layer.add(component);
 
     if (isNew) {
       addLayer(layer);

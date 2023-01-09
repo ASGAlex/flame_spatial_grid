@@ -25,7 +25,8 @@ class CellTrailLayer extends CellStaticLayer {
   bool _imageRenderInProgress = false;
 
   bool get doFadeOut =>
-      _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
+      fadeOutConfig.isFadeOut &&
+          _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
 
   @override
   bool get isUpdateNeeded => true;
@@ -56,7 +57,7 @@ class CellTrailLayer extends CellStaticLayer {
     final canvas = Canvas(recorder);
     if (doFadeOut) {
       final fadeOutDecorator =
-          fadeOutConfig.createDecorator(_fadeOutDt) as _FadeOutDecorator;
+      fadeOutConfig.createDecorator(_fadeOutDt) as _FadeOutDecorator;
       _calculatedOpacity = _calculatedOpacity * fadeOutDecorator.opacity;
 
       fadeOutDecorator.applyChain(_drawOldPicture, canvas);
@@ -112,7 +113,8 @@ class CellTrailLayer extends CellStaticLayer {
     if (cell == null) return;
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
     canvas.drawRect(
-        rect, Paint()..color = const Color.fromRGBO(255, 255, 255, 0.2));
+        rect, Paint()
+      ..color = const Color.fromRGBO(255, 255, 255, 0.2));
   }
 
   _drawOldPicture(Canvas canvas) {
@@ -141,10 +143,9 @@ class CellTrailLayer extends CellStaticLayer {
 }
 
 class FadeOutConfig {
-  FadeOutConfig(
-      {double transparencyPerStep = 0,
-      this.fadeOutTimeout = Duration.zero,
-      this.operationsLimitToSavePicture = 50}) {
+  FadeOutConfig({double transparencyPerStep = 0,
+    this.fadeOutTimeout = Duration.zero,
+    this.operationsLimitToSavePicture = 50}) {
     this.transparencyPerStep = transparencyPerStep;
   }
 
@@ -155,7 +156,7 @@ class FadeOutConfig {
 
   set transparencyPerStep(double value) {
     assert(
-        value >= 0 && value <= 1, 'Transparency must be between 0.0 and 1.0');
+    value >= 0 && value <= 1, 'Transparency must be between 0.0 and 1.0');
     _transparencyPerStep = value;
   }
 
