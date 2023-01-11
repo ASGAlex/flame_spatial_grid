@@ -34,7 +34,19 @@ class Cell {
     }
   }
 
-  bool isCellBuildFinished = false;
+  bool _isCellBuildFinished = false;
+
+  bool get isCellBuildFinished => _isCellBuildFinished;
+
+  set isCellBuildFinished(bool value) {
+    _isCellBuildFinished = value;
+    final layers = spatialGrid.game.layersManager.layers[this];
+    if (layers != null && layers.isNotEmpty) {
+      for (final layer in layers.values) {
+        layer.pauseUpdate = false;
+      }
+    }
+  }
 
   @internal
   bool scheduleToBuild = false;

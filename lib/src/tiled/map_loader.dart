@@ -129,12 +129,14 @@ abstract class TiledMapLoader {
           component: component,
           layerName: 'static-${context.layerInfo.name}',
           layerType: MapLayerType.static,
+          pauseUpdate: true,
           priority: priority);
     } else if (component.animation != null) {
       game.layersManager.addComponent(
           component: component,
           layerName: 'animated-${context.layerInfo.name}',
           layerType: MapLayerType.animated,
+          pauseUpdate: true,
           priority: priority);
     }
   }

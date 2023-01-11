@@ -43,6 +43,7 @@ class LayersManager {
     required String layerName,
     bool absolutePosition = true,
     bool optimizeCollisions = true,
+    bool pauseUpdate = false,
     int priority = 1,
   }) async {
     var cell = component.currentCell;
@@ -58,21 +59,23 @@ class LayersManager {
           throw 'Component ${component.runtimeType} must be SpriteComponent!';
         }
         if (isNew) {
-          layer = CellStaticLayer(cell, name: layerName);
+          layer =
+              CellStaticLayer(cell, name: layerName, pauseUpdate: pauseUpdate);
         }
         break;
       case MapLayerType.animated:
         if (component is! SpriteAnimationComponent) {
-          throw 'Component ${component
-              .runtimeType} must be SpriteAnimationComponent!';
+          throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
         }
         if (isNew) {
-          layer = CellStaticAnimationLayer(cell, name: layerName);
+          layer = CellStaticAnimationLayer(cell,
+              name: layerName, pauseUpdate: pauseUpdate);
         }
         break;
       case MapLayerType.trail:
         if (isNew) {
-          layer = CellTrailLayer(cell, name: layerName);
+          layer =
+              CellTrailLayer(cell, name: layerName, pauseUpdate: pauseUpdate);
         }
         break;
     }

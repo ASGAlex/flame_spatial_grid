@@ -13,17 +13,29 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell, {this.name = ''})
+  CellLayer(Cell cell, {this.name = '', bool pauseUpdate = false})
       : super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
+    _pauseUpdate = pauseUpdate;
   }
 
   bool optimizeCollisions = false;
 
   bool doUpdateComponentsPriority = false;
+
+  bool _pauseUpdate = false;
+
+  bool get pauseUpdate => _pauseUpdate;
+
+  set pauseUpdate(value) {
+    _pauseUpdate = value;
+    if (_pauseUpdate == false) {
+      isUpdateNeeded = true;
+    }
+  }
 
   @protected
   late final CollisionOptimizer collisionOptimizer;
@@ -161,10 +173,13 @@ abstract class CellLayer extends PositionComponent
   }
 
   void onChildrenUpdate() {
+    if (pauseUpdate) return;
     isUpdateNeeded = true;
   }
 
   void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
+    if (pauseUpdate) return;
+
     if (child is UpdateOnDemand) {
       child.isUpdateNeeded = true;
     }
