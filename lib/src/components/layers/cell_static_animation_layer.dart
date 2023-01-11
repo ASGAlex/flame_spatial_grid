@@ -3,7 +3,8 @@ import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
-  CellStaticAnimationLayer(super.cell, {super.name, super.pauseUpdate});
+  CellStaticAnimationLayer(super.cell,
+      {super.name, super.pauseUpdate, super.isRenewable});
 
   SpriteAnimationGlobalComponent? animationComponent;
   SpriteAnimation? animation;
@@ -30,7 +31,7 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   @override
-  Future<void> compileToSingleLayer() async {
+  Future<void> compileToSingleLayer(Iterable<Component> children) async {
     final anim = animation?.clone();
     if (anim == null) {
       return;

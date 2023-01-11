@@ -130,6 +130,7 @@ abstract class TiledMapLoader {
           layerName: 'static-${context.layerInfo.name}',
           layerType: MapLayerType.static,
           pauseUpdate: true,
+          isRenewable: false,
           priority: priority);
     } else if (component.animation != null) {
       game.layersManager.addComponent(
@@ -137,6 +138,7 @@ abstract class TiledMapLoader {
           layerName: 'animated-${context.layerInfo.name}',
           layerType: MapLayerType.animated,
           pauseUpdate: true,
+          isRenewable: false,
           priority: priority);
     }
   }

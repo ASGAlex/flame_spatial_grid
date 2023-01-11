@@ -44,6 +44,7 @@ class LayersManager {
     bool absolutePosition = true,
     bool optimizeCollisions = true,
     bool pauseUpdate = false,
+    bool isRenewable = true,
     int priority = 1,
   }) {
     var cell = component.currentCell;
@@ -59,8 +60,10 @@ class LayersManager {
           throw 'Component ${component.runtimeType} must be SpriteComponent!';
         }
         if (isNew) {
-          layer =
-              CellStaticLayer(cell, name: layerName, pauseUpdate: pauseUpdate);
+          layer = CellStaticLayer(cell,
+              name: layerName,
+              pauseUpdate: pauseUpdate,
+              isRenewable: isRenewable);
         }
         break;
       case MapLayerType.animated:
@@ -69,13 +72,17 @@ class LayersManager {
         }
         if (isNew) {
           layer = CellStaticAnimationLayer(cell,
-              name: layerName, pauseUpdate: pauseUpdate);
+              name: layerName,
+              pauseUpdate: pauseUpdate,
+              isRenewable: isRenewable);
         }
         break;
       case MapLayerType.trail:
         if (isNew) {
-          layer =
-              CellTrailLayer(cell, name: layerName, pauseUpdate: pauseUpdate);
+          layer = CellTrailLayer(cell,
+              name: layerName,
+              pauseUpdate: pauseUpdate,
+              isRenewable: isRenewable);
         }
         break;
     }

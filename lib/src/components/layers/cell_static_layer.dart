@@ -6,7 +6,8 @@ import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
-  CellStaticLayer(super.cell, {super.name, super.pauseUpdate}) {
+  CellStaticLayer(super.cell,
+      {super.name, super.pauseUpdate, super.isRenewable}) {
     paint.isAntiAlias = false;
   }
 
@@ -28,7 +29,7 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
-  Future compileToSingleLayer() async {
+  Future compileToSingleLayer(Iterable<Component> children) async {
     final cell = currentCell;
     if (cell == null) return;
 

@@ -9,7 +9,10 @@ class CellTrailLayer extends CellStaticLayer {
   final newComponents = <Component>[];
 
   CellTrailLayer(super.cell,
-      {super.name, FadeOutConfig? fadeOutConfig, super.pauseUpdate}) {
+      {super.name,
+      FadeOutConfig? fadeOutConfig,
+      super.pauseUpdate,
+      super.isRenewable}) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
 
@@ -46,7 +49,7 @@ class CellTrailLayer extends CellStaticLayer {
   void remove(Component component) {}
 
   @override
-  Future compileToSingleLayer() async {
+  Future compileToSingleLayer(Iterable<Component> children) async {
     final cell = currentCell;
     if (cell == null) return;
 

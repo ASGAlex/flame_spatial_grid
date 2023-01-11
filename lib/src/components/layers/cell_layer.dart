@@ -13,8 +13,10 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell, {this.name = '', bool pauseUpdate = false})
-      : super(
+  CellLayer(Cell cell,
+      {this.name = '', bool pauseUpdate = false, bool? isRenewable})
+      : isRenewable = isRenewable ?? true,
+        super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
@@ -25,6 +27,10 @@ abstract class CellLayer extends PositionComponent
   bool optimizeCollisions = false;
 
   bool doUpdateComponentsPriority = false;
+
+  final bool isRenewable;
+
+  final _nonRenewableComponents = <Component>[];
 
   bool _pauseUpdate = false;
 
@@ -49,7 +55,7 @@ abstract class CellLayer extends PositionComponent
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
   @protected
-  Future compileToSingleLayer();
+  Future compileToSingleLayer(Iterable<Component> children);
 
   final String name;
 
@@ -93,27 +99,35 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  Future<void>? add(Component component) {
+  Future<void>? add(Component component) async {
     updateCorrections(component);
 
-    if (component is HasGridSupport) {
-      component.transform.addListener(onChildrenUpdate);
-      _listenerChildrenUpdate[component] = onChildrenUpdate;
+    if (isRenewable) {
+      if (component is HasGridSupport) {
+        component.transform.addListener(onChildrenUpdate);
+        _listenerChildrenUpdate[component] = onChildrenUpdate;
+      }
+      onBeforeChildrenChanged(component, ChildrenChangeType.added);
+      return super.add(component);
+    } else {
+      await component.onLoad();
+      _nonRenewableComponents.add(component);
     }
-    onBeforeChildrenChanged(component, ChildrenChangeType.added);
-    return super.add(component);
   }
 
   @override
   void remove(Component component) {
-    final callback = _listenerChildrenUpdate.remove(component);
-    if (callback != null && component is HasGridSupport) {
-      component.transform.removeListener(callback);
+    if (isRenewable) {
+      final callback = _listenerChildrenUpdate.remove(component);
+      if (callback != null && component is HasGridSupport) {
+        component.transform.removeListener(callback);
+      }
+
+      onBeforeChildrenChanged(component, ChildrenChangeType.removed);
+      super.remove(component);
+    } else {
+      _nonRenewableComponents.remove(component);
     }
-
-    onBeforeChildrenChanged(component, ChildrenChangeType.removed);
-
-    super.remove(component);
   }
 
   @override
@@ -123,13 +137,18 @@ abstract class CellLayer extends PositionComponent
         dtElapsedWhileSuspended += dt;
         updateSuspendedTree(dtElapsedWhileSuspended);
       } else {
-        _updateTree(dt);
-        if (optimizeCollisions) {
-          collisionOptimizer.optimize();
-          isUpdateNeeded = true;
+        if (isRenewable) {
           _updateTree(dt);
+          if (optimizeCollisions) {
+            collisionOptimizer.optimize();
+            isUpdateNeeded = true;
+            _updateTree(dt);
+          }
+          compileToSingleLayer(children);
+        } else if (_nonRenewableComponents.isNotEmpty) {
+          compileToSingleLayer(_nonRenewableComponents);
+          _nonRenewableComponents.clear();
         }
-        compileToSingleLayer();
       }
     }
   }
