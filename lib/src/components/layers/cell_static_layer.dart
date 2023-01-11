@@ -29,6 +29,12 @@ class CellStaticLayer extends CellLayer {
 
   @override
   Future compileToSingleLayer(Iterable<Component> children) async {
+    final renderingChildren = children.whereType<HasGridSupport>();
+    if (renderingChildren.isEmpty) {
+      removeFromParent();
+      return;
+    }
+
     final cell = currentCell;
     if (cell == null) return;
 
@@ -37,8 +43,7 @@ class CellStaticLayer extends CellLayer {
     if (renderAsImage) {
       final decorator = Transform2DDecorator();
       decorator.transform2d.position = (correctionTopLeft * -1);
-      for (final component in children) {
-        if (component is! HasGridSupport) continue;
+      for (final component in renderingChildren) {
         decorator.applyChain((canvas) {
           component.decorator.applyChain(component.render, canvas);
         }, canvas);
