@@ -9,10 +9,7 @@ class CellTrailLayer extends CellStaticLayer {
   final newComponents = <Component>[];
 
   CellTrailLayer(super.cell,
-      {super.name,
-      FadeOutConfig? fadeOutConfig,
-      super.pauseUpdate,
-      super.isRenewable}) {
+      {super.name, FadeOutConfig? fadeOutConfig, super.isRenewable}) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
 

@@ -139,7 +139,6 @@ mixin HasSpatialGridFramework on FlameGame
 
   Duration get suspendedCellLifetime =>
       Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
-  final _cellsForStateUpdate = <Cell>[];
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     final worldMaps = worldLoader?.maps;
@@ -242,7 +241,7 @@ mixin HasSpatialGridFramework on FlameGame
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
-        _cellsForStateUpdate.add(cell);
+        cell.updateComponentsState();
       }
 
       _buildCellsNow -= cellsToProcess;
@@ -252,7 +251,7 @@ mixin HasSpatialGridFramework on FlameGame
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
-        _cellsForStateUpdate.add(cell);
+        cell.updateComponentsState();
       }
       spatialGrid.cellsScheduledToBuild.clear();
     }
@@ -329,12 +328,6 @@ mixin HasSpatialGridFramework on FlameGame
   @override
   Future update(double dt) async {
     await _buildNewCells();
-    if (_cellsForStateUpdate.isNotEmpty) {
-      for (final cell in _cellsForStateUpdate) {
-        cell.updateComponentsState();
-      }
-      _cellsForStateUpdate.clear();
-    }
     _countSuspendedCellsTimers(dt);
     if (removeCellsPerUpdate > 0) {
       _autoRemoveOldCells(dt);

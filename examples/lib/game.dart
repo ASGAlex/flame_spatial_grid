@@ -227,7 +227,6 @@ all collisions are disabled.
           layerType: MapLayerType.static,
           layerName: 'Brick',
           absolutePosition: false,
-          pauseUpdate: true,
           priority: 2);
     }
 
@@ -247,7 +246,6 @@ all collisions are disabled.
           component: water,
           layerType: MapLayerType.animated,
           layerName: 'Water',
-          pauseUpdate: true,
           absolutePosition: false,
           priority: 1);
     }
@@ -357,7 +355,6 @@ class DemoMapLoader extends TiledMapLoader {
         component: brick,
         layerType: MapLayerType.static,
         layerName: 'Brick',
-        pauseUpdate: true,
         priority: 2);
   }
 
@@ -373,7 +370,6 @@ class DemoMapLoader extends TiledMapLoader {
         component: water,
         layerType: MapLayerType.animated,
         layerName: 'Water',
-        pauseUpdate: true,
         priority: 1);
   }
 
@@ -397,7 +393,6 @@ class DemoMapLoader extends TiledMapLoader {
             component: water,
             layerType: MapLayerType.animated,
             layerName: 'Water',
-            pauseUpdate: true,
             priority: 1);
       }
     }

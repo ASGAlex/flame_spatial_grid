@@ -13,15 +13,14 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell,
-      {this.name = '', bool pauseUpdate = false, bool? isRenewable})
+  CellLayer(Cell cell, {this.name = '', bool? isRenewable})
       : isRenewable = isRenewable ?? true,
         super(
             position: cell.rect.topLeft.toVector2(),
             size: cell.rect.size.toVector2()) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
-    _pauseUpdate = pauseUpdate;
+    _pauseUpdate = !cell.isCellBuildFinished;
   }
 
   bool optimizeCollisions = false;
@@ -32,10 +31,12 @@ abstract class CellLayer extends PositionComponent
 
   final _nonRenewableComponents = <Component>[];
 
-  bool _pauseUpdate = false;
+  late bool _pauseUpdate;
 
+  @internal
   bool get pauseUpdate => _pauseUpdate;
 
+  @internal
   set pauseUpdate(value) {
     _pauseUpdate = value;
     if (_pauseUpdate == false) {
