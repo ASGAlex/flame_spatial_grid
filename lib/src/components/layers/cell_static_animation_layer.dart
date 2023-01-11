@@ -31,6 +31,12 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   Future<void> compileToSingleLayer(Iterable<Component> children) async {
+    final animatedChildren = children.whereType<SpriteAnimationComponent>();
+    if (animatedChildren.isEmpty) {
+      removeFromParent();
+      return;
+    }
+
     final anim = animation?.clone();
     if (anim == null) {
       return;
@@ -44,7 +50,7 @@ class CellStaticAnimationLayer extends CellLayer {
     while (anim.currentIndex < anim.frames.length) {
       final sprite = anim.getSprite();
       final composition = ImageComposition();
-      for (final component in children.whereType<SpriteAnimationComponent>()) {
+      for (final component in animatedChildren) {
         final correctedPosition = component.position + (correctionTopLeft * -1);
         composition.add(sprite.image, correctedPosition, source: sprite.src);
       }
