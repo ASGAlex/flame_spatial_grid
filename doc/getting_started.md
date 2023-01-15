@@ -2,7 +2,7 @@
 
 This is a short instruction how to make everything work.
 If you looking for some more complex, please check working example here:
-[game.dart](examples/lib/game.dart)
+[game.dart](/examples/lib/game.dart)
 
 ## Creating the game class
 
