@@ -35,20 +35,27 @@ abstract class TiledMapLoader {
   Component get rootComponent => game.rootComponent;
 
   bool preloadTileSets = false;
-  var mapRect = Rect.zero;
+  Rect mapRect = Rect.zero;
 
   final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
 
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
     this.game = game;
 
-    final tiledComponent = await TiledComponent.load(fileName, destTileSize,
-        priority: basePriority);
+    final tiledComponent = await TiledComponent.load(
+      fileName,
+      destTileSize,
+      priority: basePriority,
+    );
     final renderableTiledMap = tiledComponent.tileMap;
     final widthInTiles = tiledComponent.tileMap.map.width;
     final heightInTiles = tiledComponent.tileMap.map.height;
-    mapRect = Rect.fromLTWH(initialPosition.x, initialPosition.y,
-        widthInTiles * destTileSize.x, heightInTiles * destTileSize.y);
+    mapRect = Rect.fromLTWH(
+      initialPosition.x,
+      initialPosition.y,
+      widthInTiles * destTileSize.x,
+      heightInTiles * destTileSize.y,
+    );
     if (preloadTileSets) {
       await _preloadTileSets(renderableTiledMap.map);
     }
@@ -64,15 +71,20 @@ abstract class TiledMapLoader {
   Future<void> _preloadTileSets(TiledMap map) async {
     for (final tileSet in map.tilesets) {
       final tilesetName = tileSet.name;
-      if (tilesetName == null) continue;
+      if (tilesetName == null) {
+        continue;
+      }
       final tilesetCache =
           _preloadedTileSet[tilesetName] ?? HashMap<String, TileCache>();
       for (final tile in tileSet.tiles) {
         final tileTypeName = tile.type;
-        if (tileTypeName == null) continue;
+        if (tileTypeName == null) {
+          continue;
+        }
         tilesetCache[tileTypeName] = TileCache(
-            sprite: await tile.getSprite(tileSet),
-            spriteAnimation: await tile.getSpriteAnimation(tileSet));
+          sprite: await tile.getSprite(tileSet),
+          spriteAnimation: await tile.getSpriteAnimation(tileSet),
+        );
       }
       _preloadedTileSet[tilesetName] = tilesetCache;
     }
@@ -85,7 +97,9 @@ abstract class TiledMapLoader {
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     final contextList = _contextByCellRect[cell.rect];
     final contextsToRemove = <CellBuilderContext>[];
-    if (contextList == null || contextList.isEmpty) return;
+    if (contextList == null || contextList.isEmpty) {
+      return;
+    }
 
     for (final context in contextList) {
       if (context.remove) {
@@ -104,16 +118,14 @@ abstract class TiledMapLoader {
       await cellPostBuilder?.call(context);
     }
 
-    if (contextsToRemove.isNotEmpty) {
-      for (final context in contextsToRemove) {
-        contextList.remove(context);
-      }
-    }
+    contextsToRemove.forEach(contextList.remove);
   }
 
   Future<void> genericTileBuilder(CellBuilderContext context) async {
     final provider = context.tileDataProvider;
-    if (provider == null) return;
+    if (provider == null) {
+      return;
+    }
     final component = await TileComponent.fromProvider(provider);
     component.currentCell = context.cell;
     component.position = context.position;
@@ -126,18 +138,20 @@ abstract class TiledMapLoader {
     }
     if (component.sprite != null) {
       game.layersManager.addComponent(
-          component: component,
-          layerName: 'static-${context.layerInfo.name}',
-          layerType: MapLayerType.static,
-          isRenewable: false,
-          priority: priority);
+        component: component,
+        layerName: 'static-${context.layerInfo.name}',
+        layerType: MapLayerType.static,
+        isRenewable: false,
+        priority: priority,
+      );
     } else if (component.animation != null) {
       game.layersManager.addComponent(
-          component: component,
-          layerName: 'animated-${context.layerInfo.name}',
-          layerType: MapLayerType.animated,
-          isRenewable: false,
-          priority: priority);
+        component: component,
+        layerName: 'animated-${context.layerInfo.name}',
+        layerType: MapLayerType.animated,
+        isRenewable: false,
+        priority: priority,
+      );
     }
   }
 
@@ -150,7 +164,9 @@ abstract class TiledMapLoader {
     ];
     var isCellOutsideOfMap = true;
     for (final map in TiledMapLoader.loadedMaps) {
-      if (map.mapRect == Rect.zero) continue;
+      if (map.mapRect == Rect.zero) {
+        continue;
+      }
       for (final cellPoint in checkList) {
         if (map.mapRect.contains(cellPoint)) {
           isCellOutsideOfMap = false;
@@ -165,8 +181,10 @@ abstract class TiledMapLoader {
   bool isCellInsideOfMap(Cell cell) => !isCellOutsideOfMap(cell);
 
   List<Layer> _getLayers(
-      RenderableTiledMap tileMap, List<String>? layersToLoad) {
-    List<Layer> layers = <Layer>[];
+    RenderableTiledMap tileMap,
+    List<String>? layersToLoad,
+  ) {
+    var layers = <Layer>[];
     if (layersToLoad != null) {
       for (final layer in layersToLoad) {
         final tileLayer = tileMap.getLayer<Layer>(layer);
@@ -181,11 +199,12 @@ abstract class TiledMapLoader {
     return layers;
   }
 
-  void _processTileType<T extends Layer>(
-      {required RenderableTiledMap tileMap,
-      List<String>? layersToLoad,
-      bool clear = true}) {
-    List<Layer> layers = _getLayers(tileMap, layersToLoad);
+  void _processTileType<T extends Layer>({
+    required RenderableTiledMap tileMap,
+    List<String>? layersToLoad,
+    bool clear = true,
+  }) {
+    final layers = _getLayers(tileMap, layersToLoad);
 
     var layerPriority = 0;
     for (final layer in layers) {
@@ -195,8 +214,8 @@ abstract class TiledMapLoader {
           continue;
         }
         final layerInfo = LayerInfo(layer.name, layerPriority);
-        int xOffset = 0;
-        int yOffset = 0;
+        var xOffset = 0;
+        var yOffset = 0;
         for (var tileId in tileData) {
           if (tileId != 0) {
             final tileset = tileMap.map.tilesetByTileGId(tileId);
@@ -206,12 +225,16 @@ abstract class TiledMapLoader {
               tileId = tileId - firstGid;
             }
             final tileData = tileset.tiles[tileId];
-            final position = Vector2(xOffset.toDouble() * tileMap.map.tileWidth,
-                    yOffset.toDouble() * tileMap.map.tileWidth) +
+            final position = Vector2(
+                  xOffset.toDouble() * tileMap.map.tileWidth,
+                  yOffset.toDouble() * tileMap.map.tileWidth,
+                ) +
                 initialPosition;
 
-            final size = Vector2(tileMap.map.tileWidth.toDouble(),
-                tileMap.map.tileWidth.toDouble());
+            final size = Vector2(
+              tileMap.map.tileWidth.toDouble(),
+              tileMap.map.tileWidth.toDouble(),
+            );
             final tileProcessor = TileDataProvider(tileData, tileset);
 
             Rect rect;
@@ -223,12 +246,13 @@ abstract class TiledMapLoader {
               rect = cell.rect;
             }
             final context = CellBuilderContext(
-                tileDataProvider: tileProcessor,
-                position: position,
-                size: size,
-                cellRect: rect,
-                spatialGrid: game.spatialGrid,
-                layerInfo: layerInfo);
+              tileDataProvider: tileProcessor,
+              position: position,
+              size: size,
+              cellRect: rect,
+              spatialGrid: game.spatialGrid,
+              layerInfo: layerInfo,
+            );
             var list = HashSet<CellBuilderContext>();
             list = _contextByCellRect[rect] ??= list;
             list.add(context);
@@ -243,8 +267,7 @@ abstract class TiledMapLoader {
       } else if (layer is ObjectGroup) {
         final layerInfo = LayerInfo(layer.name, layerPriority);
         for (final object in layer.objects) {
-          final position = Vector2(object.x.toDouble(), object.y.toDouble()) +
-              initialPosition;
+          final position = Vector2(object.x, object.y) + initialPosition;
           final size = Vector2(object.width, object.height);
           Rect rect;
           if (lazyLoad) {
@@ -256,12 +279,13 @@ abstract class TiledMapLoader {
           }
 
           final context = CellBuilderContext(
-              tiledObject: object,
-              position: position,
-              size: size,
-              cellRect: rect,
-              spatialGrid: game.spatialGrid,
-              layerInfo: layerInfo);
+            tiledObject: object,
+            position: position,
+            size: size,
+            cellRect: rect,
+            spatialGrid: game.spatialGrid,
+            layerInfo: layerInfo,
+          );
           var list = HashSet<CellBuilderContext>();
           list = _contextByCellRect[rect] ??= list;
           list.add(context);
@@ -270,9 +294,7 @@ abstract class TiledMapLoader {
     }
 
     if (clear) {
-      for (final layer in layers) {
-        tileMap.map.layers.remove(layer);
-      }
+      layers.forEach(tileMap.map.layers.remove);
       for (final rl in tileMap.renderableLayers) {
         rl.refreshCache();
       }

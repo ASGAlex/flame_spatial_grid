@@ -6,9 +6,8 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/tiled/world_loader.dart';
 
-import 'collision_optimizer.dart';
+import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 
 /// This class is starting point to add Framework's abilities into you game
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary! Also call
@@ -38,44 +37,92 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
-  void gameInitializationDone() {
-    _gameInitializationFinished = true;
-    if (trackWindowSize) {
-      setRadiusByWindowDimensions();
-    }
-  }
-
-  /// Initializes the framework.
+  /// Initializes the framework. This function *MUST* be called with [await]
+  /// keyword to ensure that framework had been initialized correctly and all
+  /// resources were loaded before game loop start.
+  /// Call [gameInitializationDone] after this function and place game
+  /// components initialization between.
   ///
   /// - [debug] (optional) - if you want to see how spatial grid is spread along
-  /// the game's space
+  ///   the game's space
   /// - [rootComponent] - a component at root of components tree. At this
-  /// component Framework will add all new components by default.
+  ///   component Framework will add all new components by default.
+  /// - [blockSize] - size of grid's cells. Take care about this parameter!
+  ///   Cells should be:
+  ///   1. Bigger then every possible game component. This requirement is
+  ///      strict.
+  ///   2. But stay relatively small: then smaller cell is then faster the
+  ///      collision detection system works. See [SpatialGridCollisionDetection]
+  ///      for details.
+  ///   3. But a big count of cells on the screen is not optimal for
+  ///      rendering [CellLayer].
+  ///   *Conclusion:* you should keep cells that size, when every cell contains
+  ///   at least 50 static (non-moving) components, and normally no more than
+  ///   20-30 cells would be displayed on the screen simultaneously.
+  ///   So the "golden mean" should be found for every game individually. Try
+  ///   to balance between described parameters.
   ///
-  /// The [onComponentTypeCheck] checks if objects of different types should
-  /// collide.
-  /// The result of the calculation is cached so you should not check any
-  /// dynamical parameters here, the function is intended to be used as pure
-  /// type checker.
-  /// It should usually not be overridden, see
-  /// [CollisionCallbacks.onComponentTypeCheck] instead
+  /// - [activeRadius] - count of active cells ([CellState.active]) around
+  ///   tracked (player's) cell by X and Y dimensions.
+  /// - [unloadRadius] - count of cells after last active cell (by X and Y
+  ///   dimensions). These cells will work as usual but all components on it
+  ///   will be hidden. Such cells are in [CellState.inactive] state.
+  ///   The rest of grid cells will be moved into [CellState.suspended] state,
+  ///   when no [updateTree] performed and all cell's components could be
+  ///   unloaded from memory after some time.
+  ///   So, unloadRadius specifies count of cells to preserve in
+  ///   [CellState.inactive] state.
+  /// - [suspendedCellLifetime] - how long a cell in [CellState.suspended]
+  ///   state should being kept in memory. If state will not be changed, the
+  ///   cell will be queued for unload. All components at this cell will be
+  ///   removed from game tree, resources will be freed.
+  /// - [buildCellsPerUpdate] and [removeCellsPerUpdate] - double values which
+  ///   describes, how many cells should be built or to be removes at one
+  ///   [update] call. Building new cells includes loading map's chunks,
+  ///   creating new components. loading sprites, compiling image compositions
+  ///   and so on, so it is not cheap operation. Creating 3-5 cells at once
+  ///   can be cause of heavy freezes of the game. Removing cell also means
+  ///   images disposing, components removal from tree - this is cheaper but
+  ///   still not too fast. So specify "0.25", for example, if you want to make
+  ///   the Framework to load (or unload) just 1 cell per 4 update() calls.
+  /// - [trackWindowSize] - enable calculation of necessary [activeRadius] to
+  ///   keep viewport filled by active cells only.
+  /// - [trackedComponent] - a game component which will be the center of
+  ///   active grid. Usually it is the player or a point where player will
+  ///   spawn. Can be omitted, but [initialPosition] must be specified then!
+  /// - [initialPosition] - initial position of spatial grid framework. If you
+  ///   can not specify player's component at [onLoad] stage, omit
+  ///   [trackedComponent] parameter and set [initialPosition] instead. Then
+  ///   use [spatialGrid.trackedComponent] to specify your player's component at
+  ///   game runtime, when it become accessible.
+  /// - [cellBuilderNoMap] - cell builder function if cell does not belong to
+  ///   any map, specified at [maps] or in [worldLoader].
+  /// - [onAfterCellBuild] - function to be called when cell build was finished
+  /// - [maps] - list of manually specified [TiledMapLoader] maps. Every map
+  ///   will be loaded into game. May be not used if not needed.
+  /// - [worldLoader] - if you use Tiled *.world files, this allows to load
+  ///   whole world into game.
+  /// - [lazyLoad] - do not load whole map / world into game. Initially just
+  ///   loads map in [activeRadius] and then load map by chunks while player
+  ///   discovers the map.
+  ///
   Future<void> initializeSpatialGrid({
     bool? debug,
     Component? rootComponent,
     required double blockSize,
     Size? activeRadius,
     Size? unloadRadius,
+    Duration suspendedCellLifetime = Duration.zero,
+    double buildCellsPerUpdate = -1,
+    double removeCellsPerUpdate = -1,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
-    bool lazyLoad = true,
-    double buildCellsPerUpdate = -1,
-    double removeCellsPerUpdate = -1,
-    Duration suspendedCellLifetime = Duration.zero,
     CellBuilderFunction? cellBuilderNoMap,
     CellBuilderFunction? onAfterCellBuild,
     List<TiledMapLoader>? maps,
     WorldLoader? worldLoader,
+    bool lazyLoad = true,
   }) async {
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
@@ -125,6 +172,18 @@ mixin HasSpatialGridFramework on FlameGame
       } else {
         throw 'Lazy load initialization error!';
       }
+    }
+  }
+
+  /// Should be called when Framework is initialized and all components are
+  /// added into game.
+  /// This functions enables windows dimensions tracking and calculating grid
+  /// cells visible in viewport. It allows automatically enable or disable cells
+  /// after window resizing or zoom changes
+  void gameInitializationDone() {
+    _gameInitializationFinished = true;
+    if (trackWindowSize) {
+      setRadiusByWindowDimensions();
     }
   }
 
@@ -340,7 +399,7 @@ mixin HasSpatialGridFramework on FlameGame
       final cellsYRadius =
           (visibleSize.y / spatialGrid.blockSize.height / 2).ceil().toDouble();
       spatialGrid.activeRadius = Size(cellsXRadius, cellsYRadius);
-      // ignore: avoid_catches_without_on_clauses
+      // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
   }
 
