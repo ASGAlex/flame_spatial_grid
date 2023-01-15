@@ -9,6 +9,41 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
+/// Core mixin of spatial grid framework.
+/// This mixin should have EVERY game component, working with spatial grid.
+/// Components without this mixin will be hidden from collision detection
+/// system.
+///
+/// The one thing you should do for you game component is to set initial
+/// [currentCell]. If [currentCell] is not specified, system try to locate it by
+/// searching corresponding cell for component's [position], but it is not cheap
+/// operation and you should avoid it while can.
+///
+/// If component is outside of cells with state [CellState.active], it means
+/// that it is outside of viewport and it will be hidden.
+/// If component is outside of [SpatialGrid.unloadRadius], it will be suspended.
+/// That means that no [updateTree] function would be called for such
+/// components, but [updateSuspendedTree] will be called instead. The component
+/// is very far from the player and most probably is not reachable, so main game
+/// logic os suspended and you have to implement a lightweight one, if needed.
+/// It is ok just to ignore it and do not implement anything.
+/// If you need to catch a moment when component become suspended, use
+/// [onSuspend] function. If you need to catch a moment when component become
+/// active again, use [onResume].
+///
+/// Each component with grid support have default hitbox: [boundingBox].
+/// This is required for component's movement tracking and calculating current
+/// cells.
+/// [boundingBox] could be enabled for checking collisions. If you need this
+/// functionality, change it's "collisionType" from default
+/// [CollisionType.inactive] value. Additionally, change
+/// "boundingBox.defaultCollisionType" to that value too.
+/// See [toggleCollisionOnSuspendChange] to discover, why.
+///
+/// [boundingBox] always has calculated size to include component itself and
+/// all component's child components. So if you have an hitbox outside from
+/// component, keep in mind that [boundingBox] will contain it too!
+///
 mixin HasGridSupport on PositionComponent {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
@@ -19,13 +54,21 @@ mixin HasGridSupport on PositionComponent {
   @internal
   static final defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
-  bool isVisible = true;
-
   @internal
   final suspendNotifier = ValueNotifier<bool>(false);
 
+  /// If component's cell state become [CellState.inactive], the component
+  /// become inactive too. It also become disabled in collision detection
+  /// system, so [boundingBox.collisionType] become [CollisionType.inactive].
+  /// After component is restored from suspension, we need to restore it's
+  /// previous "collisionType" value. So by default we do this restoration.
+  /// You might want to change [toggleCollisionOnSuspendChange] to false if
+  /// you know that [boundingBox] should always have state
+  /// [CollisionType.inactive] and want to optimise you code a bit.
+  /// But you also can just to ignore this parameter.
   bool toggleCollisionOnSuspendChange = true;
 
+  /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended => suspendNotifier.value;
 
   set isSuspended(bool suspend) {
@@ -42,6 +85,7 @@ mixin HasGridSupport on PositionComponent {
 
   Cell? _currentCell;
 
+  /// Component's current cell. If null - something definitely went wrong!
   Cell? get currentCell => _currentCell;
 
   set currentCell(Cell? value) {
@@ -66,12 +110,18 @@ mixin HasGridSupport on PositionComponent {
 
   SpatialGrid get spatialGrid => _spatialGrid!;
 
+  @internal
   void setSpatialGrid(SpatialGrid spatialGrid) {
     _spatialGrid ??= spatialGrid;
   }
 
+  /// If this component is that component which all spatial grid system keeps
+  /// in center of grid?
   bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
 
+  /// Bounding box for component and it's additional hitboxes. By default it is
+  /// disabled from collision detection system, but you can change it's
+  /// collisionType and defaultCollisionType values.
   late final boundingBox = BoundingHitbox(
     position: Vector2.zero(),
     size: Vector2.zero(),
@@ -96,14 +146,15 @@ mixin HasGridSupport on PositionComponent {
 
   bool _outOfCellBounds = false;
 
+  /// If component fully lays inside cell bounds or overlaps other cells?
   bool get isOutOfCellBounds => _outOfCellBounds;
 
-  @mustCallSuper
-  void onSpatialGridSupportComponentMounted() {}
-
+  /// [boundingBox] initialisation provided here. It is absolutely necessary for
+  /// keeping framework to work correctly, so please never forgot to call
+  /// super.onLoad in yours onLoad functions!
   @override
   @mustCallSuper
-  Future<void>? onLoad() {
+  FutureOr<void>? onLoad() {
     boundingBox.size.setFrom(Rect.fromLTWH(0, 0, size.x, size.y).toVector2());
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
@@ -164,7 +215,7 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void renderTree(Canvas canvas) {
-    if (isVisible && currentCell?.state == CellState.active) {
+    if (currentCell?.state == CellState.active) {
       super.renderTree(canvas);
     }
     if (debugMode) {
@@ -172,6 +223,9 @@ mixin HasGridSupport on PositionComponent {
     }
   }
 
+  /// This is called on every [boundingBox]'s aabb recalculation. If bounding
+  /// box was mover or resized - it is necessary to recalculate component's
+  /// [currentCell], probably create new one...
   @internal
   void updateTransform() {
     boundingBox.aabbCenter = boundingBox.aabb.center;

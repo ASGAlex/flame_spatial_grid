@@ -184,7 +184,7 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void renderTree(Canvas canvas) {
-    if (isVisible && currentCell?.state == CellState.active) {
+    if (currentCell?.state == CellState.active) {
       decorator.applyChain(render, canvas);
     }
     if (game.isSpatialGridDebugEnabled) {
