@@ -1,3 +1,5 @@
+// ignore_for_file: use_if_null_to_convert_nulls_to_bools
+
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
@@ -59,7 +61,8 @@ class Cell {
 
   final components = HashSet<HasGridSupport>();
 
-  get broadphase => spatialGrid.game.collisionDetection.broadphase;
+  SpatialGridBroadphase get broadphase =>
+      spatialGrid.game.collisionDetection.broadphase;
 
   Cell? get rawLeft => _rawLeft?._remove == true ? null : _rawLeft;
 
@@ -116,7 +119,9 @@ class Cell {
   CellState tmpState = CellState.active;
 
   set state(CellState value) {
-    if (_state.value == value) return;
+    if (_state.value == value) {
+      return;
+    }
 
     _state.value = value;
     if (_state.value != CellState.suspended && scheduleToBuild) {

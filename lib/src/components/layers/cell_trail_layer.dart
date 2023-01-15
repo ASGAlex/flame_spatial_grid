@@ -48,7 +48,9 @@ class CellTrailLayer extends CellStaticLayer {
   @override
   Future compileToSingleLayer(Iterable<Component> children) async {
     final cell = currentCell;
-    if (cell == null) return;
+    if (cell == null) {
+      return;
+    }
 
     if ((newComponents.isEmpty && noTrail) ||
         (newComponents.isEmpty && !doFadeOut)) {
@@ -70,7 +72,9 @@ class CellTrailLayer extends CellStaticLayer {
 
     if (newComponents.isNotEmpty) {
       for (final component in newComponents) {
-        if (component is! HasGridSupport) continue;
+        if (component is! HasGridSupport) {
+          continue;
+        }
         // component.render(canvas);
         component.decorator.applyChain(component.render, canvas);
       }
@@ -88,7 +92,7 @@ class CellTrailLayer extends CellStaticLayer {
           .then((newImage) {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
-        canvas.drawImage(newImage, const Offset(0, 0), Paint());
+        canvas.drawImage(newImage, Offset.zero, Paint());
         layerPicture = recorder.endRecording();
         _operationsCount = 0;
 
@@ -109,15 +113,19 @@ class CellTrailLayer extends CellStaticLayer {
     }
   }
 
-  _renderDebugCell(Canvas canvas) {
+  void _renderDebugCell(Canvas canvas) {
     final cell = currentCell;
-    if (cell == null) return;
+    if (cell == null) {
+      return;
+    }
     final rect = Rect.fromLTWH(0, 0, size.x, size.y);
     canvas.drawRect(
-        rect, Paint()..color = const Color.fromRGBO(255, 255, 255, 0.2));
+      rect,
+      Paint()..color = const Color.fromRGBO(255, 255, 255, 0.2),
+    );
   }
 
-  _drawOldPicture(Canvas canvas) {
+  void _drawOldPicture(Canvas canvas) {
     if (layerPicture != null) {
       canvas.drawPicture(layerPicture!);
     }
@@ -143,10 +151,11 @@ class CellTrailLayer extends CellStaticLayer {
 }
 
 class FadeOutConfig {
-  FadeOutConfig(
-      {double transparencyPerStep = 0,
-      this.fadeOutTimeout = Duration.zero,
-      this.operationsLimitToSavePicture = 50}) {
+  FadeOutConfig({
+    double transparencyPerStep = 0,
+    this.fadeOutTimeout = Duration.zero,
+    this.operationsLimitToSavePicture = 50,
+  }) {
     this.transparencyPerStep = transparencyPerStep;
   }
 
@@ -157,7 +166,9 @@ class FadeOutConfig {
 
   set transparencyPerStep(double value) {
     assert(
-        value >= 0 && value <= 1, 'Transparency must be between 0.0 and 1.0');
+      value >= 0 && value <= 1,
+      'Transparency must be between 0.0 and 1.0',
+    );
     _transparencyPerStep = value;
   }
 
@@ -185,10 +196,10 @@ class _FadeOutDecorator extends Decorator {
 
   set opacity(double value) {
     if (value <= 0) {
-      value = 0;
+      _opacity = 0;
     }
     _opacity = value;
-    _paint.color = _paint.color.withOpacity(value);
+    _paint.color = _paint.color.withOpacity(_opacity);
   }
 
   double get opacity => _opacity;

@@ -10,6 +10,10 @@ import 'package:flame_spatial_grid/src/tiled/world_loader.dart';
 
 import 'collision_optimizer.dart';
 
+/// This class is starting point to add Framework's abilities into you game
+/// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary! Also call
+/// [gameInitializationDone] when all game objects are loaded and added.
+/// If your game could be zoomed, please call [onAfterZoom] after every zoom event.
 mixin HasSpatialGridFramework on FlameGame
     implements HasCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
   late SpatialGridCollisionDetection _collisionDetection;
@@ -41,11 +45,12 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  /// Initialise .
+  /// Initializes the framework.
   ///
-  /// - [minimumDistance] (optional) - specify minimum distance between objects
-  ///   to consider them as possibly colliding. You can also implement the
-  ///   [minimumDistanceCheck] if you need some custom behavior.
+  /// - [debug] (optional) - if you want to see how spatial grid is spread along
+  /// the game's space
+  /// - [rootComponent] - a component at root of components tree. At this
+  /// component Framework will add all new components by default.
   ///
   /// The [onComponentTypeCheck] checks if objects of different types should
   /// collide.
@@ -54,23 +59,24 @@ mixin HasSpatialGridFramework on FlameGame
   /// type checker.
   /// It should usually not be overridden, see
   /// [CollisionCallbacks.onComponentTypeCheck] instead
-  Future<void> initializeSpatialGrid(
-      {bool? debug,
-      Component? rootComponent,
-      required double blockSize,
-      Size? activeRadius,
-      Size? unloadRadius,
-      bool trackWindowSize = true,
-      HasGridSupport? trackedComponent,
-      Vector2? initialPosition,
-      bool lazyLoad = true,
-      double buildCellsPerUpdate = -1,
-      double removeCellsPerUpdate = -1,
-      Duration suspendedCellLifetime = Duration.zero,
-      CellBuilderFunction? cellBuilderNoMap,
-      CellBuilderFunction? onAfterCellBuild,
-      List<TiledMapLoader>? maps,
-      WorldLoader? worldLoader}) async {
+  Future<void> initializeSpatialGrid({
+    bool? debug,
+    Component? rootComponent,
+    required double blockSize,
+    Size? activeRadius,
+    Size? unloadRadius,
+    bool trackWindowSize = true,
+    HasGridSupport? trackedComponent,
+    Vector2? initialPosition,
+    bool lazyLoad = true,
+    double buildCellsPerUpdate = -1,
+    double removeCellsPerUpdate = -1,
+    Duration suspendedCellLifetime = Duration.zero,
+    CellBuilderFunction? cellBuilderNoMap,
+    CellBuilderFunction? onAfterCellBuild,
+    List<TiledMapLoader>? maps,
+    WorldLoader? worldLoader,
+  }) async {
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
     this.rootComponent.add(layersManager.layersRootComponent);
@@ -83,13 +89,14 @@ mixin HasSpatialGridFramework on FlameGame
       this.maps = maps;
     }
     spatialGrid = SpatialGrid(
-        blockSize: Size.square(blockSize),
-        trackedComponent: trackedComponent,
-        initialPosition: initialPosition,
-        activeRadius: activeRadius,
-        unloadRadius: unloadRadius,
-        lazyLoad: lazyLoad,
-        game: this);
+      blockSize: Size.square(blockSize),
+      trackedComponent: trackedComponent,
+      initialPosition: initialPosition,
+      activeRadius: activeRadius,
+      unloadRadius: unloadRadius,
+      lazyLoad: lazyLoad,
+      game: this,
+    );
     if (trackWindowSize) {
       setRadiusByWindowDimensions();
     }
@@ -116,12 +123,12 @@ mixin HasSpatialGridFramework on FlameGame
       if (currentCell != null) {
         spatialGrid.currentCell = currentCell;
       } else {
-        throw "Lazy load initialization error!";
+        throw 'Lazy load initialization error!';
       }
     }
   }
 
-  var trackWindowSize = true;
+  bool trackWindowSize = true;
   List<TiledMapLoader> maps = [];
   WorldLoader? worldLoader;
   CellBuilderFunction? _cellBuilderNoMap;
@@ -148,14 +155,18 @@ mixin HasSpatialGridFramework on FlameGame
 
     var cellOnMap = false;
     for (final map in maps) {
-      if (map.isCellOutsideOfMap(cell)) continue;
+      if (map.isCellOutsideOfMap(cell)) {
+        continue;
+      }
       cellOnMap = true;
       await map.cellBuilder(cell, rootComponent);
     }
 
     if (worldMaps != null) {
       for (final map in worldMaps) {
-        if (map.isCellOutsideOfMap(cell)) continue;
+        if (map.isCellOutsideOfMap(cell)) {
+          continue;
+        }
         cellOnMap = true;
         map.cellBuilder(cell, rootComponent);
       }
@@ -167,7 +178,9 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   set isSpatialGridDebugEnabled(bool debug) {
-    if (_isSpatialGridDebugEnabled == debug) return;
+    if (_isSpatialGridDebugEnabled == debug) {
+      return;
+    }
 
     _isSpatialGridDebugEnabled = debug;
     if (_isSpatialGridDebugEnabled) {
@@ -226,11 +239,13 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   Future _buildNewCells() async {
-    if (spatialGrid.cellsScheduledToBuild.isEmpty) return;
+    if (spatialGrid.cellsScheduledToBuild.isEmpty) {
+      return;
+    }
 
     if (buildCellsPerUpdate > 0) {
       _buildCellsNow += buildCellsPerUpdate;
-      final cellsToProcess = _buildCellsNow.floor().toInt();
+      final cellsToProcess = _buildCellsNow.floor();
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = spatialGrid.cellsScheduledToBuild.first;
         if (cell.state == CellState.suspended) {
@@ -247,7 +262,9 @@ mixin HasSpatialGridFramework on FlameGame
       _buildCellsNow -= cellsToProcess;
     } else {
       for (final cell in spatialGrid.cellsScheduledToBuild) {
-        if (cell.state == CellState.suspended) continue;
+        if (cell.state == CellState.suspended) {
+          continue;
+        }
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
@@ -268,7 +285,9 @@ mixin HasSpatialGridFramework on FlameGame
   HashSet<Cell> _catchCellsForRemoval() {
     final cellsToRemove = HashSet<Cell>();
     for (final cell in spatialGrid.cells.values) {
-      if (cell.state != CellState.suspended) continue;
+      if (cell.state != CellState.suspended) {
+        continue;
+      }
       if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
         cellsToRemove.add(cell);
       }
@@ -279,19 +298,23 @@ mixin HasSpatialGridFramework on FlameGame
   void _countSuspendedCellsTimers(double dt) {
     if (_suspendedCellLifetime > 0) {
       for (final cell in spatialGrid.cells.values) {
-        if (cell.state != CellState.suspended) continue;
+        if (cell.state != CellState.suspended) {
+          continue;
+        }
         cell.beingSuspendedTimeMicroseconds += dt;
       }
     }
   }
 
-  _autoRemoveOldCells(double dt) {
+  void _autoRemoveOldCells(double dt) {
     final cellsToRemove = _catchCellsForRemoval();
-    if (cellsToRemove.isEmpty) return;
+    if (cellsToRemove.isEmpty) {
+      return;
+    }
 
     if (removeCellsPerUpdate > 0) {
       _removeCellsNow += removeCellsPerUpdate;
-      final cellsToProcess = _removeCellsNow.floor().toInt();
+      final cellsToProcess = _removeCellsNow.floor();
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = cellsToRemove.first;
         cellsToRemove.remove(cell);
@@ -317,6 +340,7 @@ mixin HasSpatialGridFramework on FlameGame
       final cellsYRadius =
           (visibleSize.y / spatialGrid.blockSize.height / 2).ceil().toDouble();
       spatialGrid.activeRadius = Size(cellsXRadius, cellsYRadius);
+      // ignore: avoid_catches_without_on_clauses
     } catch (e) {}
   }
 

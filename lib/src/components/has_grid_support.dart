@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
 
@@ -72,10 +73,10 @@ mixin HasGridSupport on PositionComponent {
   bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
 
   late final boundingBox = BoundingHitbox(
-      position: Vector2.zero(),
-      size: Vector2.zero(),
-      parentWithGridSupport: this)
-    ..collisionType = CollisionType.inactive;
+    position: Vector2.zero(),
+    size: Vector2.zero(),
+    parentWithGridSupport: this,
+  )..collisionType = CollisionType.inactive;
 
   @internal
   double dtElapsedWhileSuspended = 0;
@@ -95,14 +96,14 @@ mixin HasGridSupport on PositionComponent {
 
   bool _outOfCellBounds = false;
 
-  get isOutOfCellBounds => _outOfCellBounds;
+  bool get isOutOfCellBounds => _outOfCellBounds;
 
   @mustCallSuper
   void onSpatialGridSupportComponentMounted() {}
 
   @override
   @mustCallSuper
-  onLoad() {
+  Future<void>? onLoad() {
     boundingBox.size.setFrom(Rect.fromLTWH(0, 0, size.x, size.y).toVector2());
     add(boundingBox);
     boundingBox.transform.addListener(_onBoundingBoxTransform);
@@ -110,7 +111,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   @override
-  Future<void>? add(Component component) {
+  FutureOr<void>? add(Component component) {
     if (component != boundingBox && component is ShapeHitbox) {
       final currentRect = boundingBox.shouldFillParent
           ? Rect.fromLTWH(0, 0, size.x, size.y)
@@ -172,7 +173,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   @internal
-  updateTransform() {
+  void updateTransform() {
     boundingBox.aabbCenter = boundingBox.aabb.center;
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;

@@ -20,8 +20,10 @@ class CollisionOptimizer {
 
   List<HasGridSupport> get gridChildrenActiveOrPassive => parentLayer.children
       .whereType<HasGridSupport>()
-      .where((element) =>
-          element.boundingBox.collisionType != CollisionType.inactive)
+      .where(
+        (element) =>
+            element.boundingBox.collisionType != CollisionType.inactive,
+      )
       .toList(growable: false);
 
   final _alreadyProcessed = HashSet<ShapeHitbox>();
@@ -31,7 +33,9 @@ class CollisionOptimizer {
 
   void optimize() {
     final cell = parentLayer.currentCell;
-    if (cell == null) return;
+    if (cell == null) {
+      return;
+    }
 
     final optimizedCollisionsByGroupBox =
         game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
@@ -56,7 +60,9 @@ class CollisionOptimizer {
     }
 
     for (final child in gridChildrenActiveOrPassive) {
-      if (_alreadyProcessed.contains(child.boundingBox)) continue;
+      if (_alreadyProcessed.contains(child.boundingBox)) {
+        continue;
+      }
       final hitboxes = _findOverlappingRects(child.boundingBox);
       if (hitboxes.length > 1) {
         if (hitboxes.length > maximumItemsInGroup) {
@@ -65,7 +71,9 @@ class CollisionOptimizer {
           for (final hbInChunk in hitboxes) {
             if (totalInChunk == maximumItemsInGroup) {
               final optimized = OptimizedCollisionList(
-                  HashSet<ShapeHitbox>()..addAll(chunk), parentLayer);
+                HashSet<ShapeHitbox>()..addAll(chunk),
+                parentLayer,
+              );
               collisionsListByGroup[optimized.boundingBox] = optimized;
               _createdCollisionLists.add(optimized);
               totalInChunk = 0;
@@ -77,7 +85,9 @@ class CollisionOptimizer {
           }
           if (chunk.isNotEmpty) {
             final optimized = OptimizedCollisionList(
-                HashSet<ShapeHitbox>()..addAll(chunk), parentLayer);
+              HashSet<ShapeHitbox>()..addAll(chunk),
+              parentLayer,
+            );
             collisionsListByGroup[optimized.boundingBox] = optimized;
             _createdCollisionLists.add(optimized);
           }
@@ -93,14 +103,19 @@ class CollisionOptimizer {
     }
   }
 
-  LinkedHashSet<ShapeHitbox> _findOverlappingRects(ShapeHitbox hitbox,
-      [HashSet<ShapeHitbox>? exception]) {
+  LinkedHashSet<ShapeHitbox> _findOverlappingRects(
+    ShapeHitbox hitbox, [
+    HashSet<ShapeHitbox>? exception,
+  ]) {
     exception ??= HashSet<ShapeHitbox>();
+    // ignore: prefer_collection_literals
     final hitboxes = LinkedHashSet<ShapeHitbox>();
     hitboxes.add(hitbox);
     exception.add(hitbox);
     for (final otherChild in gridChildrenActiveOrPassive) {
-      if (exception.contains(otherChild.boundingBox)) continue;
+      if (exception.contains(otherChild.boundingBox)) {
+        continue;
+      }
       if (hitbox
           .toRectSpecial()
           .overlapsSpecial(otherChild.boundingBox.toRectSpecial())) {
@@ -134,7 +149,7 @@ class OptimizedCollisionList {
   }
 
   List<ShapeHitbox> get hitboxes => _hitboxes.toList(growable: false);
-  var _hitboxes = Set<ShapeHitbox>();
+  var _hitboxes = <ShapeHitbox>{};
   var _boundingBox = GroupHitbox();
   final HasGridSupport parentLayer;
 
@@ -154,7 +169,7 @@ class OptimizedCollisionList {
     }
   }
 
-  _updateBoundingBox() {
+  void _updateBoundingBox() {
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
       if (rect == Rect.zero) {
@@ -164,19 +179,26 @@ class OptimizedCollisionList {
       rect = rect.expandToInclude(hitbox.toRectSpecial());
     }
     _boundingBox = GroupHitbox(
-        parentWithGridSupport: parentLayer,
-        position: rect.topLeft.toVector2(),
-        size: rect.size.toVector2())
-      ..collisionType = CollisionType.passive;
+      parentWithGridSupport: parentLayer,
+      position: rect.topLeft.toVector2(),
+      size: rect.size.toVector2(),
+    )..collisionType = CollisionType.passive;
     parentLayer.add(_boundingBox);
   }
 }
 
 extension ToRectSpecial on PositionComponent {
   Rect toRectSpecial() {
-    final parentPosition = (parent as PositionComponent).position;
-    return Rect.fromLTWH(parentPosition.x + position.x,
-        parentPosition.y + position.y, size.x, size.y);
+    final parentPosition = (parent as PositionComponent?)?.position;
+    if (parentPosition == null) {
+      return Rect.zero;
+    }
+    return Rect.fromLTWH(
+      parentPosition.x + position.x,
+      parentPosition.y + position.y,
+      size.x,
+      size.y,
+    );
   }
 }
 
@@ -190,9 +212,10 @@ class GroupHitbox extends BoundingHitbox {
   @override
   void renderDebugMode(Canvas canvas) {
     canvas.drawRect(
-        Rect.fromLTWH(position.x, position.y, size.x, size.y),
-        Paint()
-          ..color = const Color.fromRGBO(0, 0, 255, 1)
-          ..style = PaintingStyle.stroke);
+      Rect.fromLTWH(position.x, position.y, size.x, size.y),
+      Paint()
+        ..color = const Color.fromRGBO(0, 0, 255, 1)
+        ..style = PaintingStyle.stroke,
+    );
   }
 }

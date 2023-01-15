@@ -37,7 +37,7 @@ abstract class CellLayer extends PositionComponent
   bool get pauseUpdate => _pauseUpdate;
 
   @internal
-  set pauseUpdate(value) {
+  set pauseUpdate(bool value) {
     _pauseUpdate = value;
     if (_pauseUpdate == false) {
       isUpdateNeeded = true;
@@ -62,7 +62,9 @@ abstract class CellLayer extends PositionComponent
 
   Size get layerCalculatedSize {
     final cell = currentCell;
-    if (cell == null) throw 'layer should be connected with any cell!';
+    if (cell == null) {
+      throw 'layer should be connected with any cell!';
+    }
     var width = cell.rect.width;
     var height = cell.rect.height;
     if (correctionBottomRight != Vector2.zero()) {
@@ -193,12 +195,16 @@ abstract class CellLayer extends PositionComponent
   }
 
   void onChildrenUpdate() {
-    if (pauseUpdate) return;
+    if (pauseUpdate) {
+      return;
+    }
     isUpdateNeeded = true;
   }
 
   void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
-    if (pauseUpdate) return;
+    if (pauseUpdate) {
+      return;
+    }
 
     if (child is UpdateOnDemand) {
       child.isUpdateNeeded = true;

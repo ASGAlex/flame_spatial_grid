@@ -7,29 +7,34 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
 typedef CellBuilderFunction = Future<void> Function(
-    Cell cell, Component rootComponent);
+  Cell cell,
+  Component rootComponent,
+);
 
 class SpatialGrid {
-  SpatialGrid(
-      {required this.blockSize,
-      HasGridSupport? trackedComponent,
-      Vector2? initialPosition,
-      required this.game,
-      bool lazyLoad = true,
-      Size? activeRadius,
-      required Size? unloadRadius}) {
-    this.activeRadius = (activeRadius ?? const Size(2, 2));
-    this.unloadRadius = (unloadRadius ?? const Size(5, 5));
+  SpatialGrid({
+    required this.blockSize,
+    HasGridSupport? trackedComponent,
+    Vector2? initialPosition,
+    required this.game,
+    bool lazyLoad = true,
+    Size? activeRadius,
+    required Size? unloadRadius,
+  }) {
+    this.activeRadius = activeRadius ?? const Size(2, 2);
+    this.unloadRadius = unloadRadius ?? const Size(5, 5);
     final position =
         trackedComponent?.position ?? initialPosition ?? Vector2(0, 0);
 
     final cell = Cell(
-        spatialGrid: this,
-        suspended: lazyLoad,
-        rect: Rect.fromCenter(
-            center: position.toOffset(),
-            width: blockSize.width,
-            height: blockSize.height));
+      spatialGrid: this,
+      suspended: lazyLoad,
+      rect: Rect.fromCenter(
+        center: position.toOffset(),
+        width: blockSize.width,
+        height: blockSize.height,
+      ),
+    );
 
     if (!lazyLoad) {
       currentCell = cell;
@@ -43,7 +48,7 @@ class SpatialGrid {
     }
   }
 
-  dispose() {
+  void dispose() {
     for (final cell in cells.values) {
       cell.remove();
     }
@@ -58,7 +63,9 @@ class SpatialGrid {
   Cell? get currentCell => _currentCell;
 
   set currentCell(Cell? value) {
-    if (value == null) return;
+    if (value == null) {
+      return;
+    }
     _currentCell = value;
     updateCellsStateByRadius();
   }
@@ -117,23 +124,29 @@ class SpatialGrid {
 
   Vector2 _cellDistanceFromActiveCell(Cell cell) {
     final current = _currentCell;
-    if (current == null) return Vector2.zero();
+    if (current == null) {
+      return Vector2.zero();
+    }
     final diff = (current.center - cell.center)..absolute();
     return Vector2(diff.x / blockSize.width, diff.y / blockSize.height);
   }
 
   Set<Cell> _findCellsInRadius(Size radius, {bool create = false}) {
     final current = _currentCell;
-    if (current == null) throw 'current cell cant be null!';
+    if (current == null) {
+      throw 'current cell cant be null!';
+    }
 
-    Set<Cell> cells = {};
+    final cells = <Cell>{};
     var tmpDirection = current;
     for (var leftCounter = 1; leftCounter <= radius.width; leftCounter++) {
       if (create) {
         tmpDirection = tmpDirection.left;
       } else {
         final rawLeft = tmpDirection.leftChecked;
-        if (rawLeft == null) break;
+        if (rawLeft == null) {
+          break;
+        }
         tmpDirection = rawLeft;
       }
       cells.add(tmpDirection);
@@ -146,7 +159,9 @@ class SpatialGrid {
           topDirection = topDirection.top;
         } else {
           final rawTop = topDirection.topChecked;
-          if (rawTop == null) break;
+          if (rawTop == null) {
+            break;
+          }
           topDirection = rawTop;
         }
         cells.add(topDirection);
@@ -160,7 +175,9 @@ class SpatialGrid {
           bottomDirection = bottomDirection.bottom;
         } else {
           final rawBottom = bottomDirection.bottomChecked;
-          if (rawBottom == null) break;
+          if (rawBottom == null) {
+            break;
+          }
           bottomDirection = rawBottom;
         }
         cells.add(bottomDirection);
@@ -173,7 +190,9 @@ class SpatialGrid {
         tmpDirection = tmpDirection.right;
       } else {
         final rawRight = tmpDirection.rightChecked;
-        if (rawRight == null) break;
+        if (rawRight == null) {
+          break;
+        }
         tmpDirection = rawRight;
       }
       cells.add(tmpDirection);
@@ -186,7 +205,9 @@ class SpatialGrid {
           topDirection = topDirection.top;
         } else {
           final rawTop = topDirection.topChecked;
-          if (rawTop == null) break;
+          if (rawTop == null) {
+            break;
+          }
           topDirection = rawTop;
         }
         cells.add(topDirection);
@@ -200,7 +221,9 @@ class SpatialGrid {
           bottomDirection = bottomDirection.bottom;
         } else {
           final rawBottom = bottomDirection.bottomChecked;
-          if (rawBottom == null) break;
+          if (rawBottom == null) {
+            break;
+          }
           bottomDirection = rawBottom;
         }
         cells.add(bottomDirection);
@@ -213,7 +236,9 @@ class SpatialGrid {
         tmpDirection = tmpDirection.top;
       } else {
         final rawTop = tmpDirection.topChecked;
-        if (rawTop == null) break;
+        if (rawTop == null) {
+          break;
+        }
         tmpDirection = rawTop;
       }
       cells.add(tmpDirection);
@@ -226,7 +251,9 @@ class SpatialGrid {
           leftDirection = leftDirection.left;
         } else {
           final rawLeft = leftDirection.leftChecked;
-          if (rawLeft == null) break;
+          if (rawLeft == null) {
+            break;
+          }
           leftDirection = rawLeft;
         }
         cells.add(leftDirection);
@@ -240,7 +267,9 @@ class SpatialGrid {
           rightDirection = rightDirection.right;
         } else {
           final rawRight = rightDirection.rightChecked;
-          if (rawRight == null) break;
+          if (rawRight == null) {
+            break;
+          }
           rightDirection = rawRight;
         }
         cells.add(rightDirection);
@@ -255,7 +284,9 @@ class SpatialGrid {
         tmpDirection = tmpDirection.bottom;
       } else {
         final rawBottom = tmpDirection.bottomChecked;
-        if (rawBottom == null) break;
+        if (rawBottom == null) {
+          break;
+        }
         tmpDirection = rawBottom;
       }
       cells.add(tmpDirection);
@@ -268,7 +299,9 @@ class SpatialGrid {
           leftDirection = leftDirection.left;
         } else {
           final rawLeft = leftDirection.leftChecked;
-          if (rawLeft == null) break;
+          if (rawLeft == null) {
+            break;
+          }
           leftDirection = rawLeft;
         }
         cells.add(leftDirection);
@@ -282,7 +315,9 @@ class SpatialGrid {
           rightDirection = rightDirection.right;
         } else {
           final rawRight = rightDirection.rightChecked;
-          if (rawRight == null) break;
+          if (rawRight == null) {
+            break;
+          }
           rightDirection = rawRight;
         }
         cells.add(rightDirection);
@@ -293,6 +328,7 @@ class SpatialGrid {
 
   Cell? findExistingCellByPosition(Vector2 position) {
     final nearest = findNearestCellToPosition(position);
+    // ignore: use_if_null_to_convert_nulls_to_bools
     if (nearest?.rect.containsPoint(position) == true) {
       return nearest;
     }
@@ -300,7 +336,7 @@ class SpatialGrid {
   }
 
   Cell? findNearestCellToPosition(Vector2 position) {
-    double shortestDistance = double.maxFinite;
+    var shortestDistance = double.maxFinite;
     Cell? nearestCell;
     for (final cell in cells.entries) {
       final distance = cell.value.center.distanceToSquared(position);
@@ -315,10 +351,10 @@ class SpatialGrid {
   Rect getCellRectAtPosition(Vector2 position) {
     final nearest = findNearestCellToPosition(position);
     if (nearest == null) {
-      throw "There are no cells probably? Position: $position";
+      throw 'There are no cells probably? Position: $position';
     }
 
-    var startPoint = nearest.center;
+    final startPoint = nearest.center;
     final diff = position - startPoint;
     final xSign = diff.x > 0 ? 1 : -1;
     final ySign = diff.y > 0 ? 1 : -1;
@@ -343,9 +379,10 @@ class SpatialGrid {
     }
 
     final rect = Rect.fromCenter(
-        center: startPoint.toOffset(),
-        width: blockSize.width,
-        height: blockSize.height);
+      center: startPoint.toOffset(),
+      width: blockSize.width,
+      height: blockSize.height,
+    );
 
     return rect;
   }

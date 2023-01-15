@@ -15,7 +15,7 @@ class LayersManager {
 
   final Component layersRootComponent = Component();
 
-  addLayer(CellLayer layer) {
+  void addLayer(CellLayer layer) {
     final cell = layer.currentCell;
     if (cell == null) {
       throw 'layer must have a cell';
@@ -51,7 +51,7 @@ class LayersManager {
         game.spatialGrid.findExistingCellByPosition(component.position);
     cell ??= component.currentCell =
         game.spatialGrid.createNewCellAtPosition(component.position);
-    CellLayer? layer = getLayer(name: layerName, cell: cell);
+    var layer = getLayer(name: layerName, cell: cell);
     final isNew = layer == null;
     switch (layerType) {
       case MapLayerType.static:
@@ -68,8 +68,11 @@ class LayersManager {
           throw 'Component ${component.runtimeType} must be SpriteAnimationComponent!';
         }
         if (isNew) {
-          layer = CellStaticAnimationLayer(cell,
-              name: layerName, isRenewable: isRenewable);
+          layer = CellStaticAnimationLayer(
+            cell,
+            name: layerName,
+            isRenewable: isRenewable,
+          );
         }
         break;
       case MapLayerType.trail:

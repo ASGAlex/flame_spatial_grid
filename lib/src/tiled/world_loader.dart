@@ -17,17 +17,21 @@ class WorldLoader {
       futures.add(map.init(game));
     }
 
-    await Future.wait(futures);
+    await Future.wait<void>(futures);
     TiledMapLoader.loadedMaps.addAll(maps);
   }
 
   List<TiledMapLoader> get maps {
     final result = <TiledMapLoader>[];
     final data = worldData;
-    if (data == null) return result;
+    if (data == null) {
+      return result;
+    }
     for (final map in data.maps) {
       final loader = mapLoader[map.fileName.replaceAll('.tmx', '')];
-      if (loader == null) continue;
+      if (loader == null) {
+        continue;
+      }
       loader.initialPosition = Vector2(map.x.toDouble(), map.y.toDouble());
       loader.fileName = map.fileName;
       result.add(loader);

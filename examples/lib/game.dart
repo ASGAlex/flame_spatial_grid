@@ -59,24 +59,25 @@ all collisions are disabled.
     player = world.player;
     const blockSize = 100.0;
     await initializeSpatialGrid(
-        debug: false,
-        activeRadius: const Size(3, 2),
-        unloadRadius: const Size(5, 5),
-        blockSize: blockSize,
-        trackedComponent: player,
-        rootComponent: world,
-        buildCellsPerUpdate: 1,
-        removeCellsPerUpdate: 0.25,
-        suspendedCellLifetime: const Duration(minutes: 1),
-        cellBuilderNoMap: noMapCellBuilder,
-        onAfterCellBuild: world.onAfterCellBuild,
-        maps: [
-          DemoMapLoader(Vector2(600, 0)),
-        ],
-        worldLoader: WorldLoader(fileName: 'example.world', mapLoader: {
-          'example': DemoMapLoader(),
-          'another_map': DemoMapLoader()
-        }));
+      debug: false,
+      activeRadius: const Size(3, 2),
+      unloadRadius: const Size(5, 5),
+      blockSize: blockSize,
+      trackedComponent: player,
+      rootComponent: world,
+      buildCellsPerUpdate: 1,
+      removeCellsPerUpdate: 0.25,
+      suspendedCellLifetime: const Duration(minutes: 1),
+      cellBuilderNoMap: noMapCellBuilder,
+      onAfterCellBuild: world.onAfterCellBuild,
+      maps: [
+        DemoMapLoader(Vector2(600, 0)),
+      ],
+      worldLoader: WorldLoader(
+        fileName: 'example.world',
+        mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
+      ),
+    );
     // await demoMapLoader.init(this);
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
@@ -98,13 +99,14 @@ all collisions are disabled.
   var _fireBullet = false;
   var _killWater = false;
 
-  var teleportMode = true;
-  var isAIEnabled = true;
+  bool teleportMode = true;
+  bool isAIEnabled = true;
 
   final fadeOutConfig = FadeOutConfig(
-      fadeOutTimeout: const Duration(seconds: 1),
-      operationsLimitToSavePicture: 5,
-      transparencyPerStep: 0.1);
+    fadeOutTimeout: const Duration(seconds: 1),
+    operationsLimitToSavePicture: 5,
+    transparencyPerStep: 0.1,
+  );
 
   @override
   KeyEventResult onKeyEvent(
@@ -163,9 +165,10 @@ all collisions are disabled.
     if (!_playerDisplacement.isZero()) {
       if (_fireBullet) {
         final bullet = Bullet(
-            position: player.position,
-            displacement: _playerDisplacement * 30,
-            killWater: _killWater);
+          position: player.position,
+          displacement: _playerDisplacement * 30,
+          killWater: _killWater,
+        );
         bullet.currentCell = player.currentCell;
         world.bullets.add(bullet);
         _fireBullet = false;
@@ -223,11 +226,12 @@ all collisions are disabled.
       brick.currentCell = cell;
 
       layersManager.addComponent(
-          component: brick,
-          layerType: MapLayerType.static,
-          layerName: 'Brick',
-          absolutePosition: false,
-          priority: 2);
+        component: brick,
+        layerType: MapLayerType.static,
+        layerName: 'Brick',
+        absolutePosition: false,
+        priority: 2,
+      );
     }
 
     for (var i = 0; i < 200; i++) {
@@ -243,11 +247,11 @@ all collisions are disabled.
       );
       water.currentCell = cell;
       layersManager.addComponent(
-          component: water,
-          layerType: MapLayerType.animated,
-          layerName: 'Water',
-          absolutePosition: false,
-          priority: 1);
+        component: water,
+        layerType: MapLayerType.animated,
+        layerName: 'Water',
+        absolutePosition: false,
+      );
     }
   }
 }
@@ -256,14 +260,17 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-      position: Vector2(-100, 0), size: Vector2.all(tileSize), priority: 10);
+    position: Vector2(-100, 0),
+    size: Vector2.all(tileSize),
+    priority: 10,
+  );
 
   final bullets = Component();
 
-  var npcCount = 0;
+  int npcCount = 0;
 
   @override
-  onLoad() async {
+  Future<void> onLoad() async {
     add(player);
     add(bullets);
     spawnNpcTeam();
@@ -271,25 +278,28 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   void spawnNpcTeam() {
     for (var i = 1; i <= 80; i++) {
-      final double x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
-      final double y = i <= 40 ? 0 : -20;
+      final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
+      final y = i <= 40 ? 0.0 : -20.0;
       final position = Vector2(-100, 0)..add(Vector2(x, y));
       final cell = game.spatialGrid.findExistingCellByPosition(position) ??
           game.spatialGrid.createNewCellAtPosition(position);
       final enableAI = cell.isCellBuildFinished;
-      add(Npc(
+      add(
+        Npc(
           position: position,
           size: Vector2.all(tileSize),
-          priority: player.priority)
-        ..currentCell = cell
-        ..isAIEnabled = enableAI);
+          priority: player.priority,
+        )
+          ..currentCell = cell
+          ..isAIEnabled = enableAI,
+      );
       npcCount++;
     }
   }
 
   Future<void> onAfterCellBuild(Cell cell, Component rootComponent) async {
     final npcList = cell.components.whereType<Npc>();
-    Future.delayed(const Duration(seconds: 3)).then((value) {
+    Future<void>.delayed(const Duration(seconds: 3)).then((value) {
       for (final npc in npcList) {
         npc.isAIEnabled = true;
       }
@@ -311,7 +321,9 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
     final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {
-      if (component is! HasGridSupport) continue;
+      if (component is! HasGridSupport) {
+        continue;
+      }
       print(component.runtimeType);
     }
 
@@ -349,28 +361,33 @@ class DemoMapLoader extends TiledMapLoader {
   Future<void> onBuildBrick(CellBuilderContext context) async {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
     final brick = Brick(
-        position: context.position, sprite: spriteBrick, context: context);
+      position: context.position,
+      sprite: spriteBrick,
+      context: context,
+    );
     brick.currentCell = context.cell;
     game.layersManager.addComponent(
-        component: brick,
-        layerType: MapLayerType.static,
-        layerName: 'Brick',
-        priority: 2);
+      component: brick,
+      layerType: MapLayerType.static,
+      layerName: 'Brick',
+      priority: 2,
+    );
   }
 
   Future<void> onBuildWater(CellBuilderContext context) async {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
     final water = Water(
-        position: context.position,
-        animation: waterAnimation,
-        context: context);
+      position: context.position,
+      animation: waterAnimation,
+      context: context,
+    );
     water.currentCell = context.cell;
     game.layersManager.addComponent(
-        component: water,
-        layerType: MapLayerType.animated,
-        layerName: 'Water',
-        priority: 1);
+      component: water,
+      layerType: MapLayerType.animated,
+      layerName: 'Water',
+    );
   }
 
   Future<void> onBuildTestObject(CellBuilderContext context) async {
@@ -378,7 +395,9 @@ class DemoMapLoader extends TiledMapLoader {
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
 
     final stepSize = waterAnimation?.getSprite().srcSize.x;
-    if (stepSize == null) return;
+    if (stepSize == null) {
+      return;
+    }
     for (var y = context.position.y;
         y < context.position.y + context.size.y;
         y += stepSize) {
@@ -386,14 +405,15 @@ class DemoMapLoader extends TiledMapLoader {
           x < context.position.x + context.size.x;
           x += stepSize) {
         final water = Water(
-            position: Vector2(x, y),
-            animation: waterAnimation,
-            context: context);
+          position: Vector2(x, y),
+          animation: waterAnimation,
+          context: context,
+        );
         game.layersManager.addComponent(
-            component: water,
-            layerType: MapLayerType.animated,
-            layerName: 'Water',
-            priority: 1);
+          component: water,
+          layerType: MapLayerType.animated,
+          layerName: 'Water',
+        );
       }
     }
   }
@@ -443,7 +463,7 @@ class Player extends SpriteComponent
   double stepDone = 0;
   final previousPosition = Vector2.zero();
 
-  _onPositionUpdate() {
+  void _onPositionUpdate() {
     final diff = position - previousPosition;
     stepDone += diff.x.abs() / 3 + diff.y.abs() / 3;
     if (stepDone >= stepSize) {
@@ -452,10 +472,11 @@ class Player extends SpriteComponent
       final stepCell = step.currentCell;
       if (stepCell != null) {
         final layer = game.layersManager.addComponent(
-            component: step,
-            layerType: MapLayerType.trail,
-            layerName: 'trail',
-            optimizeCollisions: false);
+          component: step,
+          layerType: MapLayerType.trail,
+          layerName: 'trail',
+          optimizeCollisions: false,
+        );
 
         if (layer is CellTrailLayer) {
           layer.fadeOutConfig = game.fadeOutConfig;
@@ -522,8 +543,11 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
 
   @override
   void render(Canvas canvas) {
-    canvas.drawPoints(PointMode.points,
-        [Offset(1.5, size.y - 1), Offset(6.5, size.y)], paint);
+    canvas.drawPoints(
+      PointMode.points,
+      [Offset(1.5, size.y - 1), Offset(6.5, size.y)],
+      paint,
+    );
   }
 }
 
@@ -579,7 +603,7 @@ class Npc extends Player {
     super.update(dt);
   }
 
-  _createNewVector() {
+  void _createNewVector() {
     if (game.isAIEnabled && isAIEnabled) {
       final rand = Random();
       final xSign = rand.nextBool() ? -1 : 1;
@@ -595,7 +619,9 @@ class Npc extends Player {
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
-    if (isRemoving) return;
+    if (isRemoving) {
+      return;
+    }
     if (other is GameCollideable) {
       vector.setValues(0, 0);
     } else if (other is Bullet) {
@@ -611,7 +637,7 @@ class Npc extends Player {
   Image? coloredSprite;
 
   @override
-  void render(Canvas canvas) async {
+  Future<void> render(Canvas canvas) async {
     if (coloredSprite == null) {
       final recorder = PictureRecorder();
       final recorderCanvas = Canvas(recorder);
@@ -626,10 +652,11 @@ class Npc extends Player {
 
 class Bullet extends PositionComponent
     with CollisionCallbacks, HasPaint, HasGridSupport {
-  Bullet(
-      {required super.position,
-      required this.displacement,
-      this.killWater = false}) {
+  Bullet({
+    required super.position,
+    required this.displacement,
+    this.killWater = false,
+  }) {
     paint.color = Colors.deepOrange;
     priority = 10;
     size = Vector2.all(1);
@@ -637,7 +664,7 @@ class Bullet extends PositionComponent
         boundingBox.defaultCollisionType = CollisionType.active;
   }
 
-  var lifetime = 20.0;
+  double lifetime = 20.0;
   final Vector2 displacement;
   final bool killWater;
 
@@ -707,7 +734,9 @@ class Brick extends SpriteComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is Bullet) {
       context?.remove = true;
       removeFromParent();
@@ -727,7 +756,9 @@ class Water extends SpriteAnimationComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is Bullet && other.killWater) {
       context?.remove = true;
       removeFromParent();

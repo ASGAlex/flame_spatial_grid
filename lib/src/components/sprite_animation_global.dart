@@ -7,10 +7,10 @@ class SpriteAnimationGlobalController {
 
   SpriteAnimationGlobalController._();
 
-  trackComponent(SpriteAnimationGlobalComponent component) {
+  void trackComponent(SpriteAnimationGlobalComponent component) {
     final componentAnimation = component.animation;
     if (componentAnimation == null) {
-      throw "No component animation specified";
+      throw 'No component animation specified';
     }
     var animationsOfType = _animations[component.animationType];
     if (animationsOfType == null) {
@@ -75,7 +75,8 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
   }
 
   @override
-  void update(double dt) {
-    throw "Should never been called";
+  Future<void> update(double dt) async {
+    throw 'Should never been called';
+    super.update(dt);
   }
 }
