@@ -1,7 +1,8 @@
 # Getting started guide
 
 This is a short instruction how to make everything work.
-Do not forget to check working example here: [game.dart](examples/lib/game.dart)
+If you looking for some more complex, please check working example here:
+[game.dart](examples/lib/game.dart)
 
 ## Creating the game class
 
