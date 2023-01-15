@@ -6,12 +6,31 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+/// Function type, responsible for cell build: filling new cell by components
+/// and adding them into [rootComponent]
 typedef CellBuilderFunction = Future<void> Function(
   Cell cell,
   Component rootComponent,
 );
 
+/// Main class, responsible for grid creation, searching grid's cells, changing
+/// parameters of grid system, ensures that grid is consistent without holes.
+///
+/// Usually, you need this class only to change some parameters, all other
+/// functionality is mostly for internal use.
+///
+/// [trackedComponent] is component you system currently follow. It is usually
+/// player or place, where main action is happening. If you need to move
+/// camera from one component to another - you need to change [trackedComponent]
+/// too.
+///
+/// [currentCell] is the central cell on which [trackedComponent] currently
+/// stay. It changes automatically during [trackedComponent] moving so use
+/// it as readonly value.
+///
 class SpatialGrid {
+  /// See [HasSpatialGridFramework.initializeSpatialGrid] function for full
+  /// description of arguments.
   SpatialGrid({
     required this.blockSize,
     HasGridSupport? trackedComponent,
@@ -55,11 +74,24 @@ class SpatialGrid {
     cells.clear();
   }
 
+  /// The game on which the grid is built
   final HasSpatialGridFramework game;
 
+  /// Cells storage, readonly please!
+  /// Use [findExistingCellByPosition] if you know position in global
+  /// coordinates and wand to search for corresponding cells.
+  /// Use [findNearestCellToPosition] if you have an position outside of
+  /// spatial grid and want to find nearest cell.
+  /// Use [getCellRectAtPosition] if you want to calculate, what [Rect] should
+  /// have a cell, containing corresponding coordinates
+  /// Use [createNewCellAtPosition] if you want to add new cell ingo the grid.
   final cells = HashMap<Rect, Cell>();
+
   Cell? _currentCell;
 
+  /// The central cell on which [trackedComponent] currently
+  /// stay. It changes automatically during [trackedComponent] moving so use
+  /// it as readonly value.
   Cell? get currentCell => _currentCell;
 
   set currentCell(Cell? value) {
@@ -77,6 +109,10 @@ class SpatialGrid {
 
   HasGridSupport? _trackedComponent;
 
+  /// The component you system currently follow. It is usually
+  /// player or place, where main action is happening. If you need to move
+  /// camera from one component to another - you need to change
+  /// [trackedComponent] too.
   HasGridSupport? get trackedComponent => _trackedComponent;
 
   set trackedComponent(HasGridSupport? value) {
@@ -87,9 +123,23 @@ class SpatialGrid {
     }
   }
 
+  /// count of active cells ([CellState.active]) around tracked (player's) cell
+  /// by X and Y dimensions.
   Size activeRadius = const Size(2, 2);
+
+  /// Count of cells after last active cell (by X and Y
+  /// dimensions). These cells will work as usual but all components on it
+  /// will be hidden. Such cells are in [CellState.inactive] state.
+  /// The rest of grid cells will be moved into [CellState.suspended] state,
+  /// when no [Component.updateTree] performed and all cell's components could be
+  /// unloaded from memory after some time.
+  /// So, unloadRadius specifies count of cells to preserve in
+  /// [CellState.inactive] state.
   Size unloadRadius = const Size(5, 5);
 
+  /// Updates [Cell.state] of every cell in spatial grid according to values in
+  /// [activeRadius] and [unloadRadius], starting from [currentCell] position.
+  @internal
   void updateCellsStateByRadius() {
     for (final cell in cells.values) {
       cell.tmpState = CellState.suspended;
@@ -111,6 +161,8 @@ class SpatialGrid {
     }
   }
 
+  /// Recalculates cell's state based on distance from [currentCell].
+  @internal
   CellState getCellState(Cell cell) {
     final distance = _cellDistanceFromActiveCell(cell);
     if (distance.x <= activeRadius.width && distance.y <= activeRadius.height) {
@@ -348,6 +400,8 @@ class SpatialGrid {
     return nearestCell;
   }
 
+  /// Cell [Rect] is useful for creating unique cell's keys in hash maps and
+  /// hash sets, because only one cell could be in some position.
   Rect getCellRectAtPosition(Vector2 position) {
     final nearest = findNearestCellToPosition(position);
     if (nearest == null) {
@@ -387,6 +441,8 @@ class SpatialGrid {
     return rect;
   }
 
+  /// Use this function if you want to create new cell manually. Do not access
+  /// [cells] directly!!!
   Cell createNewCellAtPosition(Vector2 position) {
     final rect = getCellRectAtPosition(position);
 
