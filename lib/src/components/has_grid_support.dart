@@ -219,7 +219,7 @@ mixin HasGridSupport on PositionComponent {
       super.renderTree(canvas);
     }
     if (debugMode) {
-      renderDebugMode(canvas);
+      decorator.applyChain(renderDebugMode, canvas);
     }
   }
 
@@ -268,15 +268,5 @@ mixin HasGridSupport on PositionComponent {
       }
     }
     _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
-  }
-
-  @override
-  void renderDebugMode(Canvas canvas) {
-    super.renderDebugMode(canvas);
-    debugTextPaint.render(
-      canvas,
-      '$runtimeType',
-      Vector2(0, 0),
-    );
   }
 }

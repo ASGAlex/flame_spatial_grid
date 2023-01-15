@@ -211,6 +211,7 @@ class Cell {
 
   void _deactivateComponents() {
     for (final component in components) {
+      component.isSuspended = false;
       final hitboxes = component.children.whereType<ShapeHitbox>();
       for (final hitbox in hitboxes) {
         if (component.toggleCollisionOnSuspendChange) {

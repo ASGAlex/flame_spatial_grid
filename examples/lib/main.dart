@@ -2,6 +2,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import 'game.dart';
+import 'minimal_game.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: GameWidget(game: SpatialGridExample()),
+      home: GameWidget(game: MinimalGame()),
     );
   }
 }

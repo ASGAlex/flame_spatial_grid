@@ -12,16 +12,16 @@ structure. Even existing games could be migrated to this framework if necessary.
 There are a lot of utility function and list of its features is too long to describe at fast glance.
 So here is a list of only top-level features:
 
-- *Building endless game levels* without need to change screen for rendering another map. System
+- __Building endless game levels__ without need to change screen for rendering another map. System
   gives you ability to create big open worlds with seamlessly loading of new maps while player
   approaches to them.
-- *Build game levels with destructible environment.* Every Tiled tile could be converted into
+- __Build game levels with destructible environment.__ Every Tiled tile could be converted into
   separate game component and handle interactions with other game elements individually
-- *Building procedural-generated* pieces of map (or whole maps) on the fly, as player approaches to
-  them.
-- *Wise resource management*: system does not eat resources greedily, it takes care about proper
+- __Building procedural-generated__ pieces of map (or whole maps) on the fly, as player approaches
+  to them.
+- __Wise resource management__: system does not eat resources greedily, it takes care about proper
   allocation and de-allocation so you can enjoy you game even in browser or weak mobile phone.
-- *New visual effects*: lean resource management system allows to create trails for many players
+- __New visual effects__: lean resource management system allows to create trails for many players
   and persists it during long game session, blending with other game elements like ground.
 
 Some of possible features might still be undiscovered :-)
@@ -42,3 +42,19 @@ memory.
 4. Call `gameInitializationDone` when all components are added and the game should start.
 5. Enjoy!
 
+See detailed "minimal start" tutorial at [Getting Started](doc/getting_started.md) section.
+See [game.dart](examples/lib/game.dart) for working code example
+Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
+
+## Future usage instructions
+
+1. [TODO] Working with Tiled maps
+2. [TODO] Working with Tiled worlds
+3. [TODO] Optimizing static objects rendering and collisions using CellLayers
+4. [TODO] Creating trails and other temporary marks on the ground.
+
+## Advanced section
+
+1. [TODO] How custom collision detection system works
+2. [TODO] How CellLayers optimizes collision detection.
+3. [TODO] Spatial grid and camera movement: problems, possible solutions
