@@ -10,7 +10,22 @@ import 'package:meta/meta.dart';
 
 enum _CellCreationContext { left, top, right, bottom }
 
-enum CellState { active, inactive, suspended }
+/// The state controls cell's lifecycle and how many resources it consumes
+enum CellState {
+  /// Active cells - cells you usually see at the screen. Everything works
+  /// here as in ordinary Flame game.
+  active,
+
+  /// This cells are usually out of the screen, so no components are displayed,
+  /// [Component.renderTree] is completely omitted for components inside such
+  /// cells. See [HasGridSupport] for details.
+  inactive,
+
+  /// This kind of cells are very far from player. Usually, player did there
+  /// at past but then left these cells. Fot such cells [Component.upateTree] is
+  /// omitted to preserve CPU resources. See [HasGridSupport] for details.
+  suspended
+}
 
 class Cell {
   Cell(

@@ -1,3 +1,5 @@
+// ignore_for_file: comment_references
+
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
@@ -6,42 +8,57 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-
 import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
+import 'package:meta/meta.dart';
 
 /// This class is starting point to add Framework's abilities into you game
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary! Also call
 /// [gameInitializationDone] when all game objects are loaded and added.
-/// If your game could be zoomed, please call [onAfterZoom] after every zoom event.
+/// If your game could be zoomed, please call [onAfterZoom] after every zoom
+/// event.
 mixin HasSpatialGridFramework on FlameGame
     implements HasCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
   late SpatialGridCollisionDetection _collisionDetection;
+
+  /// The spatial grid instance for this game, contains at least one cell.
+  /// Useful to access specified cell, find a cell bu position on map and so on.
   late final SpatialGrid spatialGrid;
+
+  /// A root component, to which all other components will be added by the
+  /// framework.
   late Component rootComponent;
+
+  /// Use this class to manage [CellLayer]s instead of creating them manually.
+  /// It manages recourses automatically, according to cell's state.
+  late final LayersManager layersManager;
+
+  /// Enables or disables automatic [spatialGrid.activeRadius] control according
+  /// to viewport size and zoom level.
+  bool trackWindowSize = true;
+
   SpatialGridDebugComponent? _spatialGridDebug;
   bool _isSpatialGridDebugEnabled = false;
   TiledMapLoader? defaultMap;
   bool _gameInitializationFinished = false;
-  late final LayersManager layersManager;
 
-  @override
-  SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
+  List<TiledMapLoader> maps = [];
+  WorldLoader? worldLoader;
+  CellBuilderFunction? _cellBuilderNoMap;
+  CellBuilderFunction? _onAfterCellBuild;
+  double buildCellsPerUpdate = -1;
+  double _buildCellsNow = 0;
+  double removeCellsPerUpdate = -1;
+  double _removeCellsNow = 0;
 
-  @override
-  set collisionDetection(
-    CollisionDetection<ShapeHitbox, SpatialGridBroadphase<ShapeHitbox>> cd,
-  ) {
-    if (cd is! SpatialGridCollisionDetection) {
-      throw 'Must be SpatialGridCollisionDetection!';
-    }
-    _collisionDetection = cd;
-  }
+  double _suspendedCellLifetime = -1;
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
   /// resources were loaded before game loop start.
   /// Call [gameInitializationDone] after this function and place game
   /// components initialization between.
+  /// Some of parameters could be changed at runtime, see [spatialGrid] for
+  /// details.
   ///
   /// - [debug] (optional) - if you want to see how spatial grid is spread along
   ///   the game's space
@@ -187,24 +204,37 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  bool trackWindowSize = true;
-  List<TiledMapLoader> maps = [];
-  WorldLoader? worldLoader;
-  CellBuilderFunction? _cellBuilderNoMap;
-  CellBuilderFunction? _onAfterCellBuild;
-  double buildCellsPerUpdate = -1;
-  double _buildCellsNow = 0;
-  double removeCellsPerUpdate = -1;
-  double _removeCellsNow = 0;
-
-  double _suspendedCellLifetime = -1;
+  /// Call this at you application code at every place where zoom is done.
+  /// Necessary for adopting [spatialGrid.activeRadius] to current screen's
+  /// dimensions, including zoom level.
+  void onAfterZoom() {
+    setRadiusByWindowDimensions();
+    spatialGrid.updateCellsStateByRadius();
+  }
 
   set suspendedCellLifetime(Duration value) {
     _suspendedCellLifetime = value.inMicroseconds / 1000000;
   }
 
+  /// How long a cell in [CellState.suspended]
+  /// state should being kept in memory. If state will not be changed, the
+  /// cell will be queued for unload. All components at this cell will be
+  /// removed from game tree, resources will be freed.
   Duration get suspendedCellLifetime =>
       Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
+
+  @override
+  SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
+
+  @override
+  set collisionDetection(
+    CollisionDetection<ShapeHitbox, SpatialGridBroadphase<ShapeHitbox>> cd,
+  ) {
+    if (cd is! SpatialGridCollisionDetection) {
+      throw 'Must be SpatialGridCollisionDetection!';
+    }
+    _collisionDetection = cd;
+  }
 
   Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
     final worldMaps = worldLoader?.maps;
@@ -269,6 +299,9 @@ mixin HasSpatialGridFramework on FlameGame
     super.onRemove();
   }
 
+  /// Because Framework implements it's own collision detection broadphase,
+  /// with relatively same functionality as [QuadTreeBroadphase] has, but
+  /// [GroupHitbox] are very special type and should me skipped.
   bool onComponentTypeCheck(PositionComponent one, PositionComponent another) {
     var checkParent = false;
     if (one is GenericCollisionCallbacks) {
@@ -333,6 +366,8 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
+  /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
+  /// with [suspendedCellLifetime] is over.
   void removeUnusedCells() {
     final cellsToRemove = _catchCellsForRemoval();
     for (final cell in cellsToRemove) {
@@ -389,6 +424,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
+  @protected
   void setRadiusByWindowDimensions() {
     try {
       final camera = children.whereType<CameraComponent>().single;
@@ -403,11 +439,11 @@ mixin HasSpatialGridFramework on FlameGame
     } catch (e) {}
   }
 
-  void onAfterZoom() {
-    setRadiusByWindowDimensions();
-    spatialGrid.updateCellsStateByRadius();
-  }
-
+  /// Handles creating new cells and removing outdated.
+  /// Also runs [SpriteAnimationGlobalController] to allow
+  /// [CellStaticAnimationLayer] to work.
+  ///
+  /// The rest of operations are made inside of [SpatialGridCollisionDetection]
   @override
   Future update(double dt) async {
     await _buildNewCells();
