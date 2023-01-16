@@ -9,36 +9,101 @@ import 'package:meta/meta.dart';
 
 typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
 
-enum MapLayerType { static, animated, trail }
+/// List of basic types of [CellLayer], supported natively by spatial grid
+/// framework
+enum MapLayerType {
+  /// [CellStaticLayer] class instance
+  static,
 
+  /// [CellStaticAnimationLayer] class instance
+  animated,
+
+  /// [CellTrailLayer] class instance
+  trail
+}
+
+/// This is base class for describing a Tiled map. You going to create
+/// new class for every map type (map file) you will use in your game.
+/// Each class describes map's [fileName], it's [destTileSize], it's
+/// [initialPosition] and various build functions to convert each tile into
+/// corresponding game component.
+///
+/// [tileBuilders] allows to specify corresponding builder for each tile "Type"
+/// ("Class"). If no builder had been found for type - the [notFoundBuilder]
+/// function will be called. Bu default it runs [genericTileBuilder] - useful
+/// to create map's backgrounds - but you always free to reimplement this.
 abstract class TiledMapLoader {
   static List<TiledMapLoader> loadedMaps = [];
 
+  /// File name in '/assets/tiles' directory, with extension
   String fileName = '';
 
+  /// Your map's tile size
   Vector2 get destTileSize;
 
+  /// This helps to position map on your game field
   Vector2 initialPosition = Vector2.zero();
 
+  /// Controls map's loading behavior. If true - whole map will be loaded
+  /// at once. If false - just part of map in active cells region will be
+  /// converted into game components.
   bool lazyLoad = true;
 
+  /// The first core feature of this class. Allows to specify a build function
+  /// for every "Type" ("Class") of map's tile. The builder function will be
+  /// called for every tile of corresponding "Class" at stage of map
+  /// initialization and during new cells creation.
   Map<String, TileBuilderFunction>? get tileBuilders;
 
+  /// A function called after tile was successfully built. It is useful if you
+  /// need some post-processing for every tile of you map.
   TileBuilderFunction? get cellPostBuilder;
 
+  /// The function is called when no corresponded type (class) was found in
+  /// [tileBuilders] storage. By default it builds flat image of map, something
+  /// like [RenderableTiledMap] do, but already split by cells of grid.
   TileBuilderFunction? get notFoundBuilder => genericTileBuilder;
 
+  /// This specifies the priority of [TiledComponent] you will receive after map
+  /// initialization. Does not affect the Frameworks functionality, so might be
+  /// safely forgotten.
   int get basePriority => 0;
 
+  /// The link to the current game. Is necessary for accessing [SpatialGrid]
+  /// class and working with layers.
   late final HasSpatialGridFramework game;
 
   Component get rootComponent => game.rootComponent;
 
-  bool preloadTileSets = false;
+  /// By default flame_tiled loads just tilesets that are really used in the
+  /// map. But with using tile builders it becomes to be useful to have secured
+  /// access to all map's tilesets to reuse them in components creation.
+  ///
+  /// If you going to keep a system to load tilesets as they are needed,
+  /// most probably you will face unexpected async exceptions, trying to access
+  /// a sprite or animation, which still is not loaded. To avoid this, set the
+  /// parameter to true.
+  ///
+  /// Setting this to true will force system to load all tilesets firstly and
+  /// run builders then.
+  /// This also allows [getPreloadedTileData] to work correctly
+  bool preloadTileSets = true;
+
+  /// Map dimensions, calculated during initialization
   Rect mapRect = Rect.zero;
 
   final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
 
+  /// Use this function in tile builder to access tile's [Sprite]
+  /// or [SpriteAnimation].
+  TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
+      _preloadedTileSet[tileSetName]?[tileType];
+
+  /// Every map should be initialized after spatial grid initialization.
+  /// This function triggers the process. After it the map is loaded and mounted
+  /// into the [game].
+  /// You can use function's result for any of you purposes (for example, to
+  /// parse any additional parameters), but you also would just ignore it.
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
     this.game = game;
 
@@ -90,9 +155,8 @@ abstract class TiledMapLoader {
     }
   }
 
-  TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
-      _preloadedTileSet[tileSetName]?[tileType];
-
+  /// Core build function. Reimplement it only when you have good understanding,
+  /// what to do!
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     final contextList = _contextByCellRect[cell.rect];
@@ -121,6 +185,8 @@ abstract class TiledMapLoader {
     contextsToRemove.forEach(contextList.remove);
   }
 
+  /// This tile builder merges all tiles into single image. Useful for
+  /// rendering tiled maps background layers.
   Future<void> genericTileBuilder(CellBuilderContext context) async {
     final provider = context.tileDataProvider;
     if (provider == null) {
@@ -155,6 +221,8 @@ abstract class TiledMapLoader {
     }
   }
 
+  /// Is useful when working with worlds with multiple maps and areas without
+  /// any map at all
   bool isCellOutsideOfMap(Cell cell) {
     final checkList = [
       cell.rect.topLeft,
@@ -302,6 +370,9 @@ abstract class TiledMapLoader {
   }
 }
 
+/// This class is a storage of tile's data from tileset.
+/// Use [TiledMapLoader.getPreloadedTileData] to get instance of this class.
+/// Also read about [TiledMapLoader.preloadTileSets]
 @immutable
 class TileCache {
   const TileCache({this.sprite, this.spriteAnimation});
