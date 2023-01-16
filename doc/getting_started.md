@@ -291,7 +291,7 @@ Let's then add a new parameter into `initializeSpatialGrid`:
 cellBuilderNoMap: onBuildNewCell,
 ```
 
-All done! Now, you indigo square will never be alone!
+All done! Now, your indigo square will never be alone!
 This was a simplest cell builder in the system. `TiledMapLoader` and `WorldLoader` classes
 provides much more powerful builders especially for working with tiles on a map.
 
