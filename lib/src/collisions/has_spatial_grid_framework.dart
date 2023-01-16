@@ -330,7 +330,7 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
-  Future _buildNewCells() async {
+  Future<void> _buildNewCells() async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       return;
     }

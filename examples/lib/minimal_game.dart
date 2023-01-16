@@ -21,10 +21,12 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
       unloadRadius: const Size(2, 2),
       trackWindowSize: false,
       trackedComponent: player,
+      // suspendedCellLifetime: const Duration(seconds: 10),
+      // removeCellsPerUpdate: 1
     );
 
     add(player);
-    for (var i = 0; i <30; i++) {
+    for (var i = 0; i <100; i++) {
       add(Player(position: Vector2(i * 10.0, 20)));
     }
     // add(FpsTextComponent());

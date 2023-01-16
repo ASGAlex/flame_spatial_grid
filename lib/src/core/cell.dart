@@ -78,6 +78,8 @@ class Cell {
   @internal
   bool scheduleToBuild = false;
   bool _remove = false;
+  bool get isRemoving => _remove;
+
   final SpatialGrid spatialGrid;
   final Rect rect;
 
@@ -248,7 +250,9 @@ class Cell {
     spatialGrid.cells.remove(rect);
     for (final component in components) {
       component.removeFromParent();
+      component.currentCell = null;
     }
+    components.clear();
     _state.dispose();
   }
 

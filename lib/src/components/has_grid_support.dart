@@ -76,17 +76,21 @@ mixin HasGridSupport on PositionComponent {
 
   set currentCell(Cell? value) {
     final previousCell = _currentCell;
-    final hitboxes = children.whereType<ShapeHitbox>();
 
     _currentCell = value;
-    value?.components.add(this);
+    if (value != null && !value.isRemoving) {
+      value.components.add(this);
+    }
 
+    if (previousCell == null || previousCell.isRemoving) {
+      return;
+    }
+
+    final hitboxes = children.whereType<ShapeHitbox>();
     if (hitboxes.isNotEmpty) {
       final broadphase = spatialGrid.game.collisionDetection.broadphase;
       for (final hitbox in hitboxes) {
-        if (previousCell != null) {
-          previousCell.components.remove(this);
-        }
+        previousCell.components.remove(this);
         broadphase.updateHitboxIndexes(hitbox, previousCell);
       }
     }
@@ -176,6 +180,9 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void updateTree(double dt) {
+    if(currentCell == null || _currentCell!.isRemoving) {
+      removeFromParent();
+    }
     if (isSuspended) {
       dtElapsedWhileSuspended += dt;
       updateSuspendedTree(dtElapsedWhileSuspended);

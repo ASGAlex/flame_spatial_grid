@@ -1,35 +1,35 @@
 # Overview
 
 This library is a framework and set of tools for working with infinitive game fields, loading
-infinite maps for one game level, creating infinite count of game objects and active game players
+infinite maps for one game level, creating an infinite count of game objects and active game players
 and NPCs - as much as possible.
 
-Framework is fully compatible with Flame and does not contain any strict requirements for game
+The framework is fully compatible with Flame and does not contain any strict requirements for the game
 structure. Even existing games could be migrated to this framework if necessary.
 
 ## Features
 
-There are a lot of utility function and list of its features is too long to describe at fast glance.
+There are a lot of utility functions and the list of its features is too long to describe at a fast glance.
 So here is a list of only top-level features:
 
-- __Building endless game levels__ without need to change screen for rendering another map. System
-  gives you ability to create big open worlds with seamlessly loading of new maps while player
+- __Building endless game levels__ without the need to change the screen for rendering another map. System
+  gives you the ability to create big open worlds with seamless loading of new maps while a player
   approaches to them.
-- __Build game levels with destructible environment.__ Every Tiled tile could be converted into
+- __Build game levels with a destructible environment.__ Every Tiled tile could be converted into
   separate game component and handle interactions with other game elements individually
-- __Building procedural-generated__ pieces of map (or whole maps) on the fly, as player approaches
+- __Building procedural-generated__ pieces of a map (or whole maps) on the fly, as the player approaches
   to them.
-- __Wise resource management__: system does not eat resources greedily, it takes care about proper
-  allocation and de-allocation so you can enjoy you game even in browser or weak mobile phone.
+- __Wise resource management__: the system does not eat resources greedily, it takes care of proper
+  allocation and de-allocation so you can enjoy your game even in a browser or weak mobile phone.
 - __New visual effects__: lean resource management system allows to create trails for many players
-  and persists it during long game session, blending with other game elements like ground.
+  and persists during a long game session, blending with other game elements like ground.
 
 Some of possible features might still be undiscovered :-)
 
 ## Core concepts
 
-The core of framework is spatial grid which is build on-the-fly and controls components visibility,
-activity, loads and unloads maps by chunks. It allows to optimize rendering by pre-rendering
+The core of the framework is a spatial grid that is building on-the-fly and controls component's visibility
+and activity, loads and unloads maps by chunks. It allows optimizing rendering by pre-rendering
 statical components into images, but keeps images size small enough and unloads unused chunks from
 memory.
 

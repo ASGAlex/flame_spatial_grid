@@ -131,8 +131,8 @@ bool _outOfBounds() =>
         position.y >= 500;
 ```
 
-Run the application. You should to see how the player's square moves and creates new cells on it's
-way. You will also see new "gray" cells - it means the cell is active, but components should not to
+Run the application. You should see how the player's square moves and creates new cells on its
+way. You will also see new "gray" cells - it means the cell is active, but components should not
 be visible. And black cells - it means the cell is suspended and no `update` is performed for
 possible components inside this cell
 
@@ -166,15 +166,16 @@ class Player extends PositionComponent with HasGridSupport, HasPaint {
 
 Please notice that we enabled debug mode for non-primary components.
 Let's run our application.
-You should see how components become invisible in grey zone but keeps moving. That cells called
-"inactive". Also you should see how components freezes in black cells. Such cells are "suspended",
-`updateTree` function does not work in components from such cells. Finally, suspended components
-starts moving again when it's cell state changed to "inactive" (grey) or "active" (green).
+You should see how components become invisible in the grey zone but keep moving. That cells are
+called
+"inactive". Also, you should see how components freeze in black cells. Such cells are "suspended",
+The `updateTree` function does not work in components from such cells. Finally, suspended components
+start moving again when their cell state changed to "inactive" (grey) or "active" (green).
 
 #### 5. Adding collision detections
 
-Let's make components to collide. It is similar to vanilla Flame except one moment: we already have
-a hitbox and can reuse it to minimize computations.
+Let's make components collide. It is similar to vanilla Flame except for one moment: we already have
+a hitbox and can reuse to minimize computations.
 
 1. Add `CollisionCallbacks` mixin into `Player` class.
 2. Add `boundingBox.collisionType = boundingBox.defaultCollisionType = CollisionType.active;` at
@@ -192,10 +193,10 @@ void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
 }
 ```
 
-Now you should to see, how components changes it's directions when colliding.
-Take a look at `boundingBox.defaultCollisionType`. When component is in suspended cell, it's
-`boundingBox.collisionType` become `CollisionType.inactive`. The `defaultCollisionType` used at
-moment of re-activation of suspended component, so `boundingBox.collisionType` become
+Now you should see, how components change their directions when colliding.
+Take a look at `boundingBox.defaultCollisionType`. When a component is in a suspended cell, it's
+`boundingBox.collisionType` become `CollisionType.inactive`. The `defaultCollisionType` is used at
+a moment of re-activation of the suspended component, so `boundingBox.collisionType` become
 `boundingBox.defaultCollisionType`.
 
 #### 5. Stress test
@@ -220,7 +221,7 @@ add(Player(position: Vector2(x, y)));
 }
 ```
 
-Finally, add FPS component to game to look at some pretty (or not very pretty) benchmarks:
+Finally, add FPS component to the game to look at some pretty (or not very pretty) benchmarks:
 
 ```dart
 add(FpsTextComponent());
@@ -229,8 +230,35 @@ add(FpsTextComponent());
 Let's start the example.
 Most probably you will see something not very wonderful, about 25-30 FPS. The reason is - high
 density of objects and a big count of simultaneous collisions happen.
-But the good news are that it still works at least! You can increase objects count to 2000 or more
+But the good news is that it still works at least! You can increase objects count to 2000 or more
 and example still will be functional.
+
+#### 6. Resources economy
+
+Imagine that this small game field represents player's movement through the large game world. Also
+imagine that the world is so large that we can't store in memory every game object and need to
+remove some very old components, which barely have a chance to interact with player.
+
+The Framework offers you a solution.
+
+Every cell while being suspended have a personal timer. When the timer reaches a limit value, the
+cell is marked for removal (that also means removing all components on this cell too). By default
+this functionality is disabled, but you can simply enable it, adding new parameters into
+`initializeSpatialGrid` function:
+
+```
+suspendedCellLifetime: const Duration(minutes: 1),
+removeCellsPerUpdate: 1
+```
+
+You might want to change `suspendedCellLifetime` to seconds to see the effect faster: old cells are
+removed with components inside them. This allows you to save resources on a large game field, but
+restoration of removed components is up to you. Hopefully, the Framework has a tool to solve
+this problem
+
+#### 6. Cell builders
+
+
 
 ## Final words
 
