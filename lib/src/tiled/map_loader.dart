@@ -57,7 +57,7 @@ abstract class TiledMapLoader {
 
   /// A function called after tile was successfully built. It is useful if you
   /// need some post-processing for every tile of you map.
-  TileBuilderFunction? get cellPostBuilder;
+  TileBuilderFunction? get cellPostBuilder => null;
 
   /// The function is called when no corresponded type (class) was found in
   /// [tileBuilders] storage. By default it builds flat image of map, something
@@ -104,6 +104,9 @@ abstract class TiledMapLoader {
   /// into the [game].
   /// You can use function's result for any of you purposes (for example, to
   /// parse any additional parameters), but you also would just ignore it.
+  /// There is no need to call this function manually. If you have listed
+  /// the map in [HasSpatialGridFramework.initializeSpatialGrid] function,
+  /// it will be called automatically.
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
     this.game = game;
 
@@ -303,7 +306,7 @@ abstract class TiledMapLoader {
               tileMap.map.tileWidth.toDouble(),
               tileMap.map.tileWidth.toDouble(),
             );
-            final tileProcessor = TileDataProvider(tileData, tileset);
+            final tileDataProvider = TileDataProvider(tileData, tileset);
 
             Rect rect;
             if (lazyLoad) {
@@ -314,7 +317,7 @@ abstract class TiledMapLoader {
               rect = cell.rect;
             }
             final context = CellBuilderContext(
-              tileDataProvider: tileProcessor,
+              tileDataProvider: tileDataProvider,
               position: position,
               size: size,
               cellRect: rect,

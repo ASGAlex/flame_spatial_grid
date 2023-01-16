@@ -5,7 +5,9 @@ import 'package:tiled/tiled.dart';
 extension SpriteLoader on Tile {
   Future<Sprite> getSprite(Tileset tileset) {
     final src = image?.source ?? tileset.image?.source;
-    if (src == null) throw 'Cant load sprite without image';
+    if (src == null) {
+      throw 'Cant load sprite without image';
+    }
 
     var position = imageRect?.topLeft.toVector2();
     var size = imageRect?.size.toVector2();
@@ -16,8 +18,10 @@ extension SpriteLoader on Tile {
         final maxColumns = _maxColumns(tileset);
         final row = ((localId + 0.9) ~/ maxColumns) + 1;
         final column = (localId + 1) - ((row - 1) * maxColumns);
-        position = Vector2(((column - 1) * tileWidth).toDouble(),
-            ((row - 1) * tileHeight).toDouble());
+        position = Vector2(
+          ((column - 1) * tileWidth).toDouble(),
+          ((row - 1) * tileHeight).toDouble(),
+        );
         size = Vector2(tileWidth.toDouble(), tileHeight.toDouble());
       }
     }
@@ -29,12 +33,16 @@ extension SpriteLoader on Tile {
   }
 
   Future<SpriteAnimation?> getSpriteAnimation(Tileset tileset) async {
-    if (animation.isEmpty) return null;
+    if (animation.isEmpty) {
+      return null;
+    }
     final src = image?.source ?? tileset.image?.source;
-    if (src == null) throw 'Cant load sprite without image';
+    if (src == null) {
+      throw 'Cant load sprite without image';
+    }
 
-    final List<Sprite> spriteList = [];
-    final List<double> stepTimes = [];
+    final spriteList = <Sprite>[];
+    final stepTimes = <double>[];
 
     for (final frame in animation) {
       final frameTile = Tile(localId: frame.tileId);
@@ -48,7 +56,9 @@ extension SpriteLoader on Tile {
   int _maxColumns(Tileset tileset) {
     final maxWidth = tileset.image?.width;
     final tileWidth = tileset.tileWidth;
-    if (maxWidth == null || tileWidth == null) throw 'No tile dimensions';
+    if (maxWidth == null || tileWidth == null) {
+      throw 'No tile dimensions';
+    }
 
     return maxWidth ~/ tileWidth;
   }

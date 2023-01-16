@@ -49,7 +49,8 @@ Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
 
 ## Future usage instructions
 
-1. [TODO] Working with Tiled maps
+0. [Getting Started Guide](doc/getting_started.md), if you still did not read it
+1. [Working with Tiled maps](doc/tiled_maps_basics.md)
 2. [TODO] Working with Tiled worlds
 3. [TODO] Optimizing static objects rendering and collisions using CellLayers
 4. [TODO] Creating trails and other temporary marks on the ground.

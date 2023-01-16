@@ -281,25 +281,20 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
       final position = Vector2(-100, 0)..add(Vector2(x, y));
-      final cell = game.spatialGrid.findExistingCellByPosition(position) ??
-          game.spatialGrid.createNewCellAtPosition(position);
-      final enableAI = cell.isCellBuildFinished;
       add(
         Npc(
           position: position,
           size: Vector2.all(tileSize),
           priority: player.priority,
-        )
-          ..currentCell = cell
-          ..isAIEnabled = enableAI,
+        ),
       );
       npcCount++;
     }
   }
 
   Future<void> onAfterCellBuild(Cell cell, Component rootComponent) async {
-    final npcList = cell.components.whereType<Npc>();
-    Future<void>.delayed(const Duration(seconds: 3)).then((value) {
+    Future<void>.delayed(const Duration(seconds: 10)).then((value) {
+      final npcList = cell.components.whereType<Npc>();
       for (final npc in npcList) {
         npc.isAIEnabled = true;
       }
@@ -341,9 +336,6 @@ class DemoMapLoader extends TiledMapLoader {
     preloadTileSets = true;
     fileName = 'example.tmx';
   }
-
-  @override
-  TileBuilderFunction? get cellPostBuilder => null;
 
   @override
   Vector2 get destTileSize => Vector2.all(8);

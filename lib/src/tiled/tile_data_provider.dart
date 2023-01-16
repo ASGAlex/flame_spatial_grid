@@ -5,33 +5,15 @@ import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
+import 'package:meta/meta.dart';
 
-/// Utility class allows to process each map tile individually
-/// Usage example:
-/// ``` dart
-/// final mapComponent = await TiledComponent.load('map.tmx', Vector2.all(16));
-/// TileProcessor.processTileType(
-///   tileMap: mapComponent.tileMap,
-///   processorByType: <String, TileProcessorFunc>{
-///     'water': ((tile, position, size) {
-///       /// Create here a new object, save tile data or process it
-///       /// a way your game logics need
-///     }),
-///   },
-///   layersToLoad: [
-///   'water',
-/// ]);
-/// ```
-/// You can process individual computations for each tile inside [TileBuilderFunction].
+/// Proxy class, simplifies access to tile's individual data
+///
 /// Use [getSprite] to get [Sprite] object.
 /// Use [getSpriteAnimation] to get [SpriteAnimation] object of the tile.
-/// Use [getCollisionRect] to load [RectangleHitbox] if it had been specified in Tiled
+/// Use [getCollisionRect] to load [RectangleHitbox] if it had been specified
+/// in Tiled
 ///
-/// You usually do not need to create the class manually. Call [TileDataProvider.processTileType], and
-/// it will do the rest of work.
-///
-/// If you need to process another map, it might be useful to call [TileDataProvider.clearCache]
-/// if new map's tiles are very different from previous one.
 class TileDataProvider {
   TileDataProvider(this.tile, this.tileset);
 
@@ -39,13 +21,15 @@ class TileDataProvider {
   Tileset tileset;
 
   RectangleHitbox? getCollisionRect() {
-    if (tile.objectGroup?.type == LayerType.objectGroup) {
-      final grp = tile.objectGroup as ObjectGroup;
-      if (grp.objects.isNotEmpty) {
-        final obj = grp.objects.first;
+    final group = tile.objectGroup;
+    final type = group?.type;
+    if (type == LayerType.objectGroup && group is ObjectGroup) {
+      if (group.objects.isNotEmpty) {
+        final obj = group.objects.first;
         return RectangleHitbox(
-            size: Vector2(obj.width, obj.height),
-            position: Vector2(obj.x, obj.y));
+          size: Vector2(obj.width, obj.height),
+          position: Vector2(obj.x, obj.y),
+        );
       }
     }
     return null;
@@ -57,27 +41,51 @@ class TileDataProvider {
       tile.getSpriteAnimation(tileset);
 }
 
+/// This class represents the tile's data and the cell's context in which this
+/// tile was built
+/// [position] and [size] represents tile's global position on the game field
+/// and it's dimensions.
+/// If this context contains information about tiled object, [tiledObject] will
+/// be not null.
+/// If the context contains information about tile, the [tileDataProvider]
+/// will be not null.
+/// Use these properties to build custom components for map's tiles or objects.
+///
+///
 class CellBuilderContext {
-  CellBuilderContext(
-      {this.tileDataProvider,
-      this.tiledObject,
-      required this.position,
-      required this.size,
-      required this.cellRect,
-      required this.spatialGrid,
-      required this.layerInfo});
+  CellBuilderContext({
+    this.tileDataProvider,
+    this.tiledObject,
+    required this.position,
+    required this.size,
+    required this.cellRect,
+    required this.spatialGrid,
+    required this.layerInfo,
+  });
 
   final SpatialGrid spatialGrid;
-  final Rect cellRect;
-  final Vector2 position;
-  final Vector2 size;
+  Rect cellRect;
+
+  ///Tile's position in the global game's coordinates space
+  Vector2 position;
+
+  ///Tiles width and height
+  Vector2 size;
+
+  /// Tile's most wanted information: the sprite or animation, collision rect
   final TileDataProvider? tileDataProvider;
+
+  /// Tiled object's information, if object was processed instead a tile
   final TiledObject? tiledObject;
   int? priorityOverride;
   final LayerInfo layerInfo;
 
+  /// The cell in which the tile should be placed
   Cell? get cell => spatialGrid.cells[cellRect];
 
+  ///  If the tile should be removed in the next map load operation. Useful in
+  ///  cause you implementing a destructible game environment and want to
+  ///  preserve you  changes between cells unload and restoration
   bool remove = false;
 }
 
