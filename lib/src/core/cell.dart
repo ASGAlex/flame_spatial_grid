@@ -199,7 +199,6 @@ class Cell {
 
   void _activateComponents() {
     for (final component in components) {
-      component.isSuspended = false;
       final hitboxes = component.children.whereType<ShapeHitbox>();
       for (final hitbox in hitboxes) {
         if (component.toggleCollisionOnSuspendChange) {
@@ -211,7 +210,6 @@ class Cell {
 
   void _deactivateComponents() {
     for (final component in components) {
-      component.isSuspended = false;
       final hitboxes = component.children.whereType<ShapeHitbox>();
       for (final hitbox in hitboxes) {
         if (component.toggleCollisionOnSuspendChange) {
@@ -223,7 +221,6 @@ class Cell {
 
   void _suspendComponents() {
     for (final component in components) {
-      component.isSuspended = true;
       final hitboxes = component.children.whereType<ShapeHitbox>();
 
       for (final hitbox in hitboxes) {

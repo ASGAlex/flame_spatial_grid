@@ -54,9 +54,6 @@ mixin HasGridSupport on PositionComponent {
   @internal
   static final defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
-  @internal
-  final suspendNotifier = ValueNotifier<bool>(false);
-
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
   /// system, so [boundingBox.collisionType] become [CollisionType.inactive].
@@ -69,19 +66,8 @@ mixin HasGridSupport on PositionComponent {
   bool toggleCollisionOnSuspendChange = true;
 
   /// If component stay at cell with state [CellState.suspended]
-  bool get isSuspended => suspendNotifier.value;
-
-  set isSuspended(bool suspend) {
-    if (suspendNotifier.value != suspend) {
-      if (suspend) {
-        onSuspend();
-      } else {
-        onResume(dtElapsedWhileSuspended);
-        dtElapsedWhileSuspended = 0;
-      }
-    }
-    suspendNotifier.value = suspend;
-  }
+  bool get isSuspended =>
+      currentCell != null && currentCell?.state == CellState.suspended;
 
   Cell? _currentCell;
 
@@ -235,9 +221,6 @@ mixin HasGridSupport on PositionComponent {
     current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
         spatialGrid.createNewCellAtPosition(componentCenter);
     if (current.rect.containsPoint(componentCenter)) {
-      if (current != _currentCell) {
-        isSuspended = current.state == CellState.suspended;
-      }
       currentCell = current;
     } else {
       Cell? newCell;
@@ -262,7 +245,6 @@ mixin HasGridSupport on PositionComponent {
       newCell ??= spatialGrid.createNewCellAtPosition(componentCenter);
 
       currentCell = newCell;
-      isSuspended = newCell.state == CellState.suspended;
       if (isTracked) {
         spatialGrid.currentCell = newCell;
       }

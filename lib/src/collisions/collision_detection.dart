@@ -64,11 +64,6 @@ class SpatialGridCollisionDetection
 
     final spatialGridSupportComponent = hitbox.parentWithGridSupport;
     if (spatialGridSupportComponent != null) {
-      final listenerComponentInCellSuspend = _listenerCollisionType[hitbox];
-      if (listenerComponentInCellSuspend != null) {
-        spatialGridSupportComponent.suspendNotifier
-            .removeListener(listenerComponentInCellSuspend);
-      }
       final currentCell = spatialGridSupportComponent.currentCell;
       if (currentCell != null) {
         broadphase.scheduledOperations.add(
