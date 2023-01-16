@@ -238,7 +238,7 @@ mixin HasGridSupport on PositionComponent {
       if (current != _currentCell) {
         isSuspended = current.state == CellState.suspended;
       }
-      _currentCell = current;
+      currentCell = current;
     } else {
       Cell? newCell;
       //look close neighbours
