@@ -247,8 +247,8 @@ this functionality is disabled, but you can simply enable it, adding new paramet
 `initializeSpatialGrid` function:
 
 ```
-suspendedCellLifetime: const Duration(minutes: 1),
-removeCellsPerUpdate: 1
+suspendedCellLifetime: const Duration(seconds: 30),
+removeCellsPerUpdate: 1,
 ```
 
 You might want to change `suspendedCellLifetime` to seconds to see the effect faster: old cells are
@@ -258,7 +258,42 @@ this problem
 
 #### 6. Cell builders
 
+In the moment of cell creation you can fill it with game components: an NPCs, environment elements,
+map tiles, etc. The most basic functionality is adding new components via `cellBuilderNoMap`
+parameter of `initializeSpatialGrid` function.
 
+Let's add the new function into our `MinimalGame` class:
+
+```dart
+
+Future<void> onBuildNewCell(Cell cell,
+    Component rootComponent,) async {
+  final random = Random();
+  final doCreation = random.nextBool();
+  if (doCreation) {
+    add(Player(position: cell.center)
+      ..currentCell = cell);
+  }
+}
+```
+
+Take a closer look into `Player`'s creation lines. There is one new thing: `..СurrentCell = cell`.
+Usually, we should not control a component's cell manually. To be honest, here we also can safely
+remove this line and everything will be functional. Functional, but not too performant. If the
+Framework mounts a component without `currentCell`, it tries to find an existing cell or to create a
+new one. This operation is not cheap, so it is a good approach to specify `currentCell` manually at
+the component's creation time when you already have the
+cell's instance.
+
+Let's then add a new parameter into `initializeSpatialGrid`:
+
+```
+cellBuilderNoMap: onBuildNewCell,
+```
+
+All done! Now, you indigo square will never be alone!
+This was a simplest cell builder in the system. `TiledMapLoader` and `WorldLoader` classes
+provides much more powerful builders especially for working with tiles on a map.
 
 ## Final words
 
