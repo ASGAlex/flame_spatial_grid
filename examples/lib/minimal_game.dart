@@ -27,6 +27,7 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
     for (var i = 0; i <30; i++) {
       add(Player(position: Vector2(i * 10.0, 20)));
     }
+    // add(FpsTextComponent());
     return super.onLoad();
   }
 }
@@ -112,5 +113,4 @@ class Player extends PositionComponent
 
     super.onCollision(intersectionPoints, other);
   }
-
 }

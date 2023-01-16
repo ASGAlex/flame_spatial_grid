@@ -142,7 +142,7 @@ Let's check, how other components will interact with spatial grid. Add a small '
 `onLoad` function:
 
 ```dart
-for (var i = 0; i < 30; i++) {
+for (var i = 0; i < 90; i++) {
 add(Player(position: Vector2(i * 10.0, 20)));
 }
 ```
@@ -197,6 +197,40 @@ Take a look at `boundingBox.defaultCollisionType`. When component is in suspende
 `boundingBox.collisionType` become `CollisionType.inactive`. The `defaultCollisionType` used at
 moment of re-activation of suspended component, so `boundingBox.collisionType` become
 `boundingBox.defaultCollisionType`.
+
+#### 5. Stress test
+
+Now we will test how custom collision system works with lot of objects.
+Firstly, remove (or comment) these lines in `Player` constructor:
+
+```dart
+if (!_isPrimary) {
+debugMode = true;
+}
+```
+
+this is recommended because drawing debugging overlay is too expensive operation.
+Then modify a loop of adding non-primary components:
+
+```dart
+for (var i = 0; i < 1000; i++) {
+final y = (20 + (i / 90).floor() * 10).toDouble();
+final x = (i * 10.0) - (i / 90).floor() * 900;
+add(Player(position: Vector2(x, y)));
+}
+```
+
+Finally, add FPS component to game to look at some pretty (or not very pretty) benchmarks:
+
+```dart
+add(FpsTextComponent());
+```
+
+Let's start the example.
+Most probably you will see something not very wonderful, about 25-30 FPS. The reason is - high
+density of objects and a big count of simultaneous collisions happen.
+But the good news are that it still works at least! You can increase objects count to 2000 or more
+and example still will be functional.
 
 ## Final words
 
