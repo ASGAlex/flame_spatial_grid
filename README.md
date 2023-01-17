@@ -56,11 +56,11 @@ Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
 0. [Getting Started Guide](doc/getting_started.md), if you still did not read it
 1. [Working with Tiled maps](doc/tiled_maps_basics.md)
 2. [Working with Tiled worlds](doc/tiled_maps_worlds.md)
-3. [TODO] Optimizing static objects rendering and collisions using CellLayers
-4. [TODO] Creating trails and other temporary marks on the ground.
+3. [TODO] [Optimizing static objects rendering and collisions using CellLayers](doc/cell_layers.md)
+4. [TODO] Camera usage with the Framework. 
+5. [TODO] Creating trails and other temporary marks on the ground.
 
 ## Advanced section
 
 1. [TODO] How custom collision detection system works
 2. [TODO] How CellLayers optimizes collision detection.
-3. [TODO] Spatial grid and camera movement: problems, possible solutions
