@@ -39,6 +39,9 @@ class CellTrailLayer extends CellStaticLayer {
   Future<void>? add(Component component) {
     newComponents.add(component);
     updateCorrections(component);
+    if(component is HasGridSupport) {
+      component.currentCell = null;
+    }
     return null;
   }
 

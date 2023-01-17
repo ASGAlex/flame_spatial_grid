@@ -82,7 +82,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   HashSet<CollisionProspect<T>> querySubset(
-      HashSet<CollisionProspect<ShapeHitbox>> potentials) {
+    HashSet<CollisionProspect<ShapeHitbox>> potentials,
+  ) {
     final result = HashSet<CollisionProspect<T>>();
     _activePreviouslyChecked.clear();
     for (final tuple in potentials) {
@@ -102,10 +103,14 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
 
       final cell = groupBox.parentWithGridSupport?.currentCell;
-      if (cell == null) continue;
+      if (cell == null) {
+        continue;
+      }
       final hitboxes =
           optimizedCollisionsByGroupBox[cell]?[groupBox]?.hitboxes.toList();
-      if (hitboxes == null || hitboxes.isEmpty) continue;
+      if (hitboxes == null || hitboxes.isEmpty) {
+        continue;
+      }
 
       _compareItemWithPotentials(componentHitbox, hitboxes, result);
     }
@@ -122,7 +127,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       final withGridSupport = asShapeItem.parentWithGridSupport;
       if (withGridSupport == null ||
           asShapeItem.isRemoving ||
-          asShapeItem.parent == null) continue;
+          asShapeItem.parent == null) {
+        continue;
+      }
 
       var cellsToCheck = <Cell>[];
 
@@ -138,7 +145,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
 
       final potentiallyCollide = <ShapeHitbox>[];
-      if (cellsToCheck.isEmpty) continue;
+      if (cellsToCheck.isEmpty) {
+        continue;
+      }
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
@@ -156,8 +165,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return result;
   }
 
-  void _compareItemWithPotentials(ShapeHitbox asShapeItem,
-      List<ShapeHitbox> potentials, HashSet<CollisionProspect<T>> result) {
+  void _compareItemWithPotentials(
+    ShapeHitbox asShapeItem,
+    List<ShapeHitbox> potentials,
+    HashSet<CollisionProspect<T>> result,
+  ) {
     for (final potential in potentials) {
       if (potential.parent == asShapeItem.parent &&
           asShapeItem.parent != null) {
@@ -238,22 +250,46 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     if (currentCell != null) {
       switch (hitbox.collisionType) {
         case CollisionType.active:
-          scheduledOperations.add(ScheduledHitboxOperation.addActive(
-              hitbox: hitbox, cell: currentCell));
-          scheduledOperations.add(ScheduledHitboxOperation.removePassive(
-              hitbox: hitbox, cell: currentCell));
+          scheduledOperations.add(
+            ScheduledHitboxOperation.addActive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
+          scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
           break;
         case CollisionType.passive:
-          scheduledOperations.add(ScheduledHitboxOperation.removeActive(
-              hitbox: hitbox, cell: currentCell));
-          scheduledOperations.add(ScheduledHitboxOperation.addPassive(
-              hitbox: hitbox, cell: currentCell));
+          scheduledOperations.add(
+            ScheduledHitboxOperation.removeActive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
+          scheduledOperations.add(
+            ScheduledHitboxOperation.addPassive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
           break;
         case CollisionType.inactive:
-          scheduledOperations.add(ScheduledHitboxOperation.removeActive(
-              hitbox: hitbox, cell: currentCell));
-          scheduledOperations.add(ScheduledHitboxOperation.removePassive(
-              hitbox: hitbox, cell: currentCell));
+          scheduledOperations.add(
+            ScheduledHitboxOperation.removeActive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
+          scheduledOperations.add(
+            ScheduledHitboxOperation.removePassive(
+              hitbox: hitbox,
+              cell: currentCell,
+            ),
+          );
           break;
       }
     }
@@ -263,30 +299,35 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 @internal
 @immutable
 class ScheduledHitboxOperation {
-  const ScheduledHitboxOperation(
-      {required this.add,
-      required this.active,
-      required this.hitbox,
-      required this.cell});
+  const ScheduledHitboxOperation({
+    required this.add,
+    required this.active,
+    required this.hitbox,
+    required this.cell,
+  });
 
-  const ScheduledHitboxOperation.addActive(
-      {required this.hitbox, required this.cell})
-      : add = true,
+  const ScheduledHitboxOperation.addActive({
+    required this.hitbox,
+    required this.cell,
+  })  : add = true,
         active = true;
 
-  const ScheduledHitboxOperation.addPassive(
-      {required this.hitbox, required this.cell})
-      : add = true,
+  const ScheduledHitboxOperation.addPassive({
+    required this.hitbox,
+    required this.cell,
+  })  : add = true,
         active = false;
 
-  const ScheduledHitboxOperation.removeActive(
-      {required this.hitbox, required this.cell})
-      : add = false,
+  const ScheduledHitboxOperation.removeActive({
+    required this.hitbox,
+    required this.cell,
+  })  : add = false,
         active = true;
 
-  const ScheduledHitboxOperation.removePassive(
-      {required this.hitbox, required this.cell})
-      : add = false,
+  const ScheduledHitboxOperation.removePassive({
+    required this.hitbox,
+    required this.cell,
+  })  : add = false,
         active = false;
 
   final bool add;
