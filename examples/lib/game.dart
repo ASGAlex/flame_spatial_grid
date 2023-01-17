@@ -208,7 +208,7 @@ all collisions are disabled.
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
-    // return;
+    return;
     final map = TiledMapLoader.loadedMaps.whereType<DemoMapLoader>().first;
 
     final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
@@ -447,6 +447,9 @@ class Player extends SpriteComponent
     });
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
+    boundingBox.groupCollisionsTags
+      ..add('Water')
+      ..add('Brick');
     previousPosition.setFrom(position);
     position.addListener(_onPositionUpdate);
   }
@@ -454,10 +457,11 @@ class Player extends SpriteComponent
   static const stepSize = 2.0;
   double stepDone = 0;
   final previousPosition = Vector2.zero();
+  final movementDiff = Vector2.zero();
 
   void _onPositionUpdate() {
-    final diff = position - previousPosition;
-    stepDone += diff.x.abs() / 3 + diff.y.abs() / 3;
+    movementDiff.setFrom(position - previousPosition);
+    stepDone += movementDiff.x.abs() / 3 + movementDiff.y.abs() / 3;
     if (stepDone >= stepSize) {
       stepDone = 0;
       final step = PlayerStep(this);
@@ -490,22 +494,26 @@ class Player extends SpriteComponent
     PositionComponent other,
   ) {
     final myCenter = boundingBox.aabbCenter;
-    if (other is GameCollideable) {
-      final diffX = myCenter.x - other.cachedCenter.x;
-      if (diffX < 0) {
-        canMoveRight = false;
-      } else if (diffX > 0) {
-        canMoveLeft = false;
-      }
+    if (other is GameCollideable || other is CellLayer) {
+      if (other is GameCollideable) {
+        final diffX = myCenter.x - other.boundingBox.aabbCenter.x;
+        if (diffX < 0) {
+          canMoveRight = false;
+        } else if (diffX > 0) {
+          canMoveLeft = false;
+        }
 
-      final diffY = myCenter.y - other.cachedCenter.y;
-      if (diffY < 0) {
-        canMoveBottom = false;
-      } else if (diffY > 0) {
-        canMoveTop = false;
+        final diffY = myCenter.y - other.boundingBox.aabbCenter.y;
+        if (diffY < 0) {
+          canMoveBottom = false;
+        } else if (diffY > 0) {
+          canMoveTop = false;
+        }
+        final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
+        position.setFrom(newPos);
+      } else {
+        position.setFrom(position - movementDiff);
       }
-      final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
-      position = newPos;
     }
     super.onCollisionStart(intersectionPoints, other);
   }
@@ -568,6 +576,9 @@ class Npc extends Player {
       0.000
     ];
     paint.colorFilter = ColorFilter.matrix(matrix);
+    boundingBox.groupCollisionsTags
+      ..add('Brick')
+      ..add('Water');
   }
 
   final speed = 20;
@@ -614,7 +625,7 @@ class Npc extends Player {
     if (isRemoving) {
       return;
     }
-    if (other is GameCollideable) {
+    if (other is GameCollideable || other is CellLayer) {
       vector.setValues(0, 0);
     } else if (other is Bullet) {
       removeFromParent();
