@@ -21,17 +21,53 @@ Suppose, you have `HasSpatialGridFramework` instance in the `game` variable. The
 calling `add` method, use game's `layersManager` as follows:
 
 ```dart
-game.layersManager.addComponent(
-  component: anSpriteComponent,
-  layerType: MapLayerType.static, // Layer's type 
-  layerName: "Layer's unique name",
-  priority: 2, // Layer's priority
+game.layersManager.addComponent
+(
+    component: anSpriteComponent,
+    layerType: MapLayerType.static, // Layer's type 
+    layerName: "Layer's unique name",
+    priority: 2, // Layer's priority
 );
 ```
 
-That's all! All components, added to the layer, will be rendered as `Image`, and the `Image` will 
-be updated only when layer's components parameters being changed. 
-
+That's all! All components, added to the layer, will be rendered as `Image`, and the `Image` will
+be updated only when layer's components parameters being changed.
 
 ## Optimizing SpriteAnimationComponent's rendering
 
+Animated components also could be optimized in the same way as SpriteComponents. But you should
+notice that this works only for components with the same animations. Components with different
+animations should be added to different layers.
+
+```dart
+game.layersManager.addComponent
+(
+    component: anSpriteAnimationComponent,
+    layerType: MapLayerType.animated, // Layer's type 
+    layerName: "Layer's unique name",
+    priority: 2, // Layer's priority
+);
+```
+
+As you can see, everything is the same, only `layerType` was changed.
+
+## Collisions optimizing
+
+Every layer offers a way of collision optimization. It's enabled by default. To disable this, you
+should use the `optimizeCollisions` parameter.
+
+The optimization logic is simple: all objects in the layer are checked for being overlapped. If so,
+a new `GroupHitbox` is created for a set of overlapped components, and this special kind of hitbox
+is involved in the collision detection broad phase. And only if a component collides
+with `GroupHitbox` - the second pass of the broad phase is started to find out concrete components
+in the grouped set.
+
+Items count in one group is limited to 25 items. For now, this value is hardcoded. This limitation
+allows to avoid iterating hundreds of grouped items in a moment of collision and prevents heavy
+performance drops.
+
+If you enable debug mode either in `initializeSpatialGrid` or using the `isSpatialGridDebugEnabled`
+setter, you will see blue lines in place of group hitboxes.
+
+This approach allows the collision detection system to operate with spaces smaller than a Cell's
+space. This is an attempt to obtain the QuadTree approach's advantages without its drawbacks
