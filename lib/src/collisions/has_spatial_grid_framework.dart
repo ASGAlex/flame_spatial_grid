@@ -337,18 +337,23 @@ mixin HasSpatialGridFramework on FlameGame
 
     if (buildCellsPerUpdate > 0) {
       _buildCellsNow += buildCellsPerUpdate;
-      final cellsToProcess = _buildCellsNow.floor();
+      var cellsToProcess = _buildCellsNow.floor();
       for (var i = 0; i < cellsToProcess; i++) {
-        final cell = spatialGrid.cellsScheduledToBuild.first;
-        if (cell.state == CellState.suspended) {
-          cell.scheduleToBuild = true;
-          continue;
+        try {
+          final cell = spatialGrid.cellsScheduledToBuild.first;
+          if (cell.state == CellState.suspended) {
+            cell.scheduleToBuild = true;
+            continue;
+          }
+          spatialGrid.cellsScheduledToBuild.remove(cell);
+          await _cellBuilderMulti(cell, rootComponent);
+          await _onAfterCellBuild?.call(cell, rootComponent);
+          cell.isCellBuildFinished = true;
+          cell.updateComponentsState();
+        } on StateError catch (e) {
+          cellsToProcess = i;
+          break;
         }
-        spatialGrid.cellsScheduledToBuild.remove(cell);
-        await _cellBuilderMulti(cell, rootComponent);
-        await _onAfterCellBuild?.call(cell, rootComponent);
-        cell.isCellBuildFinished = true;
-        cell.updateComponentsState();
       }
 
       _buildCellsNow -= cellsToProcess;

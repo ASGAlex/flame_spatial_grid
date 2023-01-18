@@ -19,6 +19,7 @@ library flame_spatial_grid;
 export 'src/collisions/bounding_hitbox.dart';
 export 'src/collisions/broadphase.dart' hide ScheduledHitboxOperation;
 export 'src/collisions/collision_detection.dart';
+export 'src/collisions/group_hitbox.dart';
 export 'src/collisions/has_spatial_grid_framework.dart';
 export 'src/components/debug_component.dart';
 export 'src/components/has_grid_support.dart';

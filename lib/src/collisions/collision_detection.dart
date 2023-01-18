@@ -2,10 +2,9 @@ import 'dart:collection';
 
 import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
+import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:flutter/foundation.dart';
-
-import 'broadphase.dart';
-import 'collision_optimizer.dart';
 
 class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
@@ -145,8 +144,17 @@ class SpatialGridCollisionDetection
         final intersectionPoints = intersections(itemA, itemB);
         if (intersectionPoints.isNotEmpty) {
           if (itemA is GroupHitbox || itemB is GroupHitbox) {
-            repeatBroadphaseForItems.add(tuple);
-            continue;
+            var handleCollisions = false;
+            if (itemA is BoundingHitbox && itemB is GroupHitbox) {
+              handleCollisions = itemA.groupCollisionsTags.contains(itemB.tag);
+            } else if (itemB is BoundingHitbox && itemA is GroupHitbox) {
+              handleCollisions = itemB.groupCollisionsTags.contains(itemA.tag);
+            }
+
+            if (!handleCollisions) {
+              repeatBroadphaseForItems.add(tuple);
+              continue;
+            }
           }
           if (!itemA.collidingWith(itemB)) {
             handleCollisionStart(intersectionPoints, itemA, itemB);

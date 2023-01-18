@@ -201,7 +201,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     final potentialCenter = potential.aabbCenter;
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
-    if (activeItem is BoundingHitbox && potential is BoundingHitbox) {
+    if(activeItem is BoundingHitbox && potential is GroupHitbox){
+      minDistanceX = potential.minDistanceX;
+      minDistanceY = potential.minDistanceY;
+    }
+    else if (activeItem is BoundingHitbox && potential is BoundingHitbox) {
       minDistanceX = max(activeItem.minDistanceX, potential.minDistanceX);
       minDistanceY = max(activeItem.minDistanceY, potential.minDistanceY);
     } else {

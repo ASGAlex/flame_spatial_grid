@@ -61,11 +61,11 @@ all collisions are disabled.
     await initializeSpatialGrid(
       debug: false,
       activeRadius: const Size(3, 2),
-      unloadRadius: const Size(5, 5),
+      unloadRadius: const Size(2, 2),
       blockSize: blockSize,
       trackedComponent: player,
       rootComponent: world,
-      buildCellsPerUpdate: 1,
+      buildCellsPerUpdate: 2,
       removeCellsPerUpdate: 0.25,
       suspendedCellLifetime: const Duration(minutes: 1),
       cellBuilderNoMap: noMapCellBuilder,
@@ -95,7 +95,6 @@ all collisions are disabled.
   MyWorld world = MyWorld();
 
   late Player player;
-  final _playerDisplacement = Vector2.zero();
   var _fireBullet = false;
   var _killWater = false;
 
@@ -113,22 +112,19 @@ all collisions are disabled.
     RawKeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
+    final playerDisplacement = Vector2.zero();
     for (final key in keysPressed) {
-      if (key == LogicalKeyboardKey.keyW && player.canMoveTop) {
-        _playerDisplacement.setValues(0, -Player.stepSize);
-        player.position = player.position.translate(0, -Player.stepSize);
+      if (key == LogicalKeyboardKey.keyW) {
+        playerDisplacement.setValues(0, -Player.stepSize);
       }
-      if (key == LogicalKeyboardKey.keyA && player.canMoveLeft) {
-        _playerDisplacement.setValues(-Player.stepSize, 0);
-        player.position = player.position.translate(-Player.stepSize, 0);
+      if (key == LogicalKeyboardKey.keyA) {
+        playerDisplacement.setValues(-Player.stepSize, 0);
       }
-      if (key == LogicalKeyboardKey.keyS && player.canMoveBottom) {
-        _playerDisplacement.setValues(0, Player.stepSize);
-        player.position = player.position.translate(0, Player.stepSize);
+      if (key == LogicalKeyboardKey.keyS) {
+        playerDisplacement.setValues(0, Player.stepSize);
       }
-      if (key == LogicalKeyboardKey.keyD && player.canMoveRight) {
-        _playerDisplacement.setValues(Player.stepSize, 0);
-        player.position = player.position.translate(Player.stepSize, 0);
+      if (key == LogicalKeyboardKey.keyD) {
+        playerDisplacement.setValues(Player.stepSize, 0);
       }
       if (key == LogicalKeyboardKey.shiftLeft) {
         _killWater = !_killWater;
@@ -162,18 +158,18 @@ all collisions are disabled.
         }
       }
     }
-    if (!_playerDisplacement.isZero()) {
+    if (!playerDisplacement.isZero()) {
+      player.move(playerDisplacement);
       if (_fireBullet) {
         final bullet = Bullet(
           position: player.position,
-          displacement: _playerDisplacement * 30,
+          displacement: playerDisplacement * 30,
           killWater: _killWater,
         );
         bullet.currentCell = player.currentCell;
         world.bullets.add(bullet);
         _fireBullet = false;
       }
-      _playerDisplacement.setZero();
     }
 
     return KeyEventResult.handled;
@@ -221,7 +217,8 @@ all collisions are disabled.
           (random.nextBool() ? -1 : 1);
       final diffY = random.nextInt((map.blockSize / 2 - 25).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final position = (cell.rect.size / 2).toVector2()
+        ..add(Vector2(diffX, diffY));
       final brick = Brick(position: position, sprite: spriteBrick);
       brick.currentCell = cell;
 
@@ -240,7 +237,8 @@ all collisions are disabled.
           (random.nextBool() ? -1 : 1);
       final diffY = random.nextInt((map.blockSize / 2 - 20).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2().translate(diffX, diffY);
+      final position = (cell.rect.size / 2).toVector2()
+        ..add(Vector2(diffX, diffY));
       final water = Water(
         position: position,
         animation: waterAnimation,
@@ -447,17 +445,37 @@ class Player extends SpriteComponent
     });
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
-    previousPosition.setFrom(position);
-    position.addListener(_onPositionUpdate);
+    // boundingBox.groupCollisionsTags
+    //   ..add('Water')
+    //   ..add('Brick');
   }
 
   static const stepSize = 2.0;
   double stepDone = 0;
-  final previousPosition = Vector2.zero();
+  final positionNoCollision = Vector2.zero();
 
-  void _onPositionUpdate() {
-    final diff = position - previousPosition;
-    stepDone += diff.x.abs() / 3 + diff.y.abs() / 3;
+  final vector = Vector2.zero();
+  bool manuallyControlled = true;
+
+  void move(Vector2 diff) {
+    vector.setFrom(diff);
+  }
+
+  @override
+  void update(double dt) {
+    if (manuallyControlled && !vector.isZero()) {
+      if (activeCollisions.isEmpty) {
+        positionNoCollision.setFrom(position);
+      }
+      position.setFrom(position + vector);
+      createTrail(3);
+      vector.setZero();
+    }
+    super.update(dt);
+  }
+
+  void createTrail(int value) {
+    stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
       final step = PlayerStep(this);
@@ -475,8 +493,6 @@ class Player extends SpriteComponent
         }
       }
     }
-
-    previousPosition.setFrom(position);
   }
 
   bool canMoveLeft = true;
@@ -485,29 +501,33 @@ class Player extends SpriteComponent
   bool canMoveBottom = true;
 
   @override
-  void onCollisionStart(
+  void onCollision(
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
     final myCenter = boundingBox.aabbCenter;
-    if (other is GameCollideable) {
-      final diffX = myCenter.x - other.cachedCenter.x;
-      if (diffX < 0) {
-        canMoveRight = false;
-      } else if (diffX > 0) {
-        canMoveLeft = false;
-      }
+    if (other is GameCollideable || other is CellLayer) {
+      if (other is GameCollideable) {
+        final diffX = myCenter.x - other.boundingBox.aabbCenter.x;
+        if (diffX < 0) {
+          canMoveRight = false;
+        } else if (diffX > 0) {
+          canMoveLeft = false;
+        }
 
-      final diffY = myCenter.y - other.cachedCenter.y;
-      if (diffY < 0) {
-        canMoveBottom = false;
-      } else if (diffY > 0) {
-        canMoveTop = false;
+        final diffY = myCenter.y - other.boundingBox.aabbCenter.y;
+        if (diffY < 0) {
+          canMoveBottom = false;
+        } else if (diffY > 0) {
+          canMoveTop = false;
+        }
+        final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
+        position.setFrom(newPos);
+      } else {
+        position.setFrom(positionNoCollision);
       }
-      final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
-      position = newPos;
     }
-    super.onCollisionStart(intersectionPoints, other);
+    super.onCollision(intersectionPoints, other);
   }
 
   @override
@@ -567,11 +587,15 @@ class Npc extends Player {
       1.000,
       0.000
     ];
+    manuallyControlled = false;
     paint.colorFilter = ColorFilter.matrix(matrix);
+    boundingBox.groupCollisionsTags
+      ..add('Brick')
+      ..add('Water');
   }
 
   final speed = 20;
-  final vector = Vector2.zero();
+
   double dtElapsed = 0;
   final dtMax = 1000;
   bool isAIEnabled = false;
@@ -579,6 +603,9 @@ class Npc extends Player {
   @override
   void update(double dt) {
     dtElapsed++;
+    if (activeCollisions.isEmpty) {
+      positionNoCollision.setFrom(position);
+    }
     if (dtElapsed >= dtMax) {
       vector.setZero();
       dtElapsed = 0;
@@ -591,6 +618,7 @@ class Npc extends Player {
     final newStep = vector * dtSpeed;
     if (!vector.isZero()) {
       position.add(newStep);
+      createTrail(6);
     }
     super.update(dt);
   }
@@ -607,14 +635,14 @@ class Npc extends Player {
   }
 
   @override
-  void onCollisionStart(
+  void onCollision(
     Set<Vector2> intersectionPoints,
     PositionComponent other,
   ) {
     if (isRemoving) {
       return;
     }
-    if (other is GameCollideable) {
+    if (other is GameCollideable || other is CellLayer) {
       vector.setValues(0, 0);
     } else if (other is Bullet) {
       removeFromParent();
@@ -623,7 +651,7 @@ class Npc extends Player {
         game.world.spawnNpcTeam();
       }
     }
-    super.onCollisionStart(intersectionPoints, other);
+    super.onCollision(intersectionPoints, other);
   }
 
   Image? coloredSprite;
@@ -767,16 +795,6 @@ mixin GameCollideable on HasGridSupport {
   }
 
   Vector2 get cachedCenter => boundingBox.aabbCenter;
-}
-
-//#endregion
-
-//#region Utils
-
-extension Vector2Ext on Vector2 {
-  Vector2 translate(double x, double y) {
-    return Vector2(this.x + x, this.y + y);
-  }
 }
 
 //#endregion

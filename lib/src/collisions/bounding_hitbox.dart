@@ -45,6 +45,8 @@ class BoundingHitbox extends RectangleHitbox {
   double minDistanceX = 0.0;
   double minDistanceY = 0.0;
 
+  final groupCollisionsTags = <String>[];
+
   set aabbCenter(Vector2? value) {
     assert(value != null);
     _aabbCenter = value;

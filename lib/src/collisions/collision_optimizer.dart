@@ -10,7 +10,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 class CollisionOptimizer {
   CollisionOptimizer(this.parentLayer);
 
-  final HasGridSupport parentLayer;
+  final CellLayer parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
 
   static const maximumItemsInGroup = 25;
@@ -150,8 +150,8 @@ class OptimizedCollisionList {
 
   List<ShapeHitbox> get hitboxes => _hitboxes.toList(growable: false);
   var _hitboxes = <ShapeHitbox>{};
-  var _boundingBox = GroupHitbox();
-  final HasGridSupport parentLayer;
+  var _boundingBox = GroupHitbox(tag: '');
+  final CellLayer parentLayer;
 
   GroupHitbox get boundingBox => _boundingBox;
 
@@ -179,6 +179,7 @@ class OptimizedCollisionList {
       rect = rect.expandToInclude(hitbox.toRectSpecial());
     }
     _boundingBox = GroupHitbox(
+      tag: parentLayer.name,
       parentWithGridSupport: parentLayer,
       position: rect.topLeft.toVector2(),
       size: rect.size.toVector2(),
@@ -198,24 +199,6 @@ extension ToRectSpecial on PositionComponent {
       parentPosition.y + position.y,
       size.x,
       size.y,
-    );
-  }
-}
-
-class GroupHitbox extends BoundingHitbox {
-  GroupHitbox({super.position, super.size, super.parentWithGridSupport}) {
-    isSolid = true;
-    collisionType = CollisionType.passive;
-    defaultCollisionType = collisionType;
-  }
-
-  @override
-  void renderDebugMode(Canvas canvas) {
-    canvas.drawRect(
-      Rect.fromLTWH(position.x, position.y, size.x, size.y),
-      Paint()
-        ..color = const Color.fromRGBO(0, 0, 255, 1)
-        ..style = PaintingStyle.stroke,
     );
   }
 }
