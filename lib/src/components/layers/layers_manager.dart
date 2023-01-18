@@ -5,6 +5,10 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+/// The class provides easy-to-use API layer to access game layer's
+/// Every layer is added into [layersRootComponent] to optimize priority
+/// recalculation.
+///
 class LayersManager {
   LayersManager(this.game);
 
@@ -15,6 +19,8 @@ class LayersManager {
 
   final Component layersRootComponent = Component();
 
+  /// Adding manually created [CellLayer] into [layersRootComponent].
+  /// Usually there is no need to use this function, try [addComponent] instead.
   void addLayer(CellLayer layer) {
     final cell = layer.currentCell;
     if (cell == null) {
@@ -27,6 +33,10 @@ class LayersManager {
     layersRootComponent.add(layer);
   }
 
+  /// Removes layer from game tree.
+  /// Usually there is no need to manually remove any layer. Each layer is
+  /// managed by the Framework and will be automatically removed in cell's
+  /// removal or if the layer become empty, without components inside.
   void removeLayer({required String name, required Cell cell}) {
     final layer = layers[cell]?.remove(name);
     if (layer != null) {
@@ -34,9 +44,22 @@ class LayersManager {
     }
   }
 
+  /// Gets a layer by it's unique [name] and [cell].
   CellLayer? getLayer({required String name, required Cell cell}) =>
       layers[cell]?[name];
 
+  /// Most useful function for end-user usage. It adds the [component] into
+  /// new or existing layer with unique [layerName]. [layerType] enum is the
+  /// parameter for layer's factory, which type will the new layer be. See
+  /// [MapLayerType] for future details.
+  /// Change [priority] to set whole layer's priority. Please note that each
+  /// [addComponent] call will rewrite it's value to last one.
+  /// If your component have position in cell's relative coordinate space,
+  /// change [absolutePosition] to false.
+  /// If you layer does not contain any collideable components, it is
+  /// recommended to switch [optimizeCollisions] parameter to 'false'.
+  /// Change [isRenewable] to "false" if you are sure that components will
+  /// newer be changed, added or removed to the layer.
   CellLayer addComponent({
     required HasGridSupport component,
     required MapLayerType layerType,
