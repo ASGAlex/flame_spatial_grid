@@ -144,22 +144,28 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
 
-      final potentiallyCollide = <ShapeHitbox>[];
       if (cellsToCheck.isEmpty) {
         continue;
       }
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
-          potentiallyCollide.addAll(items);
+          _compareItemWithPotentials(
+            asShapeItem,
+            items.toList(growable: false),
+            result,
+          );
         }
 
         final itemsActive = activeCollisionsByCell[cell];
         if (itemsActive != null && itemsActive.isNotEmpty) {
-          potentiallyCollide.addAll(itemsActive);
+          _compareItemWithPotentials(
+            asShapeItem,
+            itemsActive.toList(growable: false),
+            result,
+          );
         }
       }
-      _compareItemWithPotentials(asShapeItem, potentiallyCollide, result);
     }
 
     return result;
@@ -201,17 +207,22 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     final potentialCenter = potential.aabbCenter;
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
-    if(activeItem is BoundingHitbox && potential is GroupHitbox){
-      minDistanceX = potential.minDistanceX;
-      minDistanceY = potential.minDistanceY;
-    }
-    else if (activeItem is BoundingHitbox && potential is BoundingHitbox) {
-      minDistanceX = max(activeItem.minDistanceX, potential.minDistanceX);
-      minDistanceY = max(activeItem.minDistanceY, potential.minDistanceY);
+    if (activeItem is BoundingHitbox) {
+      minDistanceX = activeItem.minDistanceX;
+      minDistanceY = activeItem.minDistanceY;
     } else {
-      minDistanceX = max(activeItem.size.x, potential.size.x);
-      minDistanceY = max(activeItem.size.y, potential.size.y);
+      minDistanceX = activeItem.size.x / 2;
+      minDistanceY = activeItem.size.y / 2;
     }
+
+    if (potential is BoundingHitbox) {
+      minDistanceX += potential.minDistanceX;
+      minDistanceY += potential.minDistanceY;
+    } else {
+      minDistanceX += potential.size.x / 2;
+      minDistanceY += potential.size.y / 2;
+    }
+
     if ((activeItemCenter.x - potentialCenter.x).abs() < minDistanceX &&
         (activeItemCenter.y - potentialCenter.y).abs() < minDistanceY) {
       return true;

@@ -28,11 +28,11 @@ class BoundingHitbox extends RectangleHitbox {
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;
-    minDistanceX = size.x;
-    minDistanceY = size.y;
+    minDistanceX = size.x/2;
+    minDistanceY = size.y/2;
     size.addListener(() {
-      minDistanceX = size.x;
-      minDistanceY = size.y;
+      minDistanceX = size.x/2;
+      minDistanceY = size.y/2;
     });
   }
 
