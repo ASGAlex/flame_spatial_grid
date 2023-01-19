@@ -1,11 +1,9 @@
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
-
-import 'collision_optimizer.dart';
 
 typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
   ShapeHitbox activeItem,

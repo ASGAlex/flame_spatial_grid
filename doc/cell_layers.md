@@ -62,9 +62,11 @@ is involved in the collision detection broad phase. And only if a component coll
 with `GroupHitbox` - the second pass of the broad phase is started to find out concrete components
 in the grouped set.
 
-Items count in one group is limited to 25 items. For now, this value is hardcoded. This limitation
+Items count in one group is limited to 25 items by default. This limitation
 allows to avoid iterating hundreds of grouped items in a moment of collision and prevents heavy
-performance drops.
+performance drops. Use `collisionOptimizerGroupLimit` parameter of `initializeSpatialGrid` to change
+default limit to your value, or change `HasSpatialGridFramework.collisionOptimizerDefaultGroupLimit`
+directly anywhere in application's runtime.
 
 If you enable debug mode either in `initializeSpatialGrid` or using the `isSpatialGridDebugEnabled`
 setter, you will see blue lines in place of group hitboxes.

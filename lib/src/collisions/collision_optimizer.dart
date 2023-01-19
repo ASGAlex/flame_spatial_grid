@@ -13,7 +13,7 @@ class CollisionOptimizer {
   final CellLayer parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
 
-  static const maximumItemsInGroup = 25;
+  int get maximumItemsInGroup => game.collisionOptimizerGroupLimit;
 
   List<HasGridSupport> get gridChildren =>
       parentLayer.children.whereType<HasGridSupport>().toList(growable: false);
@@ -28,8 +28,7 @@ class CollisionOptimizer {
 
   final _alreadyProcessed = HashSet<ShapeHitbox>();
 
-  HasSpatialGridFramework get game =>
-      (parentLayer as HasGameReference<HasSpatialGridFramework>).game;
+  HasSpatialGridFramework get game => parentLayer.game;
 
   void optimize() {
     final cell = parentLayer.currentCell;

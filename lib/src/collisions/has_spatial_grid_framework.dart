@@ -51,6 +51,7 @@ mixin HasSpatialGridFramework on FlameGame
   double _removeCellsNow = 0;
 
   double _suspendedCellLifetime = -1;
+  int collisionOptimizerGroupLimit = 25;
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
@@ -140,6 +141,7 @@ mixin HasSpatialGridFramework on FlameGame
     List<TiledMapLoader>? maps,
     WorldLoader? worldLoader,
     bool lazyLoad = true,
+    int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
@@ -149,6 +151,7 @@ mixin HasSpatialGridFramework on FlameGame
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
+    collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
     if (maps != null) {
       this.maps = maps;
     }
