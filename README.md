@@ -57,7 +57,7 @@ Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
 1. [Working with Tiled maps](doc/tiled_maps_basics.md)
 2. [Working with Tiled worlds](doc/tiled_maps_worlds.md)
 3. [Optimizing static objects rendering and collisions using CellLayers](doc/cell_layers.md)
-4. [WIP] [Interacting with Flame's Cameras](doc/camera.md)
+4. [Interacting with Flame's Cameras](doc/camera.md)
 5. [TODO] Creating trails and other temporary marks on the ground.
 
 ## Advanced section

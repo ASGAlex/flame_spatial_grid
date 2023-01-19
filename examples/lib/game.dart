@@ -56,14 +56,19 @@ all collisions are disabled.
   Future<void> onLoad() async {
     super.onLoad();
 
+    add(world);
     player = world.player;
+    cameraComponent = CameraComponent(world: world);
+    cameraComponent.viewfinder.zoom = 5;
+    cameraComponent.follow(player, maxSpeed: 40);
+
     const blockSize = 100.0;
     await initializeSpatialGrid(
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
       blockSize: blockSize,
-      trackedComponent: player,
+      trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
       buildCellsPerUpdate: 2,
       removeCellsPerUpdate: 0.25,
@@ -79,11 +84,6 @@ all collisions are disabled.
       ),
     );
     // await demoMapLoader.init(this);
-    cameraComponent = CameraComponent(world: world);
-    cameraComponent.viewfinder.zoom = 5;
-    add(world);
-    add(cameraComponent);
-    cameraComponent.follow(player);
 
     add(FpsTextComponent());
     gameInitializationDone();
@@ -180,9 +180,6 @@ all collisions are disabled.
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 8.0);
-    if (!isSpatialGridDebugEnabled) {
-      onAfterZoom();
-    }
   }
 
   @override
@@ -190,9 +187,6 @@ all collisions are disabled.
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
     cameraComponent.viewfinder.zoom = zoom.clamp(0.8, 8.0);
-    if (!isSpatialGridDebugEnabled) {
-      onAfterZoom();
-    }
   }
 
   @override
@@ -795,6 +789,19 @@ mixin GameCollideable on HasGridSupport {
   }
 
   Vector2 get cachedCenter => boundingBox.aabbCenter;
+}
+
+class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
+  SpatialGridDebugCameraWrapper(super.cameraComponent);
+
+  @override
+  void onAfterZoom() {
+    try {
+      if (!game.isSpatialGridDebugEnabled) {
+        game.onAfterZoom();
+      }
+    } catch (e) {}
+  }
 }
 
 //#endregion

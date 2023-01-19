@@ -155,6 +155,10 @@ mixin HasSpatialGridFramework on FlameGame
     if (maps != null) {
       this.maps = maps;
     }
+    if (trackedComponent is SpatialGridCameraWrapper) {
+      add(trackedComponent.cameraComponent);
+      add(trackedComponent);
+    }
     spatialGrid = SpatialGrid(
       blockSize: Size.square(blockSize),
       trackedComponent: trackedComponent,
