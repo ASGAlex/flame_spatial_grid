@@ -264,7 +264,7 @@ mixin HasSpatialGridFramework on FlameGame
           continue;
         }
         cellOnMap = true;
-        map.cellBuilder(cell, rootComponent);
+        await map.cellBuilder(cell, rootComponent);
       }
     }
 
