@@ -84,7 +84,7 @@ all collisions are disabled.
       ),
     );
     // await demoMapLoader.init(this);
-
+    layersManager.layersRootComponent.add(player);
     add(FpsTextComponent());
     gameInitializationDone();
   }
@@ -263,7 +263,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   @override
   Future<void> onLoad() async {
-    add(player);
+    bullets.priority = 100;
     add(bullets);
     spawnNpcTeam();
   }
