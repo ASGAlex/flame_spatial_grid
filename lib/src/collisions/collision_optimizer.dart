@@ -79,17 +79,17 @@ class CollisionOptimizer {
 
         if (hitboxes.length > maximumItemsInGroup) {
           var totalInChunk = 0;
-          var chunk = <ShapeHitbox>{};
+          var chunk = <ShapeHitbox>[];
           for (final hbInChunk in hitboxes) {
             if (totalInChunk == maximumItemsInGroup) {
               final optimized = OptimizedCollisionList(
-                HashSet<ShapeHitbox>()..addAll(chunk),
+                <ShapeHitbox>{}..addAll(chunk),
                 parentLayer,
               );
               collisionsListByGroup[optimized.boundingBox] = optimized;
               _createdCollisionLists.add(optimized);
               totalInChunk = 0;
-              chunk = <ShapeHitbox>{};
+              chunk = <ShapeHitbox>[];
             } else {
               chunk.add(hbInChunk);
               totalInChunk++;
