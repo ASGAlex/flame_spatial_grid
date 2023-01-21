@@ -67,6 +67,7 @@ all collisions are disabled.
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
+      collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,

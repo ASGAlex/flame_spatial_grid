@@ -62,8 +62,21 @@ class CollisionOptimizer {
       if (_alreadyProcessed.contains(child.boundingBox)) {
         continue;
       }
-      final hitboxes = _findOverlappingRects(child.boundingBox);
+      final hitboxes = _findOverlappingRects(child.boundingBox).toList();
       if (hitboxes.length > 1) {
+        hitboxes.sort((a, b) {
+          if (a.aabbCenter == b.aabbCenter) {
+            return 0;
+          }
+          if (a.aabbCenter.y < b.aabbCenter.y) {
+            return -1;
+          } else if (a.aabbCenter.y == b.aabbCenter.y) {
+            return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
+          } else {
+            return 1;
+          }
+        });
+
         if (hitboxes.length > maximumItemsInGroup) {
           var totalInChunk = 0;
           var chunk = <ShapeHitbox>{};
@@ -91,7 +104,10 @@ class CollisionOptimizer {
             _createdCollisionLists.add(optimized);
           }
         } else {
-          final optimized = OptimizedCollisionList(hitboxes, parentLayer);
+          final optimized = OptimizedCollisionList(
+            hitboxes.toSet(),
+            parentLayer,
+          );
           collisionsListByGroup[optimized.boundingBox] = optimized;
           _createdCollisionLists.add(optimized);
         }
@@ -131,6 +147,12 @@ class CollisionOptimizer {
 extension RectSpecialOverlap on Rect {
   /// Whether `other` has a nonzero area of overlap with this rectangle.
   bool overlapsSpecial(Rect other) {
+    if (topLeft == other.bottomRight ||
+        topRight == other.bottomLeft ||
+        bottomLeft == other.topRight ||
+        bottomRight == other.topLeft) {
+      return false;
+    }
     if (right < other.left || other.right < left) {
       return false;
     }
