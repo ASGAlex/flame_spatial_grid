@@ -75,8 +75,5 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
   }
 
   @override
-  Future<void> update(double dt) async {
-    throw 'Should never been called';
-    super.update(dt);
-  }
+  Future<void> update(double dt) => throw 'Should never been called';
 }

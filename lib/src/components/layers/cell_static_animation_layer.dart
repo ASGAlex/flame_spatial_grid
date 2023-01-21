@@ -6,15 +6,6 @@ class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
 
   SpriteAnimationGlobalComponent? animationComponent;
-  SpriteAnimation? animation;
-
-  @override
-  Future<void>? add(Component component) async {
-    await super.add(component);
-    if (component is SpriteAnimationComponent) {
-      animation ??= component.animation;
-    }
-  }
 
   @override
   void render(Canvas canvas) {
@@ -37,29 +28,29 @@ class CellStaticAnimationLayer extends CellLayer {
       return;
     }
 
-    final anim = animation?.clone();
-    if (anim == null) {
+    final animation = animatedChildren.first.animation?.clone();
+    if (animation == null) {
       return;
     }
 
     animationComponent?.playing = false;
     animationComponent?.removeFromParent();
 
-    List<Sprite> newSprites = [];
+    final newSprites = <Sprite>[];
 
-    while (anim.currentIndex < anim.frames.length) {
-      final sprite = anim.getSprite();
+    while (animation.currentIndex < animation.frames.length) {
+      final sprite = animation.getSprite();
       final composition = ImageComposition();
       for (final component in animatedChildren) {
         final correctedPosition = component.position + (correctionTopLeft * -1);
         composition.add(sprite.image, correctedPosition, source: sprite.src);
       }
-      var composedImage = await composition.compose();
+      final composedImage = await composition.compose();
       newSprites.add(Sprite(composedImage));
-      anim.currentIndex++;
+      animation.currentIndex++;
     }
     final spriteAnimation = SpriteAnimation.variableSpriteList(newSprites,
-        stepTimes: anim.getVariableStepTimes());
+        stepTimes: animation.getVariableStepTimes());
     animationComponent = SpriteAnimationGlobalComponent(
         animation: spriteAnimation,
         position: correctionTopLeft,
@@ -77,7 +68,7 @@ class CellStaticAnimationLayer extends CellLayer {
   void onRemove() {
     final frames = animationComponent?.animation?.frames;
     if (frames != null) {
-      for (var element in frames) {
+      for (final element in frames) {
         element.sprite.image.dispose();
       }
     }
