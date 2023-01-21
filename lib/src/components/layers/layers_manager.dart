@@ -111,7 +111,6 @@ class LayersManager {
     }
 
     layer.add(component);
-    component.currentCell?.components.remove(component);
 
     if (isNew) {
       addLayer(layer);
