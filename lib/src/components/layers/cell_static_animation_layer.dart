@@ -49,13 +49,16 @@ class CellStaticAnimationLayer extends CellLayer {
       newSprites.add(Sprite(composedImage));
       animation.currentIndex++;
     }
-    final spriteAnimation = SpriteAnimation.variableSpriteList(newSprites,
-        stepTimes: animation.getVariableStepTimes());
+    final spriteAnimation = SpriteAnimation.variableSpriteList(
+      newSprites,
+      stepTimes: animation.getVariableStepTimes(),
+    );
     animationComponent = SpriteAnimationGlobalComponent(
-        animation: spriteAnimation,
-        position: correctionTopLeft,
-        size: newSprites.first.image.size,
-        animationType: name);
+      animation: spriteAnimation,
+      position: correctionTopLeft,
+      size: newSprites.first.image.size,
+      animationType: name,
+    );
   }
 
   @override

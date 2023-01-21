@@ -306,7 +306,17 @@ abstract class TiledMapLoader {
               tileMap.map.tileWidth.toDouble(),
               tileMap.map.tileWidth.toDouble(),
             );
-            final tileDataProvider = TileDataProvider(tileData, tileset);
+
+            TileCache? cache;
+            if (preloadTileSets) {
+              final name = tileset.name;
+              final type = tileData.type;
+              if (name != null && type != null) {
+                cache = getPreloadedTileData(name, type);
+              }
+            }
+
+            final tileDataProvider = TileDataProvider(tileData, tileset, cache);
 
             Rect rect;
             if (lazyLoad) {

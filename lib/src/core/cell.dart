@@ -68,7 +68,7 @@ class Cell {
   set isCellBuildFinished(bool value) {
     _isCellBuildFinished = value;
     final layers = spatialGrid.game.layersManager.layers[this];
-    if (layers != null && layers.isNotEmpty) {
+    if (layers != null && layers.isNotEmpty && value == true) {
       for (final layer in layers.values) {
         layer.pauseUpdate = false;
       }

@@ -15,10 +15,11 @@ import 'package:meta/meta.dart';
 /// in Tiled
 ///
 class TileDataProvider {
-  TileDataProvider(this.tile, this.tileset);
+  TileDataProvider(this.tile, this.tileset, [this.cache]);
 
   Tile tile;
   Tileset tileset;
+  TileCache? cache;
 
   RectangleHitbox? getCollisionRect() {
     final group = tile.objectGroup;
@@ -35,10 +36,23 @@ class TileDataProvider {
     return null;
   }
 
-  Future<Sprite> getSprite() => tile.getSprite(tileset);
+  FutureOr<Sprite> getSprite() {
+    final sprite = cache?.sprite;
+    if (sprite != null) {
+      return sprite;
+    } else {
+      return tile.getSprite(tileset);
+    }
+  }
 
-  Future<SpriteAnimation?> getSpriteAnimation() =>
-      tile.getSpriteAnimation(tileset);
+  FutureOr<SpriteAnimation?> getSpriteAnimation() {
+    final animation = cache?.spriteAnimation;
+    if (animation != null) {
+      return animation;
+    } else {
+      return tile.getSpriteAnimation(tileset);
+    }
+  }
 }
 
 /// This class represents the tile's data and the cell's context in which this
