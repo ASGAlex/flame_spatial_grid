@@ -6,8 +6,6 @@ import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellTrailLayer extends CellStaticLayer {
-  final newComponents = <Component>[];
-
   CellTrailLayer(super.cell,
       {super.name, FadeOutConfig? fadeOutConfig, super.isRenewable}) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
@@ -36,14 +34,7 @@ class CellTrailLayer extends CellStaticLayer {
   bool get renderAsImage => false;
 
   @override
-  Future<void>? add(Component component) {
-    newComponents.add(component);
-    updateCorrections(component);
-    if(component is HasGridSupport) {
-      component.currentCell = null;
-    }
-    return null;
-  }
+  bool get isRenewable => false;
 
   @override
   void remove(Component component) {}
@@ -55,8 +46,7 @@ class CellTrailLayer extends CellStaticLayer {
       return;
     }
 
-    if ((newComponents.isEmpty && noTrail) ||
-        (newComponents.isEmpty && !doFadeOut)) {
+    if (noTrail) {
       return;
     }
     final recorder = PictureRecorder();
@@ -73,8 +63,8 @@ class CellTrailLayer extends CellStaticLayer {
       _drawOldPicture(canvas);
     }
 
-    if (newComponents.isNotEmpty) {
-      for (final component in newComponents) {
+    if (nonRenewableComponents.isNotEmpty) {
+      for (final component in nonRenewableComponents) {
         if (component is! HasGridSupport) {
           continue;
         }
@@ -83,7 +73,7 @@ class CellTrailLayer extends CellStaticLayer {
       }
       _calculatedOpacity = 1;
     }
-    newComponents.clear();
+    nonRenewableComponents.clear();
     _operationsCount++;
     layerPicture = recorder.endRecording();
     if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&

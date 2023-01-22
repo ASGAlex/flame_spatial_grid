@@ -303,6 +303,7 @@ mixin HasSpatialGridFramework on FlameGame
     isSpatialGridDebugEnabled = false;
     _spatialGridDebug = null;
     spatialGrid.dispose();
+    SpriteAnimationGlobalController.dispose();
     super.onRemove();
   }
 
@@ -460,7 +461,7 @@ mixin HasSpatialGridFramework on FlameGame
       _autoRemoveOldCells(dt);
     }
 
-    SpriteAnimationGlobalController.instance.update(dt);
+    SpriteAnimationGlobalController.instance().update(dt);
     super.update(dt);
     collisionDetection.run();
   }

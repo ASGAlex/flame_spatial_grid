@@ -29,7 +29,8 @@ abstract class CellLayer extends PositionComponent
 
   final bool isRenewable;
 
-  final _nonRenewableComponents = <Component>[];
+  @protected
+  final nonRenewableComponents = <Component>[];
 
   late bool _pauseUpdate;
 
@@ -114,7 +115,10 @@ abstract class CellLayer extends PositionComponent
       return super.add(component);
     } else {
       await component.onLoad();
-      _nonRenewableComponents.add(component);
+      nonRenewableComponents.add(component);
+      if (component is HasGridSupport) {
+        component.currentCell = null;
+      }
     }
   }
 
@@ -129,7 +133,7 @@ abstract class CellLayer extends PositionComponent
       onBeforeChildrenChanged(component, ChildrenChangeType.removed);
       super.remove(component);
     } else {
-      _nonRenewableComponents.remove(component);
+      nonRenewableComponents.remove(component);
     }
   }
 
@@ -148,9 +152,11 @@ abstract class CellLayer extends PositionComponent
             _updateTree(dt);
           }
           compileToSingleLayer(children);
-        } else if (_nonRenewableComponents.isNotEmpty) {
-          compileToSingleLayer(_nonRenewableComponents);
-          _nonRenewableComponents.clear();
+        } else if (nonRenewableComponents.isNotEmpty) {
+          _updateTree(dt);
+          compileToSingleLayer(nonRenewableComponents).then((void _) {
+            nonRenewableComponents.clear();
+          });
         }
       }
     }
