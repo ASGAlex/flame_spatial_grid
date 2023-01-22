@@ -50,14 +50,8 @@ class Cell {
 
     if (suspended) {
       state = CellState.suspended;
-      scheduleToBuild = true;
     } else {
       state = spatialGrid.getCellState(this);
-      if (state == CellState.suspended) {
-        scheduleToBuild = true;
-      } else {
-        spatialGrid.cellsScheduledToBuild.add(this);
-      }
     }
   }
 
@@ -75,9 +69,8 @@ class Cell {
     }
   }
 
-  @internal
-  bool scheduleToBuild = false;
   bool _remove = false;
+
   bool get isRemoving => _remove;
 
   final SpatialGrid spatialGrid;
@@ -86,7 +79,7 @@ class Cell {
   /// Cell's central point.
   late final Vector2 center;
 
-  final _state = ValueNotifier<CellState>(CellState.active);
+  final _state = ValueNotifier<CellState>(CellState.suspended);
 
   /// Collection of component currently places inside this cell.
   /// Should not be modified manually!
@@ -173,12 +166,10 @@ class Cell {
     if (_state.value == value) {
       return;
     }
-
-    _state.value = value;
-    if (_state.value != CellState.suspended && scheduleToBuild) {
+    if (value != CellState.suspended && _state.value == CellState.suspended) {
       spatialGrid.cellsScheduledToBuild.add(this);
-      scheduleToBuild = false;
     }
+    _state.value = value;
     updateComponentsState();
   }
 

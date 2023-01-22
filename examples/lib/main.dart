@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: GameWidget(game: SpatialGridExample()),
+      home: const GameWidget.controlled(gameFactory: SpatialGridExample.new),
     );
   }
 }
