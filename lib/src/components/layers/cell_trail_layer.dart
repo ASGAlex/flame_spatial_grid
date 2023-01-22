@@ -46,7 +46,7 @@ class CellTrailLayer extends CellStaticLayer {
       return;
     }
 
-    if (noTrail) {
+    if (noTrail && nonRenewableComponents.isEmpty) {
       return;
     }
     final recorder = PictureRecorder();
@@ -125,7 +125,7 @@ class CellTrailLayer extends CellStaticLayer {
   }
 
   @override
-  void update(double dt) {
+  void updateTree(double dt) {
     if (noTrail) {
       layerPicture?.dispose();
       layerPicture = null;
@@ -133,8 +133,11 @@ class CellTrailLayer extends CellStaticLayer {
       layerImage = null;
     } else {
       _fadeOutDt += dt;
+      if(doFadeOut) {
+        isUpdateNeeded = true;
+      }
     }
-    super.update(dt);
+    super.updateTree(dt);
   }
 
   @override
@@ -190,8 +193,9 @@ class _FadeOutDecorator extends Decorator {
   set opacity(double value) {
     if (value <= 0) {
       _opacity = 0;
+    } else {
+      _opacity = value;
     }
-    _opacity = value;
     _paint.color = _paint.color.withOpacity(_opacity);
   }
 

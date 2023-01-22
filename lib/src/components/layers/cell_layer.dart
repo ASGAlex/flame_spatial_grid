@@ -152,7 +152,7 @@ abstract class CellLayer extends PositionComponent
             _updateTree(dt);
           }
           compileToSingleLayer(children);
-        } else if (nonRenewableComponents.isNotEmpty) {
+        } else {
           _updateTree(dt);
           compileToSingleLayer(nonRenewableComponents).then((void _) {
             nonRenewableComponents.clear();
