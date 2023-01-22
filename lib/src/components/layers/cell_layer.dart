@@ -167,7 +167,7 @@ abstract class CellLayer extends PositionComponent
       super.updateTree(dt);
     } else {
       _coreUpdateTreeOverride(dt);
-      (updateNotifier as ActionNotifier).isActionNeeded = false;
+      isUpdateNeeded = false;
     }
   }
 

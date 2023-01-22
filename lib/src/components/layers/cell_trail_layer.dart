@@ -148,7 +148,7 @@ class CellTrailLayer extends CellStaticLayer {
       layerPicture = null;
       layerImage?.dispose();
       layerImage = null;
-    } else {
+    } else if(fadeOutConfig.isFadeOut) {
       _fadeOutDt += dt;
       if (doFadeOut) {
         isUpdateNeeded = true;
