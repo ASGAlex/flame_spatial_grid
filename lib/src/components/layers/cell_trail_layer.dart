@@ -49,32 +49,16 @@ class CellTrailLayer extends CellStaticLayer {
     if (noTrail && nonRenewableComponents.isEmpty) {
       return;
     }
+    _updateLayerPictureWithFade();
+    final newComponentsPicture = _drawNewComponents();
+
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
-    if (doFadeOut) {
-      final fadeOutDecorator =
-          fadeOutConfig.createDecorator(_fadeOutDt) as _FadeOutDecorator;
-      _calculatedOpacity = _calculatedOpacity * fadeOutDecorator.opacity;
-
-      fadeOutDecorator.applyChain(_drawOldPicture, canvas);
-
-      _fadeOutDt = 0;
-    } else {
-      _drawOldPicture(canvas);
+    if (layerPicture != null) {
+      canvas.drawPicture(layerPicture!);
     }
+    canvas.drawPicture(newComponentsPicture);
 
-    if (nonRenewableComponents.isNotEmpty) {
-      for (final component in nonRenewableComponents) {
-        if (component is! HasGridSupport) {
-          continue;
-        }
-        // component.render(canvas);
-        component.decorator.applyChain(component.render, canvas);
-      }
-      _calculatedOpacity = 1;
-    }
-    nonRenewableComponents.clear();
-    _operationsCount++;
     layerPicture = recorder.endRecording();
     if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&
         _imageRenderInProgress == false) {
@@ -94,6 +78,39 @@ class CellTrailLayer extends CellStaticLayer {
     } else {
       _imageRenderInProgress = false;
     }
+  }
+
+  void _updateLayerPictureWithFade() {
+    if (!doFadeOut) {
+      return;
+    }
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+    final fadeOutDecorator =
+        fadeOutConfig.createDecorator(_fadeOutDt) as _FadeOutDecorator;
+    _calculatedOpacity = _calculatedOpacity * fadeOutDecorator.opacity;
+
+    fadeOutDecorator.applyChain(_drawOldPicture, canvas);
+
+    _fadeOutDt = 0;
+    layerPicture = recorder.endRecording();
+  }
+
+  Picture _drawNewComponents() {
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
+    if (nonRenewableComponents.isNotEmpty) {
+      for (final component in nonRenewableComponents) {
+        if (component is! HasGridSupport) {
+          continue;
+        }
+        component.decorator.applyChain(component.render, canvas);
+      }
+      _calculatedOpacity = 1;
+    }
+    nonRenewableComponents.clear();
+    _operationsCount++;
+    return recorder.endRecording();
   }
 
   @override
@@ -133,7 +150,7 @@ class CellTrailLayer extends CellStaticLayer {
       layerImage = null;
     } else {
       _fadeOutDt += dt;
-      if(doFadeOut) {
+      if (doFadeOut) {
         isUpdateNeeded = true;
       }
     }
