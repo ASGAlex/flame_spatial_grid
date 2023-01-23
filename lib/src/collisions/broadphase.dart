@@ -41,9 +41,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   ExternalBroadphaseCheck broadphaseCheck;
   late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
 
-  @internal
-  final broadphaseCheckCache = HashMap<T, HashMap<T, bool>>();
-
+  final _broadphaseCheckCache = HashMap<T, HashMap<T, bool>>();
   final _activePreviouslyChecked = HashMap<T, HashMap<T, bool>>();
 
   @internal
@@ -179,7 +177,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           asShapeItem.parent != null) {
         continue;
       }
-      final canToCollide = broadphaseCheckCache[asShapeItem]?[potential] ??
+      final canToCollide = _broadphaseCheckCache[asShapeItem]?[potential] ??
           _runExternalBroadphaseCheck(asShapeItem, potential);
       if (!canToCollide) {
         continue;
@@ -233,22 +231,32 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       return true;
     }
     final canToCollide = broadphaseCheck(item0, item1);
-    if (broadphaseCheckCache[item0 as T] == null) {
-      broadphaseCheckCache[item0 as T] = HashMap<T, bool>();
+    if (_broadphaseCheckCache[item0 as T] == null) {
+      _broadphaseCheckCache[item0 as T] = HashMap<T, bool>();
     }
-    broadphaseCheckCache[item0 as T]![item1 as T] = canToCollide;
+    _broadphaseCheckCache[item0 as T]![item1 as T] = canToCollide;
 
-    if (broadphaseCheckCache[item1 as T] == null) {
-      broadphaseCheckCache[item1 as T] = HashMap<T, bool>();
+    if (_broadphaseCheckCache[item1 as T] == null) {
+      _broadphaseCheckCache[item1 as T] = HashMap<T, bool>();
     }
-    broadphaseCheckCache[item1 as T]![item0 as T] = canToCollide;
+    _broadphaseCheckCache[item1 as T]![item0 as T] = canToCollide;
 
     return canToCollide;
   }
 
   void clear() {
     activeCollisions.clear();
-    broadphaseCheckCache.clear();
+    _broadphaseCheckCache.clear();
+  }
+
+  void remove(T item) {
+    final checkCache = _broadphaseCheckCache[item];
+    if (checkCache != null) {
+      for (final entry in checkCache.entries) {
+        _broadphaseCheckCache[entry.key]?.remove(item);
+      }
+      _broadphaseCheckCache.remove(item);
+    }
   }
 
   @internal

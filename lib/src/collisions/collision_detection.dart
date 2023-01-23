@@ -83,13 +83,7 @@ class SpatialGridCollisionDetection
       }
     }
 
-    final checkCache = broadphase.broadphaseCheckCache[item];
-    if (checkCache != null) {
-      for (final entry in checkCache.entries) {
-        broadphase.broadphaseCheckCache[entry.key]?.remove(item);
-      }
-      broadphase.broadphaseCheckCache.remove(item);
-    }
+    broadphase.remove(item);
 
     item.clearGridComponentCaches();
   }
