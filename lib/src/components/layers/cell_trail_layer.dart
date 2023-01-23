@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
@@ -67,12 +68,25 @@ class CellTrailLayer extends CellStaticLayer {
         _imageRenderInProgress == false) {
       _imageRenderInProgress = true;
       final imageSize = layerCalculatedSize;
-      layerPicture
-          ?.toImage(imageSize.width.toInt(), imageSize.height.toInt())
+      final imageOffset = correctionTopLeft.clone();
+
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+      final decorator = Transform2DDecorator();
+      decorator.transform2d.position = imageOffset * -1;
+      decorator.applyChain(
+        (canvas) {
+          canvas.drawPicture(layerPicture!);
+        },
+        canvas,
+      );
+      recorder
+          .endRecording()
+          .toImageSafe(imageSize.width.toInt(), imageSize.height.toInt())
           .then((newImage) {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
-        canvas.drawImage(newImage, Offset.zero, Paint());
+        canvas.drawImage(newImage, imageOffset.toOffset(), Paint());
         layerPicture = recorder.endRecording();
         _operationsCount = 0;
 
