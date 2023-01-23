@@ -85,5 +85,6 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
   }
 
   @override
+  // ignore: must_call_super
   Future<void> update(double dt) => throw 'Should never been called';
 }

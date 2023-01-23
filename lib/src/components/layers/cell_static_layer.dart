@@ -36,25 +36,33 @@ class CellStaticLayer extends CellLayer {
     }
 
     final cell = currentCell;
-    if (cell == null) return;
+    if (cell == null) {
+      return;
+    }
 
-    var recorder = PictureRecorder();
-    var canvas = Canvas(recorder);
+    final recorder = PictureRecorder();
+    final canvas = Canvas(recorder);
     if (renderAsImage) {
       final decorator = Transform2DDecorator();
-      decorator.transform2d.position = (correctionTopLeft * -1);
+      decorator.transform2d.position = correctionTopLeft * -1;
       for (final component in renderingChildren) {
-        decorator.applyChain((canvas) {
-          component.decorator.applyChain(component.render, canvas);
-        }, canvas);
+        decorator.applyChain(
+          (canvas) {
+            component.decorator.applyChain(component.render, canvas);
+          },
+          canvas,
+        );
       }
       layerPicture = recorder.endRecording();
       layerImage = await layerPicture?.toImageSafe(
-          layerCalculatedSize.width.toInt(),
-          layerCalculatedSize.height.toInt());
+        layerCalculatedSize.width.toInt(),
+        layerCalculatedSize.height.toInt(),
+      );
     } else {
       for (final component in children) {
-        if (component is! HasGridSupport) continue;
+        if (component is! HasGridSupport) {
+          continue;
+        }
         component.decorator.applyChain(component.render, canvas);
       }
       layerPicture = recorder.endRecording();
@@ -72,6 +80,7 @@ class CellStaticLayer extends CellLayer {
     try {
       layerImage?.dispose();
       layerPicture?.dispose();
+      // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
     layerImage = null;
     layerPicture = null;

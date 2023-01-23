@@ -1,7 +1,7 @@
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/components/action_notifier.dart';
 import 'package:flutter/foundation.dart';
-import 'package:meta/meta.dart';
 
 mixin RepaintOnDemand on HasGridSupport {
   final _repaintNotifier = ActionNotifier();
@@ -41,18 +41,4 @@ mixin UpdateOnDemand on HasGridSupport {
       _updateNotifier.isActionNeeded = false;
     }
   }
-}
-
-@internal
-class ActionNotifier extends ChangeNotifier {
-  bool _isActionNeeded = true;
-
-  set isActionNeeded(bool doAction) {
-    _isActionNeeded = doAction;
-    if (doAction) {
-      notifyListeners();
-    }
-  }
-
-  bool get isActionNeeded => _isActionNeeded;
 }

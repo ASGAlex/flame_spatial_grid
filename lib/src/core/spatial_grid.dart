@@ -131,8 +131,8 @@ class SpatialGrid {
   /// dimensions). These cells will work as usual but all components on it
   /// will be hidden. Such cells are in [CellState.inactive] state.
   /// The rest of grid cells will be moved into [CellState.suspended] state,
-  /// when no [Component.updateTree] performed and all cell's components could be
-  /// unloaded from memory after some time.
+  /// when no [Component.updateTree] performed and all cell's components could
+  /// be unloaded from memory after some time.
   /// So, unloadRadius specifies count of cells to preserve in
   /// [CellState.inactive] state.
   Size get unloadRadius => _unloadRadius;

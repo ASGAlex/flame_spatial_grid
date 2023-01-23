@@ -1,13 +1,16 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellTrailLayer extends CellStaticLayer {
-  CellTrailLayer(super.cell,
-      {super.name, FadeOutConfig? fadeOutConfig, super.isRenewable}) {
+  CellTrailLayer(
+    super.cell, {
+    super.name,
+    FadeOutConfig? fadeOutConfig,
+    super.isRenewable,
+  }) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
 
@@ -148,7 +151,7 @@ class CellTrailLayer extends CellStaticLayer {
       layerPicture = null;
       layerImage?.dispose();
       layerImage = null;
-    } else if(fadeOutConfig.isFadeOut) {
+    } else if (fadeOutConfig.isFadeOut) {
       _fadeOutDt += dt;
       if (doFadeOut) {
         isUpdateNeeded = true;

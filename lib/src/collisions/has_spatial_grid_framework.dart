@@ -8,7 +8,6 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
 
 /// This class is starting point to add Framework's abilities into you game
@@ -354,7 +353,7 @@ mixin HasSpatialGridFramework on FlameGame
           await _onAfterCellBuild?.call(cell, rootComponent);
           cell.isCellBuildFinished = true;
           cell.updateComponentsState();
-        } on StateError catch (e) {
+        } on StateError {
           cellsToProcess = i;
           break;
         }

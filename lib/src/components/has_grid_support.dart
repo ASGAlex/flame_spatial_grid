@@ -6,7 +6,6 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 /// Core mixin of spatial grid framework.
@@ -56,7 +55,7 @@ mixin HasGridSupport on PositionComponent {
 
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
-  /// system, so [boundingBox.collisionType] become [CollisionType.inactive].
+  /// system, so "boundingBox.collisionType" become [CollisionType.inactive].
   /// After component is restored from suspension, we need to restore it's
   /// previous "collisionType" value. So by default we do this restoration.
   /// You might want to change [toggleCollisionOnSuspendChange] to false if
@@ -199,7 +198,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   /// Called instead of [updateTree] when component is suspended.
-  /// [dtElapsedWhileSuspended] accumulates all [dt] values since
+  /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension
   void updateSuspendedTree(double dtElapsedWhileSuspended) {}
 
@@ -208,7 +207,7 @@ mixin HasGridSupport on PositionComponent {
   void onSuspend() {}
 
   /// Called when component state changes from "suspended" to active.
-  /// [dtElapsedWhileSuspended] accumulates all [dt] values since
+  /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension. Useful to calculate next animation step as if
   /// the component was never suspended.
   void onResume(double dtElapsedWhileSuspended) {}

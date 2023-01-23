@@ -801,6 +801,7 @@ class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
       if (!game.isSpatialGridDebugEnabled) {
         game.onAfterZoom();
       }
+    // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
   }
 }

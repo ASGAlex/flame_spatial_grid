@@ -42,6 +42,7 @@ class WorldData {
   }
 
   static dynamic _getField(dynamic data, String fieldName) {
+    // ignore: avoid_dynamic_calls
     final dynamic value = data[fieldName];
     if (value == null) {
       throw 'Field "$fieldName" does not exists!';

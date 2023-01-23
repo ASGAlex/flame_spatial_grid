@@ -3,21 +3,21 @@ import 'dart:collection';
 import 'package:flame/collisions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
-import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:flutter/foundation.dart';
 
 class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
-  SpatialGridCollisionDetection(
-      {required ExternalBroadphaseCheck onComponentTypeCheck,
-      ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
-      required this.spatialGrid})
-      : super(
-            broadphase: SpatialGridBroadphase<ShapeHitbox>(
-          spatialGrid: spatialGrid,
-          broadphaseCheck: onComponentTypeCheck,
-          minimumDistanceCheck: minimumDistanceCheck,
-        ));
+  SpatialGridCollisionDetection({
+    required ExternalBroadphaseCheck onComponentTypeCheck,
+    ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
+    required this.spatialGrid,
+  }) : super(
+          broadphase: SpatialGridBroadphase<ShapeHitbox>(
+            spatialGrid: spatialGrid,
+            broadphaseCheck: onComponentTypeCheck,
+            minimumDistanceCheck: minimumDistanceCheck,
+          ),
+        );
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
   final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
@@ -37,6 +37,7 @@ class SpatialGridCollisionDetection
         }
       };
 
+      // ignore: invalid_use_of_internal_member
       item.collisionTypeNotifier.addListener(listenerCollisionType);
       _listenerCollisionType[item] = listenerCollisionType;
 
@@ -53,36 +54,44 @@ class SpatialGridCollisionDetection
   }
 
   @override
-  void remove(ShapeHitbox hitbox) {
-    hitbox.onAabbChanged = null;
-    final listenerCollisionType = _listenerCollisionType[hitbox];
+  void remove(ShapeHitbox item) {
+    // ignore: invalid_use_of_internal_member
+    item.onAabbChanged = null;
+    final listenerCollisionType = _listenerCollisionType[item];
     if (listenerCollisionType != null) {
-      hitbox.collisionTypeNotifier.removeListener(listenerCollisionType);
-      _listenerCollisionType.remove(hitbox);
+      // ignore: invalid_use_of_internal_member
+      item.collisionTypeNotifier.removeListener(listenerCollisionType);
+      _listenerCollisionType.remove(item);
     }
 
-    final spatialGridSupportComponent = hitbox.parentWithGridSupport;
+    final spatialGridSupportComponent = item.parentWithGridSupport;
     if (spatialGridSupportComponent != null) {
       final currentCell = spatialGridSupportComponent.currentCell;
       if (currentCell != null) {
         broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removePassive(
-                hitbox: hitbox, cell: currentCell));
+          ScheduledHitboxOperation.removePassive(
+            hitbox: item,
+            cell: currentCell,
+          ),
+        );
         broadphase.scheduledOperations.add(
-            ScheduledHitboxOperation.removeActive(
-                hitbox: hitbox, cell: currentCell));
+          ScheduledHitboxOperation.removeActive(
+            hitbox: item,
+            cell: currentCell,
+          ),
+        );
       }
     }
 
-    final checkCache = broadphase.broadphaseCheckCache[hitbox];
+    final checkCache = broadphase.broadphaseCheckCache[item];
     if (checkCache != null) {
       for (final entry in checkCache.entries) {
-        broadphase.broadphaseCheckCache[entry.key]?.remove(hitbox);
+        broadphase.broadphaseCheckCache[entry.key]?.remove(item);
       }
-      broadphase.broadphaseCheckCache.remove(hitbox);
+      broadphase.broadphaseCheckCache.remove(item);
     }
 
-    hitbox.clearGridComponentCaches();
+    item.clearGridComponentCaches();
   }
 
   @override
@@ -127,14 +136,17 @@ class SpatialGridCollisionDetection
       item.aabbCenter;
     }
     final withGridSupportComponent = item.parentWithGridSupport;
-    if (withGridSupportComponent == null) return;
+    if (withGridSupportComponent == null) {
+      return;
+    }
     if (item == withGridSupportComponent.boundingBox) {
       withGridSupportComponent.updateTransform();
     }
   }
 
   HashSet<CollisionProspect<ShapeHitbox>> _runForPotentials(
-      HashSet<CollisionProspect<ShapeHitbox>> potentials) {
+    HashSet<CollisionProspect<ShapeHitbox>> potentials,
+  ) {
     final repeatBroadphaseForItems = HashSet<CollisionProspect<ShapeHitbox>>();
     for (final tuple in potentials) {
       final itemA = tuple.a;

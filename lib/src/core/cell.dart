@@ -22,8 +22,8 @@ enum CellState {
   inactive,
 
   /// This kind of cells are very far from player. Usually, player did there
-  /// at past but then left these cells. Fot such cells [Component.updateTree] is
-  /// omitted to preserve CPU resources. See [HasGridSupport] for details.
+  /// at past but then left these cells. Fot such cells [Component.updateTree]
+  /// is omitted to preserve CPU resources. See [HasGridSupport] for details.
   suspended
 }
 

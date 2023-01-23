@@ -1,8 +1,8 @@
+import 'package:cluisterizer_test/game.dart';
+import 'package:cluisterizer_test/minimal_game.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import 'game.dart';
-import 'minimal_game.dart';
 
 void main() {
   runApp(const MyApp());

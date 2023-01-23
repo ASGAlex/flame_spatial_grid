@@ -5,7 +5,6 @@ import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
-import 'package:meta/meta.dart';
 
 /// Proxy class, simplifies access to tile's individual data
 ///
