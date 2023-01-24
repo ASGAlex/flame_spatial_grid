@@ -13,17 +13,6 @@ class CollisionOptimizer {
 
   int get maximumItemsInGroup => game.collisionOptimizerGroupLimit;
 
-  List<HasGridSupport> get gridChildren =>
-      parentLayer.children.whereType<HasGridSupport>().toList(growable: false);
-
-  List<HasGridSupport> get gridChildrenActiveOrPassive => parentLayer.children
-      .whereType<HasGridSupport>()
-      .where(
-        (element) =>
-            element.boundingBox.collisionType != CollisionType.inactive,
-      )
-      .toList(growable: false);
-
   final _alreadyProcessed = HashSet<ShapeHitbox>();
 
   HasSpatialGridFramework get game => parentLayer.game;
@@ -49,14 +38,23 @@ class CollisionOptimizer {
     _createdCollisionLists.clear();
     _alreadyProcessed.clear();
 
-    for (final child in gridChildren) {
+    for (final child in parentLayer.children) {
+      if (child is! HasGridSupport) {
+        continue;
+      }
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
       }
     }
 
-    for (final child in gridChildrenActiveOrPassive) {
+    for (final child in parentLayer.children) {
+      if (child is! HasGridSupport) {
+        continue;
+      }
+      if (child.boundingBox.collisionType != CollisionType.inactive) {
+        continue;
+      }
       if (_alreadyProcessed.contains(child.boundingBox)) {
         continue;
       }
@@ -125,7 +123,13 @@ class CollisionOptimizer {
     final hitboxes = LinkedHashSet<ShapeHitbox>();
     hitboxes.add(hitbox);
     exception.add(hitbox);
-    for (final otherChild in gridChildrenActiveOrPassive) {
+    for (final otherChild in parentLayer.children) {
+      if (otherChild is! HasGridSupport) {
+        continue;
+      }
+      if (otherChild.boundingBox.collisionType != CollisionType.inactive) {
+        continue;
+      }
       if (exception.contains(otherChild.boundingBox)) {
         continue;
       }
