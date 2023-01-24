@@ -9,9 +9,9 @@ import 'package:meta/meta.dart';
 /// Function type, responsible for cell build: filling new cell by components
 /// and adding them into [rootComponent]
 typedef CellBuilderFunction = Future<void> Function(
-    Cell cell,
-    Component rootComponent,
-    );
+  Cell cell,
+  Component rootComponent,
+);
 
 /// Main class, responsible for grid creation, searching grid's cells, changing
 /// parameters of grid system, ensures that grid is consistent without holes.
@@ -103,7 +103,7 @@ class SpatialGrid {
   }
 
   @internal
-  final cellsScheduledToBuild = HashSet<Cell>();
+  final cellsScheduledToBuild = Queue<Cell>();
 
   final Size blockSize;
 
@@ -185,8 +185,7 @@ class SpatialGrid {
     if (current == null) {
       return Vector2.zero();
     }
-    final diff = (current.center - cell.center)
-      ..absolute();
+    final diff = (current.center - cell.center)..absolute();
     return Vector2(diff.x / blockSize.width, diff.y / blockSize.height);
   }
 
@@ -212,8 +211,8 @@ class SpatialGrid {
 
       var topDirection = tmpDirection;
       for (var topCounter = 1;
-      topCounter <= min(leftCounter, radius.height);
-      topCounter++) {
+          topCounter <= min(leftCounter, radius.height);
+          topCounter++) {
         if (create) {
           topDirection = topDirection.top;
         } else {
@@ -228,8 +227,8 @@ class SpatialGrid {
 
       var bottomDirection = tmpDirection;
       for (var bottomCounter = 1;
-      bottomCounter <= min(leftCounter, radius.height);
-      bottomCounter++) {
+          bottomCounter <= min(leftCounter, radius.height);
+          bottomCounter++) {
         if (create) {
           bottomDirection = bottomDirection.bottom;
         } else {
@@ -258,8 +257,8 @@ class SpatialGrid {
 
       var topDirection = tmpDirection;
       for (var topCounter = 1;
-      topCounter <= min(rightCounter, radius.height);
-      topCounter++) {
+          topCounter <= min(rightCounter, radius.height);
+          topCounter++) {
         if (create) {
           topDirection = topDirection.top;
         } else {
@@ -274,8 +273,8 @@ class SpatialGrid {
 
       var bottomDirection = tmpDirection;
       for (var bottomCounter = 1;
-      bottomCounter <= min(rightCounter, radius.height);
-      bottomCounter++) {
+          bottomCounter <= min(rightCounter, radius.height);
+          bottomCounter++) {
         if (create) {
           bottomDirection = bottomDirection.bottom;
         } else {
@@ -304,8 +303,8 @@ class SpatialGrid {
 
       var leftDirection = tmpDirection;
       for (var leftCounter = 1;
-      leftCounter <= min(topCounter, radius.width);
-      leftCounter++) {
+          leftCounter <= min(topCounter, radius.width);
+          leftCounter++) {
         if (create) {
           leftDirection = leftDirection.left;
         } else {
@@ -320,8 +319,8 @@ class SpatialGrid {
 
       var rightDirection = tmpDirection;
       for (var rightCounter = 1;
-      rightCounter <= min(topCounter, radius.width);
-      rightCounter++) {
+          rightCounter <= min(topCounter, radius.width);
+          rightCounter++) {
         if (create) {
           rightDirection = rightDirection.right;
         } else {
@@ -337,8 +336,8 @@ class SpatialGrid {
 
     tmpDirection = current;
     for (var bottomCounter = 1;
-    bottomCounter <= radius.height;
-    bottomCounter++) {
+        bottomCounter <= radius.height;
+        bottomCounter++) {
       if (create) {
         tmpDirection = tmpDirection.bottom;
       } else {
@@ -352,8 +351,8 @@ class SpatialGrid {
 
       var leftDirection = tmpDirection;
       for (var leftCounter = 1;
-      leftCounter <= min(leftCounter, radius.width);
-      leftCounter++) {
+          leftCounter <= min(leftCounter, radius.width);
+          leftCounter++) {
         if (create) {
           leftDirection = leftDirection.left;
         } else {
@@ -368,8 +367,8 @@ class SpatialGrid {
 
       var rightDirection = tmpDirection;
       for (var rightCounter = 1;
-      rightCounter <= min(rightCounter, radius.width);
-      rightCounter++) {
+          rightCounter <= min(rightCounter, radius.width);
+          rightCounter++) {
         if (create) {
           rightDirection = rightDirection.right;
         } else {
