@@ -192,8 +192,10 @@ class Cell {
 
   void _activateComponents() {
     for (final component in components) {
-      final hitboxes = component.children.whereType<ShapeHitbox>();
-      for (final hitbox in hitboxes) {
+      for (final hitbox in component.children) {
+        if (hitbox is! ShapeHitbox) {
+          continue;
+        }
         if (component.toggleCollisionOnSuspendChange) {
           hitbox.collisionType = hitbox.defaultCollisionType;
         }
@@ -203,8 +205,10 @@ class Cell {
 
   void _deactivateComponents() {
     for (final component in components) {
-      final hitboxes = component.children.whereType<ShapeHitbox>();
-      for (final hitbox in hitboxes) {
+      for (final hitbox in component.children) {
+        if (hitbox is! ShapeHitbox) {
+          continue;
+        }
         if (component.toggleCollisionOnSuspendChange) {
           hitbox.collisionType = hitbox.defaultCollisionType;
         }
@@ -214,9 +218,10 @@ class Cell {
 
   void _suspendComponents() {
     for (final component in components) {
-      final hitboxes = component.children.whereType<ShapeHitbox>();
-
-      for (final hitbox in hitboxes) {
+      for (final hitbox in component.children) {
+        if (hitbox is! ShapeHitbox) {
+          continue;
+        }
         if (component.toggleCollisionOnSuspendChange) {
           hitbox.collisionType = CollisionType.inactive;
         }

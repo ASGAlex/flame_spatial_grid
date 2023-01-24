@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
-import 'dart:async';
 
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -216,9 +216,12 @@ abstract class CellLayer extends PositionComponent
       decorator.applyChain(render, canvas);
     }
     if (game.isSpatialGridDebugEnabled) {
-      children.whereType<GroupHitbox>().forEach((element) {
+      for (final element in children) {
+        if (element is! GroupHitbox) {
+          continue;
+        }
         decorator.applyChain(element.renderDebugMode, canvas);
-      });
+      }
     }
   }
 

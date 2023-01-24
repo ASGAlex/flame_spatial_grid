@@ -93,12 +93,12 @@ mixin HasGridSupport on PositionComponent {
   }
 
   void _updateComponentHitboxes(Cell previousCell) {
-    final hitboxes = children.whereType<ShapeHitbox>();
-    if (hitboxes.isNotEmpty) {
-      final broadphase = spatialGrid.game.collisionDetection.broadphase;
-      for (final hitbox in hitboxes) {
-        broadphase.updateHitboxIndexes(hitbox, previousCell);
+    for (final hitbox in children) {
+      if (hitbox is! ShapeHitbox) {
+        continue;
       }
+      spatialGrid.game.collisionDetection.broadphase
+          .updateHitboxIndexes(hitbox, previousCell);
     }
   }
 

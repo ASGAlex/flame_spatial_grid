@@ -29,7 +29,8 @@ class CellStaticLayer extends CellLayer {
 
   @override
   Future compileToSingleLayer(Iterable<Component> children) async {
-    final renderingChildren = children.whereType<HasGridSupport>();
+    final renderingChildren =
+        children.whereType<HasGridSupport>().toList(growable: false);
     if (renderingChildren.isEmpty) {
       removeFromParent();
       return;
