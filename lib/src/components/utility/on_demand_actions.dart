@@ -1,6 +1,6 @@
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/components/action_notifier.dart';
+import 'package:flame_spatial_grid/src/components/utility/action_notifier.dart';
 import 'package:flutter/foundation.dart';
 
 mixin RepaintOnDemand on HasGridSupport {
