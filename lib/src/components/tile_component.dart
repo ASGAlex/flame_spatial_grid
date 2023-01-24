@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
@@ -12,7 +14,10 @@ class TileComponent extends SpriteComponent
     return TileComponent(cache);
   }
 
-  TileComponent(this.tileCache);
+  TileComponent(this.tileCache) {
+    paint.isAntiAlias = false;
+    paint.filterQuality = FilterQuality.none;
+  }
 
   final TileCache tileCache;
 

@@ -86,7 +86,7 @@ class CellTrailLayer extends CellStaticLayer {
           .then((newImage) {
         final recorder = PictureRecorder();
         final canvas = Canvas(recorder);
-        canvas.drawImage(newImage, imageOffset.toOffset(), Paint());
+        canvas.drawImage(newImage, imageOffset.toOffset(), paint);
         layerPicture = recorder.endRecording();
         _operationsCount = 0;
 
@@ -217,6 +217,8 @@ class FadeOutConfig {
 class _FadeOutDecorator extends Decorator {
   _FadeOutDecorator(double opacity, this.steps) {
     this.opacity = opacity;
+    _paint.isAntiAlias = false;
+    _paint.filterQuality = FilterQuality.none;
   }
 
   final _paint = Paint();

@@ -8,6 +8,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 class CellStaticLayer extends CellLayer {
   CellStaticLayer(super.cell, {super.name, super.isRenewable}) {
     paint.isAntiAlias = false;
+    paint.filterQuality = FilterQuality.none;
   }
 
   final paint = Paint();
