@@ -67,13 +67,15 @@ all collisions are disabled.
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
+      preloadRadius: const Size(5, 5),
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
       buildCellsPerUpdate: 2,
       removeCellsPerUpdate: 0.25,
-      suspendedCellLifetime: const Duration(minutes: 1),
+      suspendedCellLifetime: const Duration(minutes: 2),
+      maximumCells: 150,
       cellBuilderNoMap: noMapCellBuilder,
       onAfterCellBuild: world.onAfterCellBuild,
       maps: [
@@ -742,6 +744,8 @@ class Brick extends SpriteComponent
     with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Brick({required super.position, required super.sprite, this.context}) {
     size = Vector2.all(tileSize);
+    paint.isAntiAlias = false;
+    paint.filterQuality = FilterQuality.none;
     initCollision();
   }
 
@@ -764,6 +768,8 @@ class Water extends SpriteAnimationComponent
     with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Water({required super.position, required super.animation, this.context}) {
     size = Vector2.all(tileSize);
+    paint.isAntiAlias = false;
+    paint.filterQuality = FilterQuality.none;
     initCollision();
   }
 

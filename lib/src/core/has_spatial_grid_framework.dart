@@ -1,7 +1,5 @@
 // ignore_for_file: comment_references
 
-import 'dart:collection';
-
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -129,7 +127,9 @@ mixin HasSpatialGridFramework on FlameGame
     required double blockSize,
     Size? activeRadius,
     Size? unloadRadius,
+    Size? preloadRadius,
     Duration suspendedCellLifetime = Duration.zero,
+    int maximumCells = -1,
     double buildCellsPerUpdate = -1,
     double removeCellsPerUpdate = -1,
     bool trackWindowSize = true,
@@ -148,6 +148,7 @@ mixin HasSpatialGridFramework on FlameGame
     _cellBuilderNoMap = cellBuilderNoMap;
     _onAfterCellBuild = onAfterCellBuild;
     this.suspendedCellLifetime = suspendedCellLifetime;
+    this.maximumCells = maximumCells;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
@@ -164,6 +165,7 @@ mixin HasSpatialGridFramework on FlameGame
       initialPosition: initialPosition,
       activeRadius: activeRadius,
       unloadRadius: unloadRadius,
+      preloadRadius: preloadRadius,
       lazyLoad: lazyLoad,
       game: this,
     );
@@ -228,6 +230,8 @@ mixin HasSpatialGridFramework on FlameGame
   /// removed from game tree, resources will be freed.
   Duration get suspendedCellLifetime =>
       Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
+
+  int maximumCells = -1;
 
   @override
   SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
@@ -375,22 +379,52 @@ mixin HasSpatialGridFramework on FlameGame
 
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
-  void removeUnusedCells() {
+  int removeUnusedCells() {
     final cellsToRemove = _catchCellsForRemoval();
     for (final cell in cellsToRemove) {
       cell.remove();
     }
-    cellsToRemove.clear();
+    return cellsToRemove.length;
   }
 
-  HashSet<Cell> _catchCellsForRemoval() {
-    final cellsToRemove = HashSet<Cell>();
-    for (final cell in spatialGrid.cells.values) {
-      if (cell.state != CellState.suspended) {
-        continue;
+  List<Cell> _catchCellsForRemoval() {
+    final cellsToRemove = <Cell>[];
+
+    if (maximumCells > 0) {
+      if (spatialGrid.cells.length > maximumCells) {
+        for (final cell in spatialGrid.cells.values) {
+          if (cell.state != CellState.suspended) {
+            continue;
+          }
+          if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+            cellsToRemove.add(cell);
+          }
+        }
       }
-      if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
-        cellsToRemove.add(cell);
+    } else if (_suspendedCellLifetime > 0) {
+      final sortedCells = spatialGrid.cells.values.toList(growable: false)
+        ..sort((a, b) {
+          if (a.beingSuspendedTimeMicroseconds ==
+              b.beingSuspendedTimeMicroseconds) {
+            return 0;
+          }
+
+          return a.beingSuspendedTimeMicroseconds >
+                  b.beingSuspendedTimeMicroseconds
+              ? -1
+              : 1;
+        });
+
+      for (final cell in sortedCells) {
+        if (cell.state != CellState.suspended) {
+          continue;
+        }
+        if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+          cellsToRemove.add(cell);
+        }
+        if (sortedCells.length - cellsToRemove.length <= maximumCells) {
+          break;
+        }
       }
     }
     return cellsToRemove;

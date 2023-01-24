@@ -166,11 +166,15 @@ class Cell {
     if (_state.value == value) {
       return;
     }
-    if (value != CellState.suspended && _state.value == CellState.suspended) {
+    if (value != CellState.suspended &&
+        _state.value == CellState.suspended &&
+        !isCellBuildFinished) {
       spatialGrid.cellsScheduledToBuild.add(this);
     }
     _state.value = value;
-    updateComponentsState();
+    if (isCellBuildFinished) {
+      updateComponentsState();
+    }
   }
 
   @internal

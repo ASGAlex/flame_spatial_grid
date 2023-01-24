@@ -31,17 +31,18 @@ typedef CellBuilderFunction = Future<void> Function(
 class SpatialGrid {
   /// See [HasSpatialGridFramework.initializeSpatialGrid] function for full
   /// description of arguments.
-  SpatialGrid({
-    required this.blockSize,
-    HasGridSupport? trackedComponent,
-    Vector2? initialPosition,
-    required this.game,
-    bool lazyLoad = true,
-    Size? activeRadius,
-    required Size? unloadRadius,
-  }) {
+  SpatialGrid(
+      {required this.blockSize,
+      HasGridSupport? trackedComponent,
+      Vector2? initialPosition,
+      required this.game,
+      bool lazyLoad = true,
+      Size? activeRadius,
+      required Size? unloadRadius,
+      Size? preloadRadius}) {
     this.activeRadius = activeRadius ?? const Size(2, 2);
     this.unloadRadius = unloadRadius ?? const Size(5, 5);
+    this.preloadRadius = preloadRadius ?? const Size(5, 5);
     final position =
         trackedComponent?.position ?? initialPosition ?? Vector2(0, 0);
 
@@ -143,10 +144,31 @@ class SpatialGrid {
     _unloadRadius = value + activeRadius.toOffset();
   }
 
+  Size get preloadRadius => _preloadRadius;
+
+  Size _preloadRadius = const Size(5, 5);
+
+  set preloadRadius(Size value) {
+    _preloadRadius = value + _unloadRadius.toOffset();
+  }
+
   /// Updates [Cell.state] of every cell in spatial grid according to values in
   /// [activeRadius] and [unloadRadius], starting from [currentCell] position.
   @internal
   void updateCellsStateByRadius() {
+    final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
+    var newCellsCreated = false;
+    for (final cell in cellsToActivate) {
+      if (!cell.isCellBuildFinished) {
+        newCellsCreated = true;
+        break;
+      }
+    }
+
+    if (newCellsCreated) {
+      _createCellsInPreloadRadius();
+    }
+
     for (final cell in cells.values) {
       cell.tmpState = CellState.suspended;
     }
@@ -156,7 +178,6 @@ class SpatialGrid {
       cell.tmpState = CellState.inactive;
     }
 
-    final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
     for (final cell in cellsToActivate) {
       cell.tmpState = CellState.active;
     }
@@ -164,6 +185,13 @@ class SpatialGrid {
 
     for (final cell in cells.values) {
       cell.state = cell.tmpState;
+    }
+  }
+
+  void _createCellsInPreloadRadius() {
+    final cellsToPreload = _findCellsInRadius(preloadRadius, create: true);
+    for (final cell in cellsToPreload) {
+      cell.state = CellState.inactive;
     }
   }
 
