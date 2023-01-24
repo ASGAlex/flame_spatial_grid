@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
+import 'dart:async';
 
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -57,6 +58,8 @@ abstract class CellLayer extends PositionComponent
 
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
+  final _pendingComponents = <Future>[];
+
   @protected
   Future compileToSingleLayer(Iterable<Component> children);
 
@@ -104,7 +107,7 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  Future<void>? add(Component component) async {
+  FutureOr<void>? add(Component component) async {
     updateCorrections(component);
 
     if (isRenewable) {
@@ -113,13 +116,21 @@ abstract class CellLayer extends PositionComponent
         _listenerChildrenUpdate[component] = onChildrenUpdate;
       }
       onBeforeChildrenChanged(component, ChildrenChangeType.added);
-      return super.add(component);
+      final future = super.add(component);
+      if (future is Future) {
+        _pendingComponents.add(future);
+      }
+      return future;
     } else {
-      await component.onLoad();
       nonRenewableComponents.add(component);
       if (component is HasGridSupport) {
         component.currentCell = null;
       }
+      final future = component.onLoad();
+      if (future is Future) {
+        _pendingComponents.add(future);
+      }
+      return future;
     }
   }
 
@@ -150,13 +161,23 @@ abstract class CellLayer extends PositionComponent
           if (optimizeCollisions) {
             collisionOptimizer.optimize();
             isUpdateNeeded = true;
-            _updateTree(dt);
           }
-          compileToSingleLayer(children);
+          final futures =
+              List<Future>.from(_pendingComponents, growable: false);
+          _pendingComponents.clear();
+          Future.wait<void>(futures).then<void>((value) {
+            _updateTree(dt);
+            compileToSingleLayer(children);
+          });
         } else {
           _updateTree(dt);
-          compileToSingleLayer(nonRenewableComponents).then((void _) {
-            nonRenewableComponents.clear();
+          final futures =
+              List<Future>.from(_pendingComponents, growable: false);
+          _pendingComponents.clear();
+          Future.wait<void>(futures).then<void>((value) {
+            compileToSingleLayer(nonRenewableComponents).then((void _) {
+              nonRenewableComponents.clear();
+            });
           });
         }
       }
