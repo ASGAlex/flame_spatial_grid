@@ -453,8 +453,8 @@ mixin HasSpatialGridFramework on FlameGame
   ///
   /// The rest of operations are made inside of [SpatialGridCollisionDetection]
   @override
-  Future update(double dt) async {
-    await _buildNewCells();
+  void update(double dt) {
+    _buildNewCells();
     _countSuspendedCellsTimers(dt);
     if (removeCellsPerUpdate > 0) {
       _autoRemoveOldCells(dt);

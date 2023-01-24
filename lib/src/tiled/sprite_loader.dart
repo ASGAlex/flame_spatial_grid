@@ -44,13 +44,21 @@ extension SpriteLoader on Tile {
     final spriteList = <Sprite>[];
     final stepTimes = <double>[];
 
+    final futures = <Future>[];
     for (final frame in animation) {
       final frameTile = Tile(localId: frame.tileId);
-      final sprite = await frameTile.getSprite(tileset);
-      spriteList.add(sprite);
-      stepTimes.add(frame.duration / 1000);
+      final future = frameTile.getSprite(tileset).then((sprite) {
+        spriteList.add(sprite);
+        stepTimes.add(frame.duration / 1000);
+        return sprite;
+      });
+      futures.add(future);
     }
-    return SpriteAnimation.variableSpriteList(spriteList, stepTimes: stepTimes);
+
+    return Future.wait<void>(futures).then<SpriteAnimation>((value) {
+      return SpriteAnimation.variableSpriteList(spriteList,
+          stepTimes: stepTimes);
+    });
   }
 
   int _maxColumns(Tileset tileset) {
