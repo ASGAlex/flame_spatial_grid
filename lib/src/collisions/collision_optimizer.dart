@@ -11,6 +11,8 @@ class CollisionOptimizer {
   final CellLayer parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
 
+  bool get isEmpty => _createdCollisionLists.isEmpty;
+
   int get maximumItemsInGroup => game.collisionOptimizerGroupLimit;
 
   final _alreadyProcessed = HashSet<ShapeHitbox>();
@@ -31,7 +33,8 @@ class CollisionOptimizer {
       optimizedCollisionsByGroupBox[cell] = collisionsListByGroup = {};
     }
     for (final optimized in _createdCollisionLists) {
-      optimized.boundingBox.removeFromParent();
+      optimized.boundingBox
+          .removeFromParent(); // FIXME: TRIGGERS isUpdateNeeded to true!!!
       collisionsListByGroup.remove(optimized.boundingBox);
       parentLayer.remove(optimized.boundingBox);
     }

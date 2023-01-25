@@ -64,7 +64,7 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   void onResume(double dtElapsedWhileSuspended) {
-    isUpdateNeeded = true;
+    // isUpdateNeeded = true;
     super.onResume(dtElapsedWhileSuspended);
   }
 

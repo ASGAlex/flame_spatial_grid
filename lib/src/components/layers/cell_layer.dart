@@ -159,7 +159,9 @@ abstract class CellLayer extends PositionComponent
         if (isRenewable) {
           _updateTree(dt);
           if (optimizeCollisions) {
+            pauseUpdate = true;
             collisionOptimizer.optimize();
+            pauseUpdate = false;
             isUpdateNeeded = true;
           }
           final futures =
