@@ -52,7 +52,7 @@ class CollisionOptimizer {
       if (child is! HasGridSupport) {
         continue;
       }
-      if (child.boundingBox.collisionType != CollisionType.inactive) {
+      if (child.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }
       if (_alreadyProcessed.contains(child.boundingBox)) {
@@ -127,7 +127,7 @@ class CollisionOptimizer {
       if (otherChild is! HasGridSupport) {
         continue;
       }
-      if (otherChild.boundingBox.collisionType != CollisionType.inactive) {
+      if (otherChild.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }
       if (exception.contains(otherChild.boundingBox)) {
