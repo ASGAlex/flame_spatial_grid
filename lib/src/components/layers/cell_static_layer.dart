@@ -56,14 +56,12 @@ class CellStaticLayer extends CellLayer {
         );
       }
       layerPicture = recorder.endRecording();
-      layerPicture
-          ?.toImageSafe(
+      layerImage = layerPicture?.toImageSync(
         layerCalculatedSize.width.toInt(),
         layerCalculatedSize.height.toInt(),
-      )
-          .then((newImage) {
-        layerImage = newImage;
-      });
+      );
+      layerPicture?.dispose();
+      layerPicture = null;
     } else {
       for (final component in children) {
         if (component is! HasGridSupport) {
