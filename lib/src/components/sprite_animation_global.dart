@@ -3,10 +3,8 @@ import 'dart:collection';
 import 'package:flame/components.dart';
 
 class SpriteAnimationGlobalController {
-
-  factory SpriteAnimationGlobalController.instance()=>
+  factory SpriteAnimationGlobalController.instance() =>
       _instance ??= SpriteAnimationGlobalController._();
-
 
   static SpriteAnimationGlobalController? _instance;
 
@@ -20,7 +18,7 @@ class SpriteAnimationGlobalController {
   void trackComponent(SpriteAnimationGlobalComponent component) {
     final componentAnimation = component.animation;
     if (componentAnimation == null) {
-      throw 'No component animation specified';
+      throw 'No component animation specified.';
     }
     var animationsOfType = _animations[component.animationType];
     if (animationsOfType == null) {
@@ -78,8 +76,9 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
 
   @override
   void onRemove() {
-    SpriteAnimationGlobalController
-        .instance()._animations[animationType]?.trackedComponents
+    SpriteAnimationGlobalController.instance()
+        ._animations[animationType]
+        ?.trackedComponents
         .remove(this);
     super.onRemove();
   }
