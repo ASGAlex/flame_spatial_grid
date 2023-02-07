@@ -8,6 +8,8 @@ import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+enum InitializationState { coreClasses, maps, worlds, layers, cells }
+
 /// This class is starting point to add Framework's abilities into you game
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary! Also call
 /// [gameInitializationDone] when all game objects are loaded and added.
@@ -198,6 +200,9 @@ mixin HasSpatialGridFramework on FlameGame
         throw 'Lazy load initialization error!';
       }
     }
+
+    await LayersManager.waitForComponents();
+    await _buildNewCells(true);
   }
 
   /// Should be called when Framework is initialized and all components are
@@ -341,12 +346,12 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
-  Future<void> _buildNewCells() async {
+  Future<void> _buildNewCells([bool forceAll = false]) async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       return;
     }
 
-    if (buildCellsPerUpdate > 0) {
+    if (!forceAll && buildCellsPerUpdate > 0) {
       _buildCellsNow += buildCellsPerUpdate;
       var cellsToProcess = _buildCellsNow.floor();
       for (var i = 0; i < cellsToProcess; i++) {

@@ -15,6 +15,8 @@ class LayersManager {
   @internal
   final layers = HashMap<Cell, HashMap<String, CellLayer>>();
 
+  static final _futures = <Future<void>>[];
+
   HasSpatialGridFramework game;
 
   final Component layersRootComponent = Component();
@@ -111,7 +113,10 @@ class LayersManager {
       component.position = component.position - cell.rect.topLeft.toVector2();
     }
 
-    layer.add(component);
+    final future = layer.add(component);
+    if (future is Future) {
+      _futures.add(future);
+    }
 
     if (isNew) {
       addLayer(layer);
@@ -121,4 +126,7 @@ class LayersManager {
 
     return layer;
   }
+
+  static Future waitForComponents() =>
+      Future.wait<void>(_futures).then<void>((_) => _futures.clear());
 }
