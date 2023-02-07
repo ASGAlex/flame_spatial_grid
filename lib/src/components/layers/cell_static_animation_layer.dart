@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/components/layers/image_composition.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
@@ -41,12 +42,12 @@ class CellStaticAnimationLayer extends CellLayer {
 
     while (animation.currentIndex < animation.frames.length) {
       final sprite = animation.getSprite();
-      final composition = ImageComposition();
+      final composition = ImageCompositionExt();
       for (final component in animatedChildren) {
         final correctedPosition = component.position + (correctionTopLeft * -1);
         composition.add(sprite.image, correctedPosition, source: sprite.src);
       }
-      final composedImage = await composition.compose();
+      final composedImage = composition.compose();
       newSprites.add(Sprite(composedImage));
       animation.currentIndex++;
     }
