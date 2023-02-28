@@ -11,8 +11,7 @@ import 'package:meta/meta.dart';
 enum InitializationState { coreClasses, maps, worlds, layers, cells }
 
 /// This class is starting point to add Framework's abilities into you game
-/// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary! Also call
-/// [gameInitializationDone] when all game objects are loaded and added.
+/// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary!
 /// If your game could be zoomed, please call [onAfterZoom] after every zoom
 /// event.
 mixin HasSpatialGridFramework on FlameGame
@@ -55,8 +54,6 @@ mixin HasSpatialGridFramework on FlameGame
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
   /// resources were loaded before game loop start.
-  /// Call [gameInitializationDone] after this function and place game
-  /// components initialization between.
   /// Some of parameters could be changed at runtime, see [spatialGrid] for
   /// details.
   ///
@@ -205,17 +202,7 @@ mixin HasSpatialGridFramework on FlameGame
     await _buildNewCells(true);
   }
 
-  /// Should be called when Framework is initialized and all components are
-  /// added into game.
-  /// This functions enables windows dimensions tracking and calculating grid
-  /// cells visible in viewport. It allows automatically enable or disable cells
-  /// after window resizing or zoom changes
-  void gameInitializationDone() {
-    _gameInitializationFinished = true;
-    if (trackWindowSize) {
-      setRadiusByWindowDimensions();
-    }
-  }
+  void onInitializationDone() {}
 
   /// Call this at you application code at every place where zoom is done.
   /// Necessary for adopting [spatialGrid.activeRadius] to current screen's
@@ -492,14 +479,34 @@ mixin HasSpatialGridFramework on FlameGame
   /// The rest of operations are made inside of [SpatialGridCollisionDetection]
   @override
   void update(double dt) {
-    _buildNewCells();
-    _countSuspendedCellsTimers(dt);
-    if (removeCellsPerUpdate > 0) {
-      _autoRemoveOldCells(dt);
-    }
+    if (_gameInitializationFinished) {
+      _buildNewCells();
+      _countSuspendedCellsTimers(dt);
+      if (removeCellsPerUpdate > 0) {
+        _autoRemoveOldCells(dt);
+      }
 
-    SpriteAnimationGlobalController.instance().update(dt);
-    super.update(dt);
-    collisionDetection.run();
+      SpriteAnimationGlobalController.instance().update(dt);
+      super.update(dt);
+      collisionDetection.run();
+    } else {
+      if (trackWindowSize) {
+        setRadiusByWindowDimensions();
+      }
+      _buildNewCells(true).then((value) {
+        super.update(dt);
+        collisionDetection.run();
+      });
+
+      initializationCycles--;
+
+      if (initializationCycles <= 0 &&
+          spatialGrid.cellsScheduledToBuild.isEmpty) {
+        _gameInitializationFinished = true;
+        onInitializationDone();
+      }
+    }
   }
+
+  int initializationCycles = 100;
 }

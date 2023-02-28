@@ -68,7 +68,7 @@ all collisions are disabled.
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
-      preloadRadius: const Size(3, 3),
+      preloadRadius: const Size(1, 1),
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
@@ -78,7 +78,6 @@ all collisions are disabled.
       suspendedCellLifetime: const Duration(minutes: 2),
       maximumCells: 150,
       cellBuilderNoMap: noMapCellBuilder,
-      onAfterCellBuild: world.onAfterCellBuild,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
       ],
@@ -90,7 +89,6 @@ all collisions are disabled.
     // await demoMapLoader.init(this);
     layersManager.layersRootComponent.add(player);
     add(FpsTextComponent());
-    gameInitializationDone();
   }
 
   final elapsedMicroseconds = <double>[];
@@ -201,6 +199,14 @@ all collisions are disabled.
     // print(sw.elapsedMicroseconds);
   }
 
+  @override
+  void onInitializationDone() {
+    for (final npc in world.npcList) {
+      npc.isAIEnabled = true;
+    }
+    world.npcList.clear();
+  }
+
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
     // return;
     final map = TiledMapLoader.loadedMaps.whereType<DemoMapLoader>().first;
@@ -277,25 +283,18 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
       final position = Vector2(-100, 0)..add(Vector2(x, y));
-      add(
-        Npc(
-          position: position,
-          size: Vector2.all(tileSize),
-          priority: player.priority,
-        ),
+      final npc = Npc(
+        position: position,
+        size: Vector2.all(tileSize),
+        priority: player.priority,
       );
+      add(npc);
+      npcList.add(npc);
       npcCount++;
     }
   }
 
-  Future<void> onAfterCellBuild(Cell cell, Component rootComponent) async {
-    Future<void>.delayed(const Duration(seconds: 10)).then((value) {
-      final npcList = cell.components.whereType<Npc>();
-      for (final npc in npcList) {
-        npc.isAIEnabled = true;
-      }
-    });
-  }
+  final npcList = <Npc>[];
 
   @override
   void onTapDown(TapDownEvent event) {
