@@ -41,7 +41,7 @@ class CellTrailLayer extends CellStaticLayer {
   bool get isRenewable => false;
 
   @override
-  void remove(Component component) {}
+  void remove(Component component, {bool internalCall = false}) {}
 
   @override
   Future compileToSingleLayer(Iterable<Component> children) async {

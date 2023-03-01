@@ -22,7 +22,6 @@ abstract class CellLayer extends PositionComponent
         ) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
-    _pauseUpdate = !cell.isCellBuildFinished;
   }
 
   bool optimizeCollisions = false;
@@ -33,19 +32,6 @@ abstract class CellLayer extends PositionComponent
 
   @protected
   final nonRenewableComponents = <Component>[];
-
-  late bool _pauseUpdate;
-
-  @internal
-  bool get pauseUpdate => _pauseUpdate;
-
-  @internal
-  set pauseUpdate(bool value) {
-    _pauseUpdate = value;
-    if (_pauseUpdate == false) {
-      isUpdateNeeded = true;
-    }
-  }
 
   @protected
   late final CollisionOptimizer collisionOptimizer;
@@ -107,7 +93,7 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  FutureOr<void>? add(Component component) async {
+  FutureOr<void>? add(Component component, {bool internalCall = false}) async {
     updateCorrections(component);
 
     if (isRenewable) {
@@ -115,7 +101,9 @@ abstract class CellLayer extends PositionComponent
         component.transform.addListener(onChildrenUpdate);
         _listenerChildrenUpdate[component] = onChildrenUpdate;
       }
-      onBeforeChildrenChanged(component, ChildrenChangeType.added);
+      if (!internalCall) {
+        onBeforeChildrenChanged(component, ChildrenChangeType.added);
+      }
       final future = super.add(component);
       if (future is Future) {
         _pendingComponents.add(future);
@@ -135,14 +123,16 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  void remove(Component component) {
+  void remove(Component component, {bool internalCall = false}) {
     if (isRenewable) {
       final callback = _listenerChildrenUpdate.remove(component);
       if (callback != null && component is HasGridSupport) {
         component.transform.removeListener(callback);
       }
 
-      onBeforeChildrenChanged(component, ChildrenChangeType.removed);
+      if (!internalCall) {
+        onBeforeChildrenChanged(component, ChildrenChangeType.removed);
+      }
       super.remove(component);
     } else {
       nonRenewableComponents.remove(component);
@@ -159,10 +149,7 @@ abstract class CellLayer extends PositionComponent
         if (isRenewable) {
           _updateTree(dt);
           if (optimizeCollisions) {
-            pauseUpdate = true;
             collisionOptimizer.optimize();
-            pauseUpdate = false;
-            isUpdateNeeded = true;
           }
           final futures =
               List<Future>.from(_pendingComponents, growable: false);
@@ -227,15 +214,28 @@ abstract class CellLayer extends PositionComponent
     }
   }
 
+  bool _isUpdateProhibited() {
+    final cell = currentCell;
+    if (cell == null) {
+      return true;
+    }
+
+    if (cell.isRemoving || !cell.isCellBuildFinished) {
+      return true;
+    }
+
+    return false;
+  }
+
   void onChildrenUpdate() {
-    if (pauseUpdate) {
+    if (_isUpdateProhibited()) {
       return;
     }
     isUpdateNeeded = true;
   }
 
   void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
-    if (pauseUpdate) {
+    if (_isUpdateProhibited()) {
       return;
     }
 

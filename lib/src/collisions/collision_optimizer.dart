@@ -33,10 +33,8 @@ class CollisionOptimizer {
       optimizedCollisionsByGroupBox[cell] = collisionsListByGroup = {};
     }
     for (final optimized in _createdCollisionLists) {
-      optimized.boundingBox
-          .removeFromParent(); // FIXME: TRIGGERS isUpdateNeeded to true!!!
       collisionsListByGroup.remove(optimized.boundingBox);
-      parentLayer.remove(optimized.boundingBox);
+      parentLayer.remove(optimized.boundingBox, internalCall: true);
     }
     _createdCollisionLists.clear();
     _alreadyProcessed.clear();
@@ -196,6 +194,9 @@ class OptimizedCollisionList {
   }
 
   void _updateBoundingBox() {
+    if (_boundingBox.parent != null) {
+      parentLayer.remove(_boundingBox, internalCall: true);
+    }
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
       if (rect == Rect.zero) {
@@ -210,7 +211,7 @@ class OptimizedCollisionList {
       position: rect.topLeft.toVector2(),
       size: rect.size.toVector2(),
     )..collisionType = CollisionType.passive;
-    parentLayer.add(_boundingBox);
+    parentLayer.add(_boundingBox, internalCall: true);
   }
 }
 

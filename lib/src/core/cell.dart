@@ -64,7 +64,7 @@ class Cell {
     final layers = spatialGrid.game.layersManager.layers[this];
     if (layers != null && layers.isNotEmpty && value == true) {
       for (final layer in layers.values) {
-        layer.pauseUpdate = false;
+        layer.isUpdateNeeded = true;
       }
     }
   }
