@@ -104,10 +104,9 @@ abstract class CellLayer extends PositionComponent
       if (!internalCall) {
         onBeforeChildrenChanged(component, ChildrenChangeType.added);
       }
-      final future = super.add(component);
-      if (future is Future) {
-        _pendingComponents.add(future);
-      }
+      final future = component.loaded;
+      _pendingComponents.add(future);
+      super.add(component);
       return future;
     } else {
       nonRenewableComponents.add(component);
@@ -153,11 +152,15 @@ abstract class CellLayer extends PositionComponent
           }
           final futures =
               List<Future>.from(_pendingComponents, growable: false);
-          _pendingComponents.clear();
-          Future.wait<void>(futures).then<void>((value) {
-            _updateTree(dt);
+          for (final future in futures) {
+            future.then((void _) {
+              _updateTree(dt);
+            });
+          }
+          Future.wait<void>(futures).whenComplete(() {
             compileToSingleLayer(children);
           });
+          _pendingComponents.clear();
         } else {
           _updateTree(dt);
           final futures =
