@@ -1,5 +1,7 @@
 // ignore_for_file: comment_references
 
+import 'dart:math';
+
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -443,7 +445,7 @@ mixin HasSpatialGridFramework on FlameGame
 
     if (removeCellsPerUpdate > 0) {
       _removeCellsNow += removeCellsPerUpdate;
-      final cellsToProcess = _removeCellsNow.floor();
+      final cellsToProcess = min(_removeCellsNow.floor(), cellsToRemove.length);
       for (var i = 0; i < cellsToProcess; i++) {
         final cell = cellsToRemove.first;
         cellsToRemove.remove(cell);

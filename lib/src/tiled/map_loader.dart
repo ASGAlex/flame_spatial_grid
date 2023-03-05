@@ -97,7 +97,7 @@ abstract class TiledMapLoader {
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
   TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
-      game.tilesetManager.getPreloadedTileData(tileSetName, tileType);
+      game.tilesetManager.getTile(tileSetName, tileType);
 
   /// Every map should be initialized after spatial grid initialization.
   /// This function triggers the process. After it the map is loaded and mounted

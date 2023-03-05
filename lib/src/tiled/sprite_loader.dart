@@ -71,3 +71,8 @@ extension SpriteLoader on Tile {
     return maxWidth ~/ tileWidth;
   }
 }
+
+extension ConvertToAnimation on Sprite {
+  SpriteAnimation toAnimation() =>
+      SpriteAnimation.spriteList([this], stepTime: 100000);
+}

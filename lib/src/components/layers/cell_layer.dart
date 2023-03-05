@@ -113,11 +113,13 @@ abstract class CellLayer extends PositionComponent
       if (component is HasGridSupport) {
         component.currentCell = null;
       }
-      final future = component.onLoad();
-      if (future is Future) {
-        _pendingComponents.add(future);
+      if (!component.isLoaded) {
+        final future = component.onLoad();
+        if (future is Future) {
+          _pendingComponents.add(future);
+        }
+        return future;
       }
-      return future;
     }
   }
 

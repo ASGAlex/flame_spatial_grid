@@ -11,7 +11,7 @@ class TilesetManager {
 
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
-  TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
+  TileCache? getTile(String tileSetName, String tileType) =>
       _preloadedTileSet[tileSetName]?[tileType];
 
   Future<void> loadTileset(String fileName) async {
@@ -35,9 +35,9 @@ class TilesetManager {
         continue;
       }
       tilesetCache[tileTypeName] = TileCache(
-        sprite: await tile.getSprite(tileSet),
-        spriteAnimation: await tile.getSpriteAnimation(tileSet),
-      );
+          sprite: await tile.getSprite(tileSet),
+          spriteAnimation: await tile.getSpriteAnimation(tileSet),
+          properties: tile.properties);
     }
     _preloadedTileSet[tilesetName] = tilesetCache;
   }

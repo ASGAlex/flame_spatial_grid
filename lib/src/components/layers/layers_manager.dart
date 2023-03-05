@@ -80,9 +80,6 @@ class LayersManager {
     final isNew = layer == null;
     switch (layerType) {
       case MapLayerType.static:
-        if (component is! SpriteComponent) {
-          throw 'Component ${component.runtimeType} must be SpriteComponent!';
-        }
         if (isNew) {
           layer =
               CellStaticLayer(cell, name: layerName, isRenewable: isRenewable);
