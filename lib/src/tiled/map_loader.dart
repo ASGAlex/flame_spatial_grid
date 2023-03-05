@@ -97,7 +97,7 @@ abstract class TiledMapLoader {
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
   TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
-      _preloadedTileSet[tileSetName]?[tileType];
+      game.tilesetManager.getPreloadedTileData(tileSetName, tileType);
 
   /// Every map should be initialized after spatial grid initialization.
   /// This function triggers the process. After it the map is loaded and mounted
@@ -133,29 +133,8 @@ abstract class TiledMapLoader {
     return tiledComponent;
   }
 
-  static final _preloadedTileSet =
-      HashMap<String, HashMap<String, TileCache>>();
-
   Future<void> _preloadTileSets(TiledMap map) async {
-    for (final tileSet in map.tilesets) {
-      final tilesetName = tileSet.name;
-      if (tilesetName == null) {
-        continue;
-      }
-      final tilesetCache =
-          _preloadedTileSet[tilesetName] ?? HashMap<String, TileCache>();
-      for (final tile in tileSet.tiles) {
-        final tileTypeName = tile.type;
-        if (tileTypeName == null) {
-          continue;
-        }
-        tilesetCache[tileTypeName] = TileCache(
-          sprite: await tile.getSprite(tileSet),
-          spriteAnimation: await tile.getSpriteAnimation(tileSet),
-        );
-      }
-      _preloadedTileSet[tilesetName] = tilesetCache;
-    }
+    game.tilesetManager.addFromMap(map);
   }
 
   /// Core build function. Reimplement it only when you have good understanding,
@@ -382,15 +361,4 @@ abstract class TiledMapLoader {
       }
     }
   }
-}
-
-/// This class is a storage of tile's data from tileset.
-/// Use [TiledMapLoader.getPreloadedTileData] to get instance of this class.
-/// Also read about [TiledMapLoader.preloadTileSets]
-@immutable
-class TileCache {
-  const TileCache({this.sprite, this.spriteAnimation});
-
-  final Sprite? sprite;
-  final SpriteAnimation? spriteAnimation;
 }

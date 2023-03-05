@@ -30,6 +30,8 @@ mixin HasSpatialGridFramework on FlameGame
   /// It manages recourses automatically, according to cell's state.
   late final LayersManager layersManager;
 
+  final tilesetManager = TilesetManager();
+
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
   /// to viewport size and zoom level.
   bool trackWindowSize = true;

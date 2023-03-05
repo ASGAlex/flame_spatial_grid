@@ -63,6 +63,9 @@ all collisions are disabled.
     cameraComponent.viewfinder.zoom = 5;
     cameraComponent.follow(player, maxSpeed: 40);
 
+    // check that manual loading works correctly (not necessary line)
+    tilesetManager.loadTileset('tileset.tsx');
+
     const blockSize = 100.0;
     await initializeSpatialGrid(
       debug: false,
