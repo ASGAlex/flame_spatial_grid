@@ -63,10 +63,7 @@ class CellStaticLayer extends CellLayer {
       layerPicture?.dispose();
       layerPicture = null;
     } else {
-      for (final component in children) {
-        if (component is! HasGridSupport) {
-          continue;
-        }
+      for (final component in renderingChildren) {
         component.decorator.applyChain(component.render, canvas);
       }
       layerPicture = recorder.endRecording();
