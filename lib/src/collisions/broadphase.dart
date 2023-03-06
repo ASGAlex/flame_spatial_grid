@@ -21,6 +21,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     required this.broadphaseCheck,
     ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
   }) {
+    clear();
     this.minimumDistanceCheck = minimumDistanceCheck ?? _minimumDistanceCheck;
   }
 
@@ -41,7 +42,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   ExternalBroadphaseCheck broadphaseCheck;
   late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
 
-  final _broadphaseCheckCache = HashMap<T, HashMap<T, bool>>();
+  @internal
+  static final broadphaseCheckCache =
+      HashMap<ShapeHitbox, HashMap<ShapeHitbox, bool>>();
   final _activePreviouslyChecked = HashMap<T, HashMap<T, bool>>();
 
   @internal
@@ -177,8 +180,14 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           asShapeItem.parent != null) {
         continue;
       }
-      final canToCollide = _broadphaseCheckCache[asShapeItem]?[potential] ??
-          _runExternalBroadphaseCheck(asShapeItem, potential);
+      var canToCollide = true;
+      if (asShapeItem is BoundingHitbox) {
+        canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
+            _runExternalBroadphaseCheck(asShapeItem, potential);
+      } else {
+        canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
+            _runExternalBroadphaseCheck(asShapeItem, potential);
+      }
       if (!canToCollide) {
         continue;
       }
@@ -231,31 +240,31 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       return true;
     }
     final canToCollide = broadphaseCheck(item0, item1);
-    if (_broadphaseCheckCache[item0 as T] == null) {
-      _broadphaseCheckCache[item0 as T] = HashMap<T, bool>();
+    if (item0 is BoundingHitbox) {
+      item0.storeBroadphaseCheckCache(item1, canToCollide);
+    } else {
+      item0.storeBroadphaseCheckCache(item1, canToCollide);
     }
-    _broadphaseCheckCache[item0 as T]![item1 as T] = canToCollide;
-
-    if (_broadphaseCheckCache[item1 as T] == null) {
-      _broadphaseCheckCache[item1 as T] = HashMap<T, bool>();
-    }
-    _broadphaseCheckCache[item1 as T]![item0 as T] = canToCollide;
 
     return canToCollide;
   }
 
   void clear() {
     activeCollisions.clear();
-    _broadphaseCheckCache.clear();
+    broadphaseCheckCache.clear();
   }
 
   void remove(T item) {
-    final checkCache = _broadphaseCheckCache[item];
+    final checkCache = broadphaseCheckCache[item];
     if (checkCache != null) {
-      for (final entry in checkCache.entries) {
-        _broadphaseCheckCache[entry.key]?.remove(item);
+      for (final hitbox in checkCache.keys) {
+        if (hitbox is BoundingHitbox) {
+          hitbox.removeBroadphaseCheckItem(item as ShapeHitbox);
+        } else {
+          broadphaseCheckCache[hitbox]?.remove(item);
+        }
       }
-      _broadphaseCheckCache.remove(item);
+      broadphaseCheckCache.remove(item);
     }
   }
 

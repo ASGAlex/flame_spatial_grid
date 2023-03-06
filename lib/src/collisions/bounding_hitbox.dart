@@ -28,15 +28,17 @@ class BoundingHitbox extends RectangleHitbox {
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;
-    minDistanceX = size.x/2;
-    minDistanceY = size.y/2;
+    minDistanceX = size.x / 2;
+    minDistanceY = size.y / 2;
     size.addListener(() {
-      minDistanceX = size.x/2;
-      minDistanceY = size.y/2;
+      minDistanceX = size.x / 2;
+      minDistanceY = size.y / 2;
     });
   }
 
   Vector2? _aabbCenter;
+
+  final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
 
   /// [aabb] calculates center at each call. This method provides
   /// caching.
@@ -50,6 +52,22 @@ class BoundingHitbox extends RectangleHitbox {
   set aabbCenter(Vector2? value) {
     assert(value != null);
     _aabbCenter = value;
+  }
+
+  void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
+    _broadphaseCheckCache[item] = canCollide;
+    if (item is BoundingHitbox) {
+      item._broadphaseCheckCache[this] = canCollide;
+    } else {
+      item.storeBroadphaseCheckCache(this, canCollide);
+    }
+  }
+
+  bool? getBroadphaseCheckCache(ShapeHitbox item) =>
+      _broadphaseCheckCache[item];
+
+  void removeBroadphaseCheckItem(ShapeHitbox item) {
+    _broadphaseCheckCache.remove(item);
   }
 
   HasGridSupport? _parentWithGridSupport;
@@ -92,6 +110,18 @@ class BoundingHitbox extends RectangleHitbox {
     return rect.topLeft < boundingRect.topLeft &&
         rect.bottomRight > boundingRect.bottomRight;
   }
+
+  @override
+  void onRemove() {
+    for (final item in _broadphaseCheckCache.keys) {
+      if (item is BoundingHitbox) {
+        item._broadphaseCheckCache.remove(this);
+      } else {
+        SpatialGridBroadphase.broadphaseCheckCache[item]?.remove(this);
+      }
+    }
+    _broadphaseCheckCache.clear();
+  }
 }
 
 extension SpatialGridRectangleHitbox on RectangleHitbox {
@@ -129,6 +159,16 @@ extension SpatialGridShapeHitbox on ShapeHitbox {
     }
     return cache!;
   }
+
+  void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
+    var cache = SpatialGridBroadphase.broadphaseCheckCache[this];
+    cache ??= SpatialGridBroadphase.broadphaseCheckCache[this] =
+        HashMap<ShapeHitbox, bool>();
+    cache[item] = canCollide;
+  }
+
+  bool? getBroadphaseCheckCache(ShapeHitbox item) =>
+      SpatialGridBroadphase.broadphaseCheckCache[this]?[item];
 
   HasGridSupport? get parentWithGridSupport {
     final hitbox = this;
