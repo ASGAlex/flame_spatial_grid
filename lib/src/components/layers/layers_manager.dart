@@ -105,7 +105,8 @@ class LayersManager {
     }
 
     if (absolutePosition) {
-      component.position = component.position - cell.rect.topLeft.toVector2();
+      component.position
+          .setFrom(component.position - cell.rect.topLeft.toVector2());
     }
 
     layer.add(component);

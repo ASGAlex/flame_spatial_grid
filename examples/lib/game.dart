@@ -71,7 +71,7 @@ all collisions are disabled.
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
-      preloadRadius: const Size(1, 1),
+      preloadRadius: const Size(10, 10),
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
@@ -80,7 +80,7 @@ all collisions are disabled.
       removeCellsPerUpdate: 1,
       suspendedCellLifetime: const Duration(minutes: 2),
       maximumCells: 150,
-      buildCellsLimitToPauseEngine: 10,
+      buildCellsLimitToPauseEngine: 40,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),

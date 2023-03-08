@@ -36,13 +36,20 @@ class BoundingHitbox extends RectangleHitbox {
     });
   }
 
-  Vector2? _aabbCenter;
+  bool _aabbCenterNotSet = true;
+  final Vector2 _aabbCenter = Vector2.zero();
 
   final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
 
   /// [aabb] calculates center at each call. This method provides
   /// caching.
-  Vector2 get aabbCenter => _aabbCenter ??= aabb.center;
+  Vector2 get aabbCenter {
+    if (_aabbCenterNotSet) {
+      _aabbCenterNotSet = false;
+      _aabbCenter.setFrom(aabb.center);
+    }
+    return _aabbCenter;
+  }
 
   double minDistanceX = 0.0;
   double minDistanceY = 0.0;
@@ -51,7 +58,7 @@ class BoundingHitbox extends RectangleHitbox {
 
   set aabbCenter(Vector2? value) {
     assert(value != null);
-    _aabbCenter = value;
+    _aabbCenter.setFrom(value!);
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
