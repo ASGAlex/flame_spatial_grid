@@ -140,6 +140,8 @@ abstract class CellLayer extends PositionComponent
     }
   }
 
+  Future<void> waitForComponents() => Future.wait<void>(_pendingComponents);
+
   @override
   void updateTree(double dt) {
     if (isUpdateNeeded) {

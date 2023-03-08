@@ -201,9 +201,29 @@ mixin HasSpatialGridFramework on FlameGame
         throw 'Lazy load initialization error!';
       }
     }
+  }
 
-    await LayersManager.waitForComponents();
-    await _buildNewCells(true);
+  Future<void> _initializationLoop() async {
+    while (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
+      print('init loop: ${spatialGrid.cellsScheduledToBuild.length}');
+
+      await _buildNewCells(true);
+      collisionDetection.run();
+      super.update(0.001);
+      await layersManager.waitForComponents();
+      collisionDetection.run();
+      super.update(0.001);
+      if (trackWindowSize) {
+        setRadiusByWindowDimensions();
+      }
+    }
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (spatialGrid.cellsScheduledToBuild.isEmpty) {
+      _gameInitializationFinished = true;
+      onInitializationDone();
+    } else {
+      await _initializationLoop();
+    }
   }
 
   void onInitializationDone() {}
@@ -494,23 +514,10 @@ mixin HasSpatialGridFramework on FlameGame
       super.update(dt);
       collisionDetection.run();
     } else {
-      if (trackWindowSize) {
-        setRadiusByWindowDimensions();
-      }
-      _buildNewCells(true).then((value) {
-        super.update(dt);
-        collisionDetection.run();
+      pauseEngine();
+      _initializationLoop().then((_) {
+        resumeEngine();
       });
-
-      initializationCycles--;
-
-      if (initializationCycles <= 0 &&
-          spatialGrid.cellsScheduledToBuild.isEmpty) {
-        _gameInitializationFinished = true;
-        onInitializationDone();
-      }
     }
   }
-
-  int initializationCycles = 100;
 }
