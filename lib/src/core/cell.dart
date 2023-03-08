@@ -85,9 +85,6 @@ class Cell {
   /// Should not be modified manually!
   final components = HashSet<HasGridSupport>();
 
-  SpatialGridBroadphase get broadphase =>
-      spatialGrid.game.collisionDetection.broadphase;
-
   /// Left cell from current, or null
   Cell? get rawLeft => _rawLeft?._remove == true ? null : _rawLeft;
 
