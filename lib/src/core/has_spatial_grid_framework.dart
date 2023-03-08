@@ -54,6 +54,7 @@ mixin HasSpatialGridFramework on FlameGame
 
   double _suspendedCellLifetime = -1;
   int collisionOptimizerGroupLimit = 25;
+  int buildCellsLimitToPauseEngine = 250;
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
@@ -133,6 +134,7 @@ mixin HasSpatialGridFramework on FlameGame
     Size? preloadRadius,
     Duration suspendedCellLifetime = Duration.zero,
     int maximumCells = -1,
+    int buildCellsLimitToPauseEngine = 250,
     double buildCellsPerUpdate = -1,
     double removeCellsPerUpdate = -1,
     bool trackWindowSize = true,
@@ -155,6 +157,7 @@ mixin HasSpatialGridFramework on FlameGame
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
+    this.buildCellsLimitToPauseEngine = buildCellsLimitToPauseEngine;
     if (maps != null) {
       this.maps = maps;
     }
@@ -457,7 +460,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  void _autoRemoveOldCells(double dt) {
+  void _autoRemoveOldCells() {
     final cellsToRemove = _catchCellsForRemoval();
     if (cellsToRemove.isEmpty) {
       return;
@@ -504,15 +507,25 @@ mixin HasSpatialGridFramework on FlameGame
   @override
   void update(double dt) {
     if (_gameInitializationFinished) {
-      _buildNewCells();
-      _countSuspendedCellsTimers(dt);
-      if (removeCellsPerUpdate > 0) {
-        _autoRemoveOldCells(dt);
-      }
+      if (spatialGrid.cellsScheduledToBuild.length >
+          buildCellsLimitToPauseEngine) {
+        toggleLoadingComponent();
+        pauseEngine();
+        _initializationLoop().then((_) {
+          resumeEngine();
+          toggleLoadingComponent();
+        });
+      } else {
+        _buildNewCells();
+        _countSuspendedCellsTimers(dt);
+        if (removeCellsPerUpdate > 0) {
+          _autoRemoveOldCells();
+        }
 
-      SpriteAnimationGlobalController.instance().update(dt);
-      super.update(dt);
-      collisionDetection.run();
+        SpriteAnimationGlobalController.instance().update(dt);
+        super.update(dt);
+        collisionDetection.run();
+      }
     } else {
       pauseEngine();
       _initializationLoop().then((_) {
@@ -520,4 +533,7 @@ mixin HasSpatialGridFramework on FlameGame
       });
     }
   }
+
+  @protected
+  void toggleLoadingComponent() {}
 }

@@ -17,7 +17,22 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: const GameWidget.controlled(gameFactory: SpatialGridExample.new),
+      home: GameWidget.controlled(
+          gameFactory: SpatialGridExample.new,
+          overlayBuilderMap: {
+            'loading': (BuildContext ctx, SpatialGridExample game) {
+              return const Material(
+                  type: MaterialType.transparency,
+                  child: Center(
+                      child: Text(
+                    'Loading...',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24),
+                  )));
+            }
+          }),
     );
   }
 }

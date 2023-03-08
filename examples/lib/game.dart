@@ -80,6 +80,7 @@ all collisions are disabled.
       removeCellsPerUpdate: 1,
       suspendedCellLifetime: const Duration(minutes: 2),
       maximumCells: 150,
+      buildCellsLimitToPauseEngine: 10,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -111,6 +112,17 @@ all collisions are disabled.
     operationsLimitToSavePicture: 10,
     transparencyPerStep: 0.1,
   );
+
+  bool overlayVisible = false;
+
+  @override
+  void toggleLoadingComponent() {
+    if (overlays.isActive('loading')) {
+      overlays.remove('loading');
+    } else {
+      overlays.add('loading');
+    }
+  }
 
   @override
   KeyEventResult onKeyEvent(
