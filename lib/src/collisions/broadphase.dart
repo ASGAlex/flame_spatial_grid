@@ -45,7 +45,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @internal
   static final broadphaseCheckCache =
       HashMap<ShapeHitbox, HashMap<ShapeHitbox, bool>>();
-  final _activePreviouslyChecked = HashMap<T, HashMap<T, bool>>();
 
   @internal
   final scheduledOperations = <ScheduledHitboxOperation>[];
@@ -84,7 +83,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     HashSet<CollisionProspect<ShapeHitbox>> potentials,
   ) {
     final result = HashSet<CollisionProspect<T>>();
-    _activePreviouslyChecked.clear();
     for (final tuple in potentials) {
       RectangleHitbox componentHitbox;
       GroupHitbox groupBox;
@@ -120,7 +118,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @override
   HashSet<CollisionProspect<T>> query() {
     final result = HashSet<CollisionProspect<T>>();
-    _activePreviouslyChecked.clear();
     for (final activeItem in activeCollisions) {
       final asShapeItem = activeItem as ShapeHitbox;
       final withGridSupport = asShapeItem.parentWithGridSupport;
