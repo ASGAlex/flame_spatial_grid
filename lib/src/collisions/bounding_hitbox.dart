@@ -51,6 +51,10 @@ class BoundingHitbox extends RectangleHitbox {
     return _aabbCenter;
   }
 
+  double collisionCheckFrequency = 1;
+  @internal
+  double collisionCheckCounter = 0;
+
   double minDistanceX = 0.0;
   double minDistanceY = 0.0;
 

@@ -127,6 +127,19 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
+      if (activeItem is BoundingHitbox) {
+        final boundingHitbox = activeItem as BoundingHitbox;
+        if (boundingHitbox.collisionCheckFrequency < 1) {
+          if (boundingHitbox.collisionCheckCounter < 1) {
+            boundingHitbox.collisionCheckCounter +=
+                boundingHitbox.collisionCheckFrequency;
+            continue;
+          } else {
+            boundingHitbox.collisionCheckCounter = 0;
+          }
+        }
+      }
+
       var cellsToCheck = <Cell>[];
 
       if (withGridSupport.isOutOfCellBounds) {
