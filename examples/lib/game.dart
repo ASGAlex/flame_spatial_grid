@@ -432,6 +432,9 @@ class DemoMapLoader extends TiledMapLoader {
 
     super.genericTileBuilder(context);
   }
+
+  @override
+  Map<String, TileBuilderFunction>? get globalObjectBuilder => null;
 }
 //#endregion
 

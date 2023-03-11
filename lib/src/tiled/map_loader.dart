@@ -55,6 +55,10 @@ abstract class TiledMapLoader {
   /// initialization and during new cells creation.
   Map<String, TileBuilderFunction>? get tileBuilders;
 
+  /// Finds and process objects at any map's point. Useful for initialisation
+  /// process, for example to find player's initial position on a map.
+  Map<String, TileBuilderFunction>? get globalObjectBuilder;
+
   /// A function called after tile was successfully built. It is useful if you
   /// need some post-processing for every tile of you map.
   TileBuilderFunction? get cellPostBuilder => null;
@@ -129,6 +133,44 @@ abstract class TiledMapLoader {
     }
 
     _processTileType(tileMap: renderableTiledMap);
+
+    if (globalObjectBuilder != null) {
+      var layerPriority = 0;
+      for (final renderableLayer in renderableTiledMap.renderableLayers) {
+        layerPriority++;
+        final layer = renderableLayer.layer;
+        if (layer.type != LayerType.objectGroup) {
+          continue;
+        }
+
+        final objects = (layer as ObjectGroup).objects;
+        for (final object in objects) {
+          final processor = globalObjectBuilder![object.type];
+          if (processor != null) {
+            final layerInfo = LayerInfo(layer.name, layerPriority);
+            final position = Vector2(object.x, object.y) + initialPosition;
+            final size = Vector2(object.width, object.height);
+            Rect rect;
+            if (lazyLoad) {
+              rect = game.spatialGrid.getCellRectAtPosition(position);
+            } else {
+              final cell =
+                  game.spatialGrid.createNewCellAtPosition(position + size / 2);
+              rect = cell.rect;
+            }
+            final context = CellBuilderContext(
+              tiledObject: object,
+              position: position,
+              size: size,
+              cellRect: rect,
+              spatialGrid: game.spatialGrid,
+              layerInfo: layerInfo,
+            );
+            processor(context);
+          }
+        }
+      }
+    }
 
     return tiledComponent;
   }
