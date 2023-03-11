@@ -15,7 +15,7 @@ class CellStaticLayer extends CellLayer {
   Picture? layerPicture;
   Image? layerImage;
 
-  bool renderAsImage = true;
+  bool renderAsImage = false;
 
   @override
   void render(Canvas canvas) {
