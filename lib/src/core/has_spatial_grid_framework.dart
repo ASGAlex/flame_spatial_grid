@@ -1,7 +1,5 @@
 // ignore_for_file: comment_references
 
-import 'dart:math';
-
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
@@ -49,12 +47,13 @@ mixin HasSpatialGridFramework on FlameGame
   CellBuilderFunction? _onAfterCellBuild;
   double buildCellsPerUpdate = -1;
   double _buildCellsNow = 0;
-  double removeCellsPerUpdate = -1;
-  double _removeCellsNow = 0;
 
   double _suspendedCellLifetime = -1;
+  Duration suspendCellPrecision = const Duration(minutes: 1);
+  double _precisionDtCounter = 0;
+
   int collisionOptimizerGroupLimit = 25;
-  int buildCellsLimitToPauseEngine = 250;
+  int processCellsLimitToPauseEngine = 250;
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
@@ -95,15 +94,15 @@ mixin HasSpatialGridFramework on FlameGame
   ///   state should being kept in memory. If state will not be changed, the
   ///   cell will be queued for unload. All components at this cell will be
   ///   removed from game tree, resources will be freed.
-  /// - [buildCellsPerUpdate] and [removeCellsPerUpdate] - double values which
-  ///   describes, how many cells should be built or to be removes at one
+  /// - [buildCellsPerUpdate]  - double values which
+  ///   describes, how many cells should be built at one
   ///   [update] call. Building new cells includes loading map's chunks,
   ///   creating new components. loading sprites, compiling image compositions
   ///   and so on, so it is not cheap operation. Creating 3-5 cells at once
   ///   can be cause of heavy freezes of the game. Removing cell also means
   ///   images disposing, components removal from tree - this is cheaper but
   ///   still not too fast. So specify "0.25", for example, if you want to make
-  ///   the Framework to load (or unload) just 1 cell per 4 update() calls.
+  ///   the Framework to load just 1 cell per 4 update() calls.
   /// - [trackWindowSize] - enable calculation of necessary [activeRadius] to
   ///   keep viewport filled by active cells only.
   /// - [trackedComponent] - a game component which will be the center of
@@ -133,10 +132,9 @@ mixin HasSpatialGridFramework on FlameGame
     Size? unloadRadius,
     Size? preloadRadius,
     Duration suspendedCellLifetime = Duration.zero,
-    int maximumCells = -1,
-    int buildCellsLimitToPauseEngine = 250,
+    Duration suspendCellPrecision = const Duration(minutes: 1),
+    int processCellsLimitToPauseEngine = 250,
     double buildCellsPerUpdate = -1,
-    double removeCellsPerUpdate = -1,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -153,11 +151,11 @@ mixin HasSpatialGridFramework on FlameGame
     _cellBuilderNoMap = cellBuilderNoMap;
     _onAfterCellBuild = onAfterCellBuild;
     this.suspendedCellLifetime = suspendedCellLifetime;
-    this.maximumCells = maximumCells;
+    this.suspendCellPrecision = suspendCellPrecision;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
-    this.buildCellsLimitToPauseEngine = buildCellsLimitToPauseEngine;
+    this.processCellsLimitToPauseEngine = processCellsLimitToPauseEngine;
     if (maps != null) {
       this.maps = maps;
     }
@@ -194,7 +192,6 @@ mixin HasSpatialGridFramework on FlameGame
       await worldLoader.init(this);
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
-    this.removeCellsPerUpdate = removeCellsPerUpdate;
 
     if (lazyLoad) {
       final currentCell = spatialGrid.currentCell;
@@ -249,8 +246,6 @@ mixin HasSpatialGridFramework on FlameGame
   /// removed from game tree, resources will be freed.
   Duration get suspendedCellLifetime =>
       Duration(microseconds: (_suspendedCellLifetime * 1000000).toInt());
-
-  int maximumCells = -1;
 
   @override
   SpatialGridCollisionDetection get collisionDetection => _collisionDetection;
@@ -398,8 +393,8 @@ mixin HasSpatialGridFramework on FlameGame
 
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
-  int removeUnusedCells() {
-    final cellsToRemove = _catchCellsForRemoval();
+  int removeUnusedCells([List<Cell>? unusedCells]) {
+    final cellsToRemove = unusedCells ?? _catchCellsForRemoval();
     for (final cell in cellsToRemove) {
       cell.remove();
     }
@@ -408,42 +403,9 @@ mixin HasSpatialGridFramework on FlameGame
 
   List<Cell> _catchCellsForRemoval() {
     final cellsToRemove = <Cell>[];
-
-    if (maximumCells > 0) {
-      if (spatialGrid.cells.length > maximumCells) {
-        for (final cell in spatialGrid.cells.values) {
-          if (cell.state != CellState.suspended) {
-            continue;
-          }
-          if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
-            cellsToRemove.add(cell);
-          }
-        }
-      }
-    } else if (_suspendedCellLifetime > 0) {
-      final sortedCells = spatialGrid.cells.values.toList(growable: false)
-        ..sort((a, b) {
-          if (a.beingSuspendedTimeMicroseconds ==
-              b.beingSuspendedTimeMicroseconds) {
-            return 0;
-          }
-
-          return a.beingSuspendedTimeMicroseconds >
-                  b.beingSuspendedTimeMicroseconds
-              ? -1
-              : 1;
-        });
-
-      for (final cell in sortedCells) {
-        if (cell.state != CellState.suspended) {
-          continue;
-        }
-        if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
-          cellsToRemove.add(cell);
-        }
-        if (sortedCells.length - cellsToRemove.length <= maximumCells) {
-          break;
-        }
+    for (final cell in spatialGrid.suspendedCellsCache) {
+      if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+        cellsToRemove.add(cell);
       }
     }
     return cellsToRemove;
@@ -451,36 +413,9 @@ mixin HasSpatialGridFramework on FlameGame
 
   void _countSuspendedCellsTimers(double dt) {
     if (_suspendedCellLifetime > 0) {
-      for (final cell in spatialGrid.cells.values) {
-        if (cell.state != CellState.suspended) {
-          continue;
-        }
+      for (final cell in spatialGrid.suspendedCellsCache) {
         cell.beingSuspendedTimeMicroseconds += dt;
       }
-    }
-  }
-
-  void _autoRemoveOldCells() {
-    final cellsToRemove = _catchCellsForRemoval();
-    if (cellsToRemove.isEmpty) {
-      return;
-    }
-
-    if (removeCellsPerUpdate > 0) {
-      _removeCellsNow += removeCellsPerUpdate;
-      final cellsToProcess = min(_removeCellsNow.floor(), cellsToRemove.length);
-      for (var i = 0; i < cellsToProcess; i++) {
-        final cell = cellsToRemove.first;
-        cellsToRemove.remove(cell);
-        cell.remove();
-      }
-
-      _removeCellsNow -= cellsToProcess;
-    } else {
-      for (final cell in cellsToRemove) {
-        cell.remove();
-      }
-      cellsToRemove.clear();
     }
   }
 
@@ -507,20 +442,27 @@ mixin HasSpatialGridFramework on FlameGame
   @override
   void update(double dt) {
     if (_gameInitializationFinished) {
-      if (spatialGrid.cellsScheduledToBuild.length >
-          buildCellsLimitToPauseEngine) {
+      _precisionDtCounter += dt;
+      List<Cell>? toBeRemoved;
+      if (_precisionDtCounter * 1000 >= suspendCellPrecision.inMicroseconds) {
+        _countSuspendedCellsTimers(_precisionDtCounter);
+        toBeRemoved = _catchCellsForRemoval();
+        _precisionDtCounter = 0;
+      }
+
+      final totalCellsToProcess =
+          spatialGrid.cellsScheduledToBuild.length + (toBeRemoved?.length ?? 0);
+
+      if (totalCellsToProcess > processCellsLimitToPauseEngine) {
         toggleLoadingComponent();
         pauseEngine();
+        removeUnusedCells(toBeRemoved);
         _initializationLoop().then((_) {
           resumeEngine();
           toggleLoadingComponent();
         });
       } else {
         _buildNewCells();
-        _countSuspendedCellsTimers(dt);
-        if (removeCellsPerUpdate > 0) {
-          _autoRemoveOldCells();
-        }
 
         SpriteAnimationGlobalController.instance().update(dt);
         super.update(dt);

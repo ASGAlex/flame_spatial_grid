@@ -168,6 +168,11 @@ class Cell {
         !isCellBuildFinished) {
       spatialGrid.cellsScheduledToBuild.add(this);
     }
+    if (value == CellState.suspended) {
+      spatialGrid.suspendedCellsCache.add(this);
+    } else if (_state.value == CellState.suspended) {
+      spatialGrid.suspendedCellsCache.remove(this);
+    }
     _state.value = value;
     if (isCellBuildFinished) {
       updateComponentsState();
@@ -245,6 +250,7 @@ class Cell {
     rawBottom = null;
 
     spatialGrid.cells.remove(rect);
+    spatialGrid.suspendedCellsCache.remove(this);
     for (final component in components) {
       component.removeFromParent();
       component.currentCell = null;

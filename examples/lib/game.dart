@@ -77,10 +77,8 @@ all collisions are disabled.
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
       buildCellsPerUpdate: 1,
-      removeCellsPerUpdate: 1,
       suspendedCellLifetime: const Duration(minutes: 2),
-      maximumCells: 150,
-      buildCellsLimitToPauseEngine: 40,
+      processCellsLimitToPauseEngine: 40,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
