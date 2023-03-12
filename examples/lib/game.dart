@@ -165,6 +165,15 @@ all collisions are disabled.
       if (key == LogicalKeyboardKey.keyT) {
         teleportMode = !teleportMode;
       }
+      if (key == LogicalKeyboardKey.keyK) {
+        for (final npc in world.npcList) {
+          npc.removeFromParent();
+        }
+        world.npcList.clear();
+      }
+      if (key == LogicalKeyboardKey.keyC) {
+        world.spawnNpcTeam();
+      }
       if (key == LogicalKeyboardKey.keyI) {
         isAIEnabled = !isAIEnabled;
         final npcList = world.children.whereType<Npc>();
@@ -217,7 +226,7 @@ all collisions are disabled.
     for (final npc in world.npcList) {
       npc.isAIEnabled = true;
     }
-    world.npcList.clear();
+    // world.npcList.clear();
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
@@ -634,6 +643,7 @@ class Npc extends Player {
     ];
     manuallyControlled = false;
     paint.colorFilter = ColorFilter.matrix(matrix);
+    // _createColoredSprite();
     boundingBox.groupCollisionsTags
       ..add('Brick')
       ..add('Water');
@@ -706,19 +716,25 @@ class Npc extends Player {
     super.onCollision(intersectionPoints, other);
   }
 
-  Image? coloredSprite;
+  static Image? coloredSprite;
 
   @override
   Future<void> render(Canvas canvas) async {
-    if (coloredSprite == null) {
-      final recorder = PictureRecorder();
-      final recorderCanvas = Canvas(recorder);
-      recorderCanvas.saveLayer(null, paint);
-      super.render(recorderCanvas);
-      coloredSprite = await recorder.endRecording().toImageSafe(8, 8);
-    } else {
-      canvas.drawImage(coloredSprite!, Offset.zero, paint);
+    _createColoredSprite();
+    canvas.drawImage(coloredSprite!, Offset.zero, paint);
+  }
+
+  void _createColoredSprite() {
+    if (coloredSprite != null) {
+      return;
     }
+    final recorder = PictureRecorder();
+    final recorderCanvas = Canvas(recorder);
+    recorderCanvas.saveLayer(null, paint);
+    super.render(recorderCanvas);
+    final picture = recorder.endRecording();
+    coloredSprite = picture.toImageSync(8, 8);
+    picture.dispose();
   }
 }
 

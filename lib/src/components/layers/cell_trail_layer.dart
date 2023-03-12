@@ -70,8 +70,8 @@ class CellTrailLayer extends CellStaticLayer {
       final imageSize = layerCalculatedSize;
       final imageOffset = correctionTopLeft.clone();
 
-      final recorder = PictureRecorder();
-      final canvas = Canvas(recorder);
+      var recorder = PictureRecorder();
+      var canvas = Canvas(recorder);
       final decorator = Transform2DDecorator();
       decorator.transform2d.position = imageOffset * -1;
       decorator.applyChain(
@@ -80,18 +80,18 @@ class CellTrailLayer extends CellStaticLayer {
         },
         canvas,
       );
-      recorder
-          .endRecording()
-          .toImageSafe(imageSize.width.toInt(), imageSize.height.toInt())
-          .then((newImage) {
-        final recorder = PictureRecorder();
-        final canvas = Canvas(recorder);
-        canvas.drawImage(newImage, imageOffset.toOffset(), paint);
-        layerPicture = recorder.endRecording();
-        _operationsCount = 0;
+      final newPicture = recorder.endRecording();
+      final newImage = newPicture.toImageSync(
+          imageSize.width.toInt(), imageSize.height.toInt());
+      newPicture.dispose();
 
-        _imageRenderInProgress = false;
-      });
+      recorder = PictureRecorder();
+      canvas = Canvas(recorder);
+      canvas.drawImage(newImage, imageOffset.toOffset(), paint);
+      layerPicture = recorder.endRecording();
+      _operationsCount = 0;
+
+      _imageRenderInProgress = false;
     } else {
       _imageRenderInProgress = false;
     }
