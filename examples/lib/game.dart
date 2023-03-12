@@ -9,6 +9,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 import 'package:flutter/services.dart';
 
@@ -67,11 +68,17 @@ all collisions are disabled.
     tilesetManager.loadTileset('tileset.tsx');
 
     const blockSize = 100.0;
+    Size preloadRadius;
+    if (kIsWeb) {
+      preloadRadius = const Size(3, 3);
+    } else {
+      preloadRadius = const Size(15, 15);
+    }
     await initializeSpatialGrid(
       debug: false,
       activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
-      preloadRadius: const Size(10, 10),
+      preloadRadius: preloadRadius,
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
