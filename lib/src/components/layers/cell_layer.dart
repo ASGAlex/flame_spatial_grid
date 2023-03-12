@@ -145,37 +145,30 @@ abstract class CellLayer extends PositionComponent
   @override
   void updateTree(double dt) {
     if (isUpdateNeeded) {
-      if (isSuspended) {
-        dtElapsedWhileSuspended += dt;
-        updateSuspendedTree(dtElapsedWhileSuspended);
-      } else {
-        if (isRenewable) {
-          _updateTree(dt);
-          if (optimizeCollisions) {
-            collisionOptimizer.optimize();
-          }
-          final futures =
-              List<Future>.from(_pendingComponents, growable: false);
-          for (final future in futures) {
-            future.then((void _) {
-              _updateTree(dt);
-            });
-          }
-          Future.wait<void>(futures).whenComplete(() {
-            compileToSingleLayer(children);
-          });
-          _pendingComponents.clear();
-        } else {
-          _updateTree(dt);
-          final futures =
-              List<Future>.from(_pendingComponents, growable: false);
-          _pendingComponents.clear();
-          Future.wait<void>(futures).then<void>((value) {
-            compileToSingleLayer(nonRenewableComponents).then((void _) {
-              nonRenewableComponents.clear();
-            });
+      if (isRenewable) {
+        _updateTree(dt);
+        if (optimizeCollisions) {
+          collisionOptimizer.optimize();
+        }
+        final futures = List<Future>.from(_pendingComponents, growable: false);
+        for (final future in futures) {
+          future.then((void _) {
+            _updateTree(dt);
           });
         }
+        Future.wait<void>(futures).whenComplete(() {
+          compileToSingleLayer(children);
+        });
+        _pendingComponents.clear();
+      } else {
+        _updateTree(dt);
+        final futures = List<Future>.from(_pendingComponents, growable: false);
+        _pendingComponents.clear();
+        Future.wait<void>(futures).then<void>((value) {
+          compileToSingleLayer(nonRenewableComponents).then((void _) {
+            nonRenewableComponents.clear();
+          });
+        });
       }
     }
   }

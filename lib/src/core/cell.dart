@@ -163,11 +163,6 @@ class Cell {
     if (_state.value == value) {
       return;
     }
-    if (value != CellState.suspended &&
-        _state.value == CellState.suspended &&
-        !isCellBuildFinished) {
-      spatialGrid.cellsScheduledToBuild.add(this);
-    }
     if (value == CellState.suspended) {
       spatialGrid.suspendedCellsCache.add(this);
     } else if (_state.value == CellState.suspended) {
@@ -176,6 +171,10 @@ class Cell {
     _state.value = value;
     if (isCellBuildFinished) {
       updateComponentsState();
+    } else {
+      if (!spatialGrid.cellsScheduledToBuild.contains(this)) {
+        spatialGrid.cellsScheduledToBuild.add(this);
+      }
     }
   }
 

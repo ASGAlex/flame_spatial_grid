@@ -379,9 +379,6 @@ mixin HasSpatialGridFramework on FlameGame
       _buildCellsNow -= cellsToProcess;
     } else {
       for (final cell in spatialGrid.cellsScheduledToBuild) {
-        if (cell.state == CellState.suspended) {
-          continue;
-        }
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
@@ -444,7 +441,8 @@ mixin HasSpatialGridFramework on FlameGame
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
       List<Cell>? toBeRemoved;
-      if (_precisionDtCounter * 1000 >= suspendCellPrecision.inMicroseconds) {
+      if (_precisionDtCounter * 1000000 >=
+          suspendCellPrecision.inMicroseconds) {
         _countSuspendedCellsTimers(_precisionDtCounter);
         toBeRemoved = _catchCellsForRemoval();
         _precisionDtCounter = 0;

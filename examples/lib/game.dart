@@ -77,8 +77,8 @@ all collisions are disabled.
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
       buildCellsPerUpdate: 1,
-      suspendedCellLifetime: const Duration(minutes: 2),
-      processCellsLimitToPauseEngine: 40,
+      suspendedCellLifetime: const Duration(minutes: 5),
+      processCellsLimitToPauseEngine: 20,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -239,13 +239,14 @@ all collisions are disabled.
       final brick = Brick(position: position, sprite: spriteBrick);
       brick.currentCell = cell;
 
-      layersManager.addComponent(
+      final layer = layersManager.addComponent(
         component: brick,
         layerType: MapLayerType.static,
         layerName: 'Brick',
         absolutePosition: false,
         priority: 2,
       );
+      (layer as CellStaticLayer).renderAsImage = true;
     }
 
     for (var i = 0; i < 200; i++) {
@@ -275,7 +276,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-    position: Vector2(-100, 0),
+    position: Vector2(0, 0),
     size: Vector2.all(tileSize),
     priority: 10,
   );
@@ -316,18 +317,49 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     gameRef.spatialGrid.cells.forEach((rect, cell) {
       if (cell.rect.containsPoint(tapPosition)) {
         cellsUnderCursor.add(cell);
-        print('State:  + ${cell.state}');
-        print('Rect: $rect');
+        // print('State:  + ${cell.state}');
+        // print('Rect: $rect');
+
         // print('Components count: ${cell.components.length}');
       }
     });
 
+    for (final cell in cellsUnderCursor) {
+      for (final c in cell.components.toList()) {
+        if (c is CellStaticLayer) {
+          c.collisionOptimizer.optimize();
+          c.lifecycle.processQueues();
+          c.update(0.001);
+          for (final c in children) {
+            c.updateTree(0.001);
+          }
+
+          for (final hb in c.children) {
+            if (hb is GroupHitbox) {
+              print('grp');
+            }
+          }
+        }
+      }
+
+      final optimized = game
+          .collisionDetection.broadphase.optimizedCollisionsByGroupBox[cell];
+      print(optimized?.length);
+    }
+    print('========================================');
     final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {
       if (component is! HasGridSupport) {
         continue;
       }
-      print(component.runtimeType);
+      // if (component is CellStaticLayer) {
+      //   component.collisionOptimizer.optimize();
+      // }
+      //
+      // final optimized = game.collisionDetection.broadphase
+      //     .optimizedCollisionsByGroupBox[component.currentCell];
+      // print(optimized?.length);
+      // print(component.runtimeType);
     }
 
     if (game.teleportMode) {
