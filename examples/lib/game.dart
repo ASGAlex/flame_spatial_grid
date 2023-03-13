@@ -80,7 +80,7 @@ all collisions are disabled.
     if (kIsWeb) {
       preloadRadius = const Size(3, 3);
     } else {
-      preloadRadius = const Size(1, 1);
+      preloadRadius = const Size(10, 10);
     }
     await initializeSpatialGrid(
       debug: false,
