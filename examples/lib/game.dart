@@ -64,7 +64,6 @@ all collisions are disabled.
 
   @override
   Future<void> onLoad() async {
-    toggleLoadingComponent();
     super.onLoad();
 
     add(world);
@@ -81,7 +80,7 @@ all collisions are disabled.
     if (kIsWeb) {
       preloadRadius = const Size(3, 3);
     } else {
-      preloadRadius = const Size(8, 8);
+      preloadRadius = const Size(1, 1);
     }
     await initializeSpatialGrid(
       debug: false,
@@ -130,13 +129,19 @@ all collisions are disabled.
   bool overlayVisible = false;
 
   @override
-  Future<void> toggleLoadingComponent() async {
+  Future<void> showLoadingComponent() async {
+    if (!overlays.isActive('loading')) {
+      overlays.add('loading');
+      return Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  @override
+  Future<void> hideLoadingComponent() async {
     if (overlays.isActive('loading')) {
       overlays.remove('loading');
-    } else {
-      overlays.add('loading');
+      return Future.delayed(const Duration(milliseconds: 500));
     }
-    return Future.delayed(const Duration(milliseconds: 500));
   }
 
   @override
@@ -252,7 +257,7 @@ all collisions are disabled.
       npc.isAIEnabled = true;
     }
     // world.npcList.clear();
-    toggleLoadingComponent();
+    hideLoadingComponent();
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {

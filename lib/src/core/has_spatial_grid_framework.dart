@@ -148,6 +148,7 @@ mixin HasSpatialGridFramework on FlameGame
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
     LoadingProgressManager.lastProgressMinimum = 0;
+    showLoadingComponent();
     final progressManager = LoadingProgressManager<String>(
       'spatial grid',
       this,
@@ -488,15 +489,13 @@ mixin HasSpatialGridFramework on FlameGame
       final totalCellsToProcess =
           spatialGrid.cellsScheduledToBuild.length + (toBeRemoved?.length ?? 0);
 
-      if (totalCellsToProcess > processCellsLimitToPauseEngine) {
-        toggleLoadingComponent().then((value) {
-          pauseEngine();
-          removeUnusedCells(toBeRemoved);
-          _initializationLoop().then((_) {
-            resumeEngine();
-            toggleLoadingComponent();
-          });
-        });
+      if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
+        showLoadingComponent();
+        pauseEngine();
+        removeUnusedCells(toBeRemoved);
+        _gameInitializationFinished = false;
+        _initializationStepStage = InitializationStepStage.none;
+        resumeEngine();
       } else {
         _buildNewCells();
 
@@ -533,6 +532,7 @@ mixin HasSpatialGridFramework on FlameGame
 
   Future<void> _stepPrepareVariables() async {
     _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
+    _prepareCollisionsStage = 0;
     _initializationStepStage = InitializationStepStage.cells;
   }
 
@@ -567,6 +567,8 @@ mixin HasSpatialGridFramework on FlameGame
     );
     if (_prepareCollisionsStage == 0) {
       _prepareCollisionsStage = 1;
+      progressManager.setProgress(10);
+      return;
     }
 
     if (_prepareCollisionsStage == 1) {
@@ -574,11 +576,14 @@ mixin HasSpatialGridFramework on FlameGame
       super.update(0.001);
       progressManager.setProgress(40);
       _prepareCollisionsStage++;
+      return;
     } else {
+      pauseEngine();
       await layersManager.waitForComponents();
       collisionDetection.run();
       super.update(0.001);
       progressManager.setProgress(90);
+      resumeEngine();
 
       _initializationStepStage = InitializationStepStage.finalPass;
       _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
@@ -620,5 +625,7 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   @protected
-  Future<void> toggleLoadingComponent() async {}
+  Future<void> showLoadingComponent() async {}
+
+  Future<void> hideLoadingComponent() async {}
 }
