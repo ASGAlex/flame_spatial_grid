@@ -7,9 +7,9 @@ class LoadingProgressManager<M> {
     this.game, {
     int? min,
     this.max = 100,
-  }) : min = min ?? LoadingProgressManager.lastProgressValue;
+  }) : min = min ?? LoadingProgressManager.lastProgressMinimum;
 
-  static int lastProgressValue = 0;
+  static int lastProgressMinimum = 0;
 
   final String type;
   HasSpatialGridFramework game;
@@ -24,14 +24,7 @@ class LoadingProgressManager<M> {
   void setProgress(int value, [M? message]) {
     final converted = _convertValueForSubProcess(value);
     _progress = converted;
-    lastProgressValue = converted;
     game.onLoadingProgress(LoadingProgressMessage<M>(progress, type, message));
-  }
-
-  void incrementProgress(int value, [M? message]) {
-    final converted = _convertValueForSubProcess(value);
-    final currentProgress = LoadingProgressManager.lastProgressValue;
-    setProgress(currentProgress + converted, message);
   }
 
   int _convertValueForSubProcess(int value) {
@@ -49,7 +42,7 @@ class LoadingProgressManager<M> {
 
   void resetProgress() {
     _progress = 0;
-    lastProgressValue = 0;
+    lastProgressMinimum = 0;
   }
 }
 

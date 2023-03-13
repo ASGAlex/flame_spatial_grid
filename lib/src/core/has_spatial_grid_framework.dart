@@ -147,7 +147,7 @@ mixin HasSpatialGridFramework on FlameGame
     bool lazyLoad = true,
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
-    LoadingProgressManager.lastProgressValue = 0;
+    LoadingProgressManager.lastProgressMinimum = 0;
     final progressManager = LoadingProgressManager<String>(
       'spatial grid',
       this,
@@ -194,6 +194,7 @@ mixin HasSpatialGridFramework on FlameGame
     isSpatialGridDebugEnabled = debug ?? false;
 
     progressManager.setProgress(10, 'Loading worlds and maps');
+    LoadingProgressManager.lastProgressMinimum = 10;
 
     for (final map in this.maps) {
       await map.init(this);
@@ -538,6 +539,7 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> _stepBuildCells() async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _initializationStepStage = InitializationStepStage.collisions;
+      LoadingProgressManager.lastProgressMinimum = 90;
       return;
     }
     final processed =
@@ -545,7 +547,7 @@ mixin HasSpatialGridFramework on FlameGame
     final progressManager = LoadingProgressManager<String>(
       'Build cells',
       this,
-      max: 80,
+      max: 90,
     );
     final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
     await _buildOneCell(cell);
@@ -561,7 +563,7 @@ mixin HasSpatialGridFramework on FlameGame
     final progressManager = LoadingProgressManager<String>(
       'Optimize collisions',
       this,
-      max: 85,
+      max: 95,
     );
     if (_prepareCollisionsStage == 0) {
       _prepareCollisionsStage = 1;
@@ -580,6 +582,7 @@ mixin HasSpatialGridFramework on FlameGame
 
       _initializationStepStage = InitializationStepStage.finalPass;
       _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
+      LoadingProgressManager.lastProgressMinimum = 95;
     }
   }
 
@@ -592,7 +595,7 @@ mixin HasSpatialGridFramework on FlameGame
     final progressManager = LoadingProgressManager<String>(
       'Build additional cells',
       this,
-      max: 90,
+      max: 99,
     );
 
     final processed =
