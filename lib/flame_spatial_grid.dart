@@ -25,3 +25,4 @@ export 'src/tiled/tile_data_provider.dart';
 export 'src/tiled/tileset_manager.dart';
 export 'src/tiled/world_data.dart';
 export 'src/tiled/world_loader.dart';
+export 'src/ui/loading_progress_manager.dart';

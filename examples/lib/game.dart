@@ -8,6 +8,7 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flame_message_stream/flame_message_stream.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
@@ -23,8 +24,13 @@ class SpatialGridExample extends FlameGame
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
-        HasTappableComponents {
-  SpatialGridExample();
+        HasTappableComponents,
+        HasMessageProviders {
+  SpatialGridExample() {
+    loadingStream = messageProvidersManager
+        .getMessageProvider<LoadingProgressMessage<String>>('loading_progress')
+        .messagingStream;
+  }
 
   static const description = '''
 In this example the "Clusterizer" algorithm work. 
@@ -54,8 +60,11 @@ clusters are suspended: components are not rendering, update() not work and
 all collisions are disabled.
   ''';
 
+  late final Stream<LoadingProgressMessage<String>> loadingStream;
+
   @override
   Future<void> onLoad() async {
+    toggleLoadingComponent();
     super.onLoad();
 
     add(world);
@@ -72,7 +81,7 @@ all collisions are disabled.
     if (kIsWeb) {
       preloadRadius = const Size(3, 3);
     } else {
-      preloadRadius = const Size(15, 15);
+      preloadRadius = const Size(8, 8);
     }
     await initializeSpatialGrid(
       debug: false,
@@ -85,7 +94,7 @@ all collisions are disabled.
       rootComponent: world,
       buildCellsPerUpdate: 1,
       suspendedCellLifetime: const Duration(minutes: 5),
-      processCellsLimitToPauseEngine: 20,
+      processCellsLimitToPauseEngine: (preloadRadius.width + 1).toInt(),
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -121,12 +130,21 @@ all collisions are disabled.
   bool overlayVisible = false;
 
   @override
-  void toggleLoadingComponent() {
+  Future<void> toggleLoadingComponent() async {
     if (overlays.isActive('loading')) {
       overlays.remove('loading');
     } else {
       overlays.add('loading');
     }
+    return Future.delayed(const Duration(milliseconds: 500));
+  }
+
+  @override
+  void onLoadingProgress<M>(LoadingProgressMessage<M> message) {
+    messageProvidersManager
+        .getMessageProvider<LoadingProgressMessage<M>>('loading_progress')
+        .sendMessage(message);
+    super.onLoadingProgress(message);
   }
 
   @override
@@ -234,6 +252,7 @@ all collisions are disabled.
       npc.isAIEnabled = true;
     }
     // world.npcList.clear();
+    toggleLoadingComponent();
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
@@ -340,28 +359,6 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       }
     });
 
-    for (final cell in cellsUnderCursor) {
-      for (final c in cell.components.toList()) {
-        if (c is CellStaticLayer) {
-          c.collisionOptimizer.optimize();
-          c.lifecycle.processQueues();
-          c.update(0.001);
-          for (final c in children) {
-            c.updateTree(0.001);
-          }
-
-          for (final hb in c.children) {
-            if (hb is GroupHitbox) {
-              print('grp');
-            }
-          }
-        }
-      }
-
-      final optimized = game
-          .collisionDetection.broadphase.optimizedCollisionsByGroupBox[cell];
-      print(optimized?.length);
-    }
     print('========================================');
     final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {

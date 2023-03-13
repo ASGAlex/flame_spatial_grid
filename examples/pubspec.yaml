@@ -32,8 +32,12 @@ dependencies:
   flame: 1.6.0
   flame_spatial_grid: # ^1.0.2
     path: ../
+
+  flame_message_stream:
+    path: ../../flame_message_stream
   flutter:
     sdk: flutter
+
 
 
   # The following adds the Cupertino Icons font to your application.

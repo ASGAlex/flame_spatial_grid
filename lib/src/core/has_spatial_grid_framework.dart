@@ -145,6 +145,13 @@ mixin HasSpatialGridFramework on FlameGame
     bool lazyLoad = true,
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
+    LoadingProgressManager.lastProgressValue = 0;
+    final progressManager = LoadingProgressManager<String>(
+      'spatial grid',
+      this,
+    );
+    progressManager.setProgress(0, 'Init core variables');
+
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
     this.rootComponent.add(layersManager.layersRootComponent);
@@ -184,6 +191,8 @@ mixin HasSpatialGridFramework on FlameGame
 
     isSpatialGridDebugEnabled = debug ?? false;
 
+    progressManager.setProgress(10, 'Loading worlds and maps');
+
     for (final map in this.maps) {
       await map.init(this);
       TiledMapLoader.loadedMaps.add(map);
@@ -203,30 +212,49 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  Future<void> _initializationLoop() async {
+  Future<void> _initializationLoop([bool finalPass = false]) async {
     while (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
-      print('init loop: ${spatialGrid.cellsScheduledToBuild.length}');
-
-      await _buildNewCells(true);
+      await _buildNewCells(true, finalPass ? 100 : 80);
+      final progressManager = LoadingProgressManager<String>(
+        'Optimize collisions',
+        this,
+        max: finalPass ? 100 : 90,
+      );
       collisionDetection.run();
       super.update(0.001);
+      progressManager.setProgress(40);
       await layersManager.waitForComponents();
       collisionDetection.run();
       super.update(0.001);
+      progressManager.setProgress(100);
       if (trackWindowSize) {
         setRadiusByWindowDimensions();
       }
     }
+    final progressManager = LoadingProgressManager<String>(
+      'Final preparations',
+      this,
+    );
     await Future<void>.delayed(const Duration(seconds: 2));
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _gameInitializationFinished = true;
       onInitializationDone();
+      progressManager.setProgress(100);
     } else {
-      await _initializationLoop();
+      await _initializationLoop(true);
     }
   }
 
   void onInitializationDone() {}
+
+  void onLoadingProgress<M>(LoadingProgressMessage<M> message) {
+    if (message.data is String) {
+      print('${message.type} | progress: ${message.progress}% '
+          '| ${message.data}');
+    } else {
+      print('${message.type} | progress: ${message.progress}%');
+    }
+  }
 
   /// Call this at you application code at every place where zoom is done.
   /// Necessary for adopting [spatialGrid.activeRadius] to current screen's
@@ -355,7 +383,8 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
-  Future<void> _buildNewCells([bool forceAll = false]) async {
+  Future<void> _buildNewCells(
+      [bool forceAll = false, int progressMax = 80]) async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       return;
     }
@@ -378,11 +407,23 @@ mixin HasSpatialGridFramework on FlameGame
 
       _buildCellsNow -= cellsToProcess;
     } else {
+      final total = spatialGrid.cellsScheduledToBuild.length;
+      var processed = 0;
+      final progressManager = LoadingProgressManager<String>(
+        'Build cells',
+        this,
+        max: progressMax,
+      );
       for (final cell in spatialGrid.cellsScheduledToBuild) {
         await _cellBuilderMulti(cell, rootComponent);
         await _onAfterCellBuild?.call(cell, rootComponent);
         cell.isCellBuildFinished = true;
         cell.updateComponentsState();
+        processed++;
+        progressManager.setProgress(
+          processed * 100 ~/ total,
+          '$processed cells of $total built',
+        );
       }
       spatialGrid.cellsScheduledToBuild.clear();
     }
@@ -452,12 +493,13 @@ mixin HasSpatialGridFramework on FlameGame
           spatialGrid.cellsScheduledToBuild.length + (toBeRemoved?.length ?? 0);
 
       if (totalCellsToProcess > processCellsLimitToPauseEngine) {
-        toggleLoadingComponent();
-        pauseEngine();
-        removeUnusedCells(toBeRemoved);
-        _initializationLoop().then((_) {
-          resumeEngine();
-          toggleLoadingComponent();
+        toggleLoadingComponent().then((value) {
+          pauseEngine();
+          removeUnusedCells(toBeRemoved);
+          _initializationLoop().then((_) {
+            resumeEngine();
+            toggleLoadingComponent();
+          });
         });
       } else {
         _buildNewCells();
@@ -475,5 +517,5 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   @protected
-  void toggleLoadingComponent() {}
+  Future<void> toggleLoadingComponent() async {}
 }
