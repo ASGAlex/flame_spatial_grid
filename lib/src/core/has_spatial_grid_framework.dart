@@ -216,27 +216,6 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  Future<void> _initializationLoop([bool finalPass = false]) async {
-    while (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
-      await _buildNewCells(true, finalPass ? 100 : 80);
-      collisionDetection.run();
-      super.update(0.001);
-      await layersManager.waitForComponents();
-      collisionDetection.run();
-      super.update(0.001);
-      if (trackWindowSize) {
-        setRadiusByWindowDimensions();
-      }
-    }
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (spatialGrid.cellsScheduledToBuild.isEmpty) {
-      _gameInitializationFinished = true;
-      onInitializationDone();
-    } else {
-      await _initializationLoop(true);
-    }
-  }
-
   void onInitializationDone() {}
 
   void onLoadingProgress<M>(LoadingProgressMessage<M> message) {
