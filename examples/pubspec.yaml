@@ -34,7 +34,8 @@ dependencies:
     path: ../
 
   flame_message_stream:
-    path: ../../flame_message_stream
+    git: https://github.com/ASGAlex/flame_message_stream.git
+
   flutter:
     sdk: flutter
 

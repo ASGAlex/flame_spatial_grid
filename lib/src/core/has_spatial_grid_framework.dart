@@ -6,9 +6,9 @@ import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 
-enum InitializationState { coreClasses, maps, worlds, layers, cells }
+enum InitializationStepStage { none, cells, collisions, done }
 
 /// This class is starting point to add Framework's abilities into you game
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary!
@@ -54,6 +54,8 @@ mixin HasSpatialGridFramework on FlameGame
 
   int collisionOptimizerGroupLimit = 25;
   int processCellsLimitToPauseEngine = 250;
+
+  var _initializationStepStage = InitializationStepStage.none;
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
@@ -215,31 +217,19 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> _initializationLoop([bool finalPass = false]) async {
     while (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
       await _buildNewCells(true, finalPass ? 100 : 80);
-      final progressManager = LoadingProgressManager<String>(
-        'Optimize collisions',
-        this,
-        max: finalPass ? 100 : 90,
-      );
       collisionDetection.run();
       super.update(0.001);
-      progressManager.setProgress(40);
       await layersManager.waitForComponents();
       collisionDetection.run();
       super.update(0.001);
-      progressManager.setProgress(100);
       if (trackWindowSize) {
         setRadiusByWindowDimensions();
       }
     }
-    final progressManager = LoadingProgressManager<String>(
-      'Final preparations',
-      this,
-    );
     await Future<void>.delayed(const Duration(seconds: 2));
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _gameInitializationFinished = true;
       onInitializationDone();
-      progressManager.setProgress(100);
     } else {
       await _initializationLoop(true);
     }
@@ -248,11 +238,13 @@ mixin HasSpatialGridFramework on FlameGame
   void onInitializationDone() {}
 
   void onLoadingProgress<M>(LoadingProgressMessage<M> message) {
-    if (message.data is String) {
-      print('${message.type} | progress: ${message.progress}% '
-          '| ${message.data}');
-    } else {
-      print('${message.type} | progress: ${message.progress}%');
+    if (kDebugMode) {
+      if (message.data is String) {
+        print('${message.type} | progress: ${message.progress}% '
+            '| ${message.data}');
+      } else {
+        print('${message.type} | progress: ${message.progress}%');
+      }
     }
   }
 
@@ -383,8 +375,10 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
-  Future<void> _buildNewCells(
-      [bool forceAll = false, int progressMax = 80]) async {
+  Future<void> _buildNewCells([
+    bool forceAll = false,
+    int progressMax = 80,
+  ]) async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       return;
     }
@@ -395,10 +389,7 @@ mixin HasSpatialGridFramework on FlameGame
       for (var i = 0; i < cellsToProcess; i++) {
         if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
           final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
-          await _cellBuilderMulti(cell, rootComponent);
-          await _onAfterCellBuild?.call(cell, rootComponent);
-          cell.isCellBuildFinished = true;
-          cell.updateComponentsState();
+          await _buildOneCell(cell);
         } else {
           cellsToProcess = i;
           break;
@@ -415,10 +406,7 @@ mixin HasSpatialGridFramework on FlameGame
         max: progressMax,
       );
       for (final cell in spatialGrid.cellsScheduledToBuild) {
-        await _cellBuilderMulti(cell, rootComponent);
-        await _onAfterCellBuild?.call(cell, rootComponent);
-        cell.isCellBuildFinished = true;
-        cell.updateComponentsState();
+        await _buildOneCell(cell);
         processed++;
         progressManager.setProgress(
           processed * 100 ~/ total,
@@ -427,6 +415,13 @@ mixin HasSpatialGridFramework on FlameGame
       }
       spatialGrid.cellsScheduledToBuild.clear();
     }
+  }
+
+  Future<void> _buildOneCell(Cell cell) async {
+    await _cellBuilderMulti(cell, rootComponent);
+    await _onAfterCellBuild?.call(cell, rootComponent);
+    cell.isCellBuildFinished = true;
+    cell.updateComponentsState();
   }
 
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
@@ -509,10 +504,61 @@ mixin HasSpatialGridFramework on FlameGame
         collisionDetection.run();
       }
     } else {
-      pauseEngine();
-      _initializationLoop().then((_) {
-        resumeEngine();
-      });
+      _doInitializationStep();
+    }
+  }
+
+  int _totalCellsToBuild = -1;
+
+  Future<void> _doInitializationStep() async {
+    if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
+      if (_initializationStepStage == InitializationStepStage.none ||
+          _initializationStepStage == InitializationStepStage.cells) {
+        if (_initializationStepStage == InitializationStepStage.none) {
+          _initializationStepStage = InitializationStepStage.cells;
+          _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
+        }
+        final processed =
+            _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
+        final progressManager = LoadingProgressManager<String>(
+          'Build cells',
+          this,
+          max: 90,
+        );
+        final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
+        await _buildOneCell(cell);
+        progressManager.setProgress(
+          processed * 100 ~/ _totalCellsToBuild,
+          '$processed cells of $_totalCellsToBuild built',
+        );
+      } else if (_initializationStepStage ==
+          InitializationStepStage.collisions) {
+        _initializationLoop().then((value) {
+          _initializationStepStage = InitializationStepStage.done;
+          LoadingProgressManager<String>(
+            'Final pass',
+            this,
+          ).setProgress(100);
+        });
+      }
+    } else {
+      final progressManager = LoadingProgressManager<String>(
+        'Optimize collisions',
+        this,
+        max: 98,
+      );
+      if (_initializationStepStage == InitializationStepStage.cells) {
+        _initializationStepStage = InitializationStepStage.collisions;
+        collisionDetection.run();
+        super.update(0.001);
+        progressManager.setProgress(40);
+      } else if (_initializationStepStage ==
+          InitializationStepStage.collisions) {
+        await layersManager.waitForComponents();
+        collisionDetection.run();
+        super.update(0.001);
+        progressManager.setProgress(90);
+      }
     }
   }
 
