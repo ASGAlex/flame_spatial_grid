@@ -51,6 +51,7 @@ mixin HasSpatialGridFramework on FlameGame
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
   double _precisionDtCounter = 0;
+  int cellsLimitToCleanup = 50;
 
   int collisionOptimizerGroupLimit = 25;
   int processCellsLimitToPauseEngine = 250;
@@ -137,6 +138,7 @@ mixin HasSpatialGridFramework on FlameGame
     Duration suspendCellPrecision = const Duration(minutes: 1),
     int processCellsLimitToPauseEngine = 250,
     double buildCellsPerUpdate = -1,
+    int cellsLimitToCleanup = 50,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -162,6 +164,7 @@ mixin HasSpatialGridFramework on FlameGame
     _onAfterCellBuild = onAfterCellBuild;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.suspendCellPrecision = suspendCellPrecision;
+    this.cellsLimitToCleanup = cellsLimitToCleanup;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
@@ -415,11 +418,17 @@ mixin HasSpatialGridFramework on FlameGame
     return cellsToRemove.length;
   }
 
-  List<Cell> _catchCellsForRemoval() {
+  List<Cell> _catchCellsForRemoval([bool forceCleanup = false]) {
     final cellsToRemove = <Cell>[];
-    for (final cell in spatialGrid.suspendedCellsCache) {
-      if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
-        cellsToRemove.add(cell);
+    if (forceCleanup) {
+      return spatialGrid.suspendedCellsCache
+          .take(cellsLimitToCleanup)
+          .toList(growable: false);
+    } else {
+      for (final cell in spatialGrid.suspendedCellsCache) {
+        if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+          cellsToRemove.add(cell);
+        }
       }
     }
     return cellsToRemove;
@@ -458,10 +467,12 @@ mixin HasSpatialGridFramework on FlameGame
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
       List<Cell>? toBeRemoved;
+      final forceCleanup = spatialGrid.cells.length > cellsLimitToCleanup;
       if (_precisionDtCounter * 1000000 >=
-          suspendCellPrecision.inMicroseconds) {
+              suspendCellPrecision.inMicroseconds ||
+          forceCleanup) {
         _countSuspendedCellsTimers(_precisionDtCounter);
-        toBeRemoved = _catchCellsForRemoval();
+        toBeRemoved = _catchCellsForRemoval(forceCleanup);
         _precisionDtCounter = 0;
       }
 

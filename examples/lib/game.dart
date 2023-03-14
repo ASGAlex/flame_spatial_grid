@@ -91,6 +91,7 @@ all collisions are disabled.
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
       buildCellsPerUpdate: 1,
+      cellsLimitToCleanup: 100,
       suspendedCellLifetime: const Duration(minutes: 5),
       processCellsLimitToPauseEngine: (preloadRadius.width + 1).toInt(),
       cellBuilderNoMap: noMapCellBuilder,
