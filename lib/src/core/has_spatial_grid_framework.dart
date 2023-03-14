@@ -411,29 +411,55 @@ mixin HasSpatialGridFramework on FlameGame
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
   int removeUnusedCells([List<Cell>? unusedCells]) {
+    print('==================');
+    final broadphase = collisionDetection.broadphase;
+    var l0 = spatialGrid.cells.length;
+    var l1 = broadphase.optimizedCollisionsByGroupBox.length;
+    var l2 = broadphase.activeCollisionsByCell.length;
+    var l3 = broadphase.passiveCollisionsByCell.length;
+    print('$l0 | $l1 | $l2 | $l3 ');
+
     final cellsToRemove = unusedCells ?? _catchCellsForRemoval();
     for (final cell in cellsToRemove) {
       cell.remove();
     }
-    final broadphase = collisionDetection.broadphase;
+
     for (final entry in broadphase.optimizedCollisionsByGroupBox.entries
         .toList(growable: false)) {
-      if (entry.value.isEmpty) {
+      if (entry.value.isEmpty ||
+          entry.key.isRemoving ||
+          !spatialGrid.cells.containsKey(entry.key.rect)) {
         broadphase.optimizedCollisionsByGroupBox.remove(entry.key);
       }
     }
     for (final entry
         in broadphase.activeCollisionsByCell.entries.toList(growable: false)) {
-      if (entry.value.isEmpty) {
+      if (entry.value.isEmpty || entry.key.isRemoving) {
         broadphase.activeCollisionsByCell.remove(entry.key);
       }
     }
     for (final entry
         in broadphase.passiveCollisionsByCell.entries.toList(growable: false)) {
-      if (entry.value.isEmpty) {
+      if (entry.value.isEmpty || entry.key.isRemoving) {
         broadphase.passiveCollisionsByCell.remove(entry.key);
       }
     }
+
+    // FIXME: memory leak here, this is dirty fix!
+    // suspendedCellsCache empty, but suspended cells exists!
+    for (final entry in spatialGrid.cells.entries.toList(growable: false)) {
+      if (entry.value.state == CellState.suspended &&
+          !spatialGrid.suspendedCellsCache.contains(entry.value)) {
+        entry.value.remove();
+      }
+    }
+
+    l0 = spatialGrid.cells.length;
+    l1 = broadphase.optimizedCollisionsByGroupBox.length;
+    l2 = broadphase.activeCollisionsByCell.length;
+    l3 = broadphase.passiveCollisionsByCell.length;
+    print('$l0 | $l1 | $l2 | $l3 ');
+
     return cellsToRemove.length;
   }
 
@@ -501,20 +527,10 @@ mixin HasSpatialGridFramework on FlameGame
       if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
         showLoadingComponent();
         pauseEngine();
-        print('==================');
-        final broadphase = collisionDetection.broadphase;
-        var l1 = broadphase.optimizedCollisionsByGroupBox.length;
-        var l2 = broadphase.activeCollisionsByCell.length;
-        var l3 = broadphase.passiveCollisionsByCell.length;
-        print('$l1 | $l2 | $l3 ');
         removeUnusedCells(toBeRemoved);
         _gameInitializationFinished = false;
         _initializationStepStage = InitializationStepStage.none;
 
-        l1 = broadphase.optimizedCollisionsByGroupBox.length;
-        l2 = broadphase.activeCollisionsByCell.length;
-        l3 = broadphase.passiveCollisionsByCell.length;
-        print('$l1 | $l2 | $l3 ');
         resumeEngine();
       } else {
         _buildNewCells();
