@@ -106,9 +106,6 @@ class SpatialGrid {
   @internal
   final cellsScheduledToBuild = Queue<Cell>();
 
-  @internal
-  final suspendedCellsCache = Queue<Cell>();
-
   final Size blockSize;
 
   HasGridSupport? _trackedComponent;

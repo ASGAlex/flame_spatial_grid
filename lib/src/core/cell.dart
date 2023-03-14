@@ -160,14 +160,14 @@ class Cell {
   CellState tmpState = CellState.active;
 
   set state(CellState value) {
-    if (_state.value == value) {
+    final oldValue = _state.value;
+    if (oldValue == value) {
       return;
     }
     if (value == CellState.suspended) {
-      spatialGrid.suspendedCellsCache.add(this);
-    } else if (_state.value == CellState.suspended) {
-      spatialGrid.suspendedCellsCache.remove(this);
+      beingSuspendedTimeMicroseconds = 0;
     }
+
     _state.value = value;
     if (isCellBuildFinished) {
       updateComponentsState();
@@ -182,11 +182,9 @@ class Cell {
   void updateComponentsState() {
     switch (_state.value) {
       case CellState.active:
-        beingSuspendedTimeMicroseconds = 0;
         _activateComponents();
         break;
       case CellState.inactive:
-        beingSuspendedTimeMicroseconds = 0;
         _deactivateComponents();
         break;
       case CellState.suspended:
@@ -238,6 +236,9 @@ class Cell {
   /// remove all cell's components from game tree and dispose [state]'s
   /// listeners.
   void remove() {
+    if (_remove) {
+      return;
+    }
     _remove = true;
     rawLeft?.rawRight = null;
     rawLeft = null;
@@ -249,8 +250,6 @@ class Cell {
     rawBottom = null;
 
     spatialGrid.cells.remove(rect);
-    spatialGrid.suspendedCellsCache.remove(this);
-
     final broadphase = spatialGrid.game.collisionDetection.broadphase;
     broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
     broadphase.activeCollisionsByCell.remove(this)?.clear();

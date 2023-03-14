@@ -411,13 +411,7 @@ mixin HasSpatialGridFramework on FlameGame
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
   int removeUnusedCells([List<Cell>? unusedCells]) {
-    print('==================');
     final broadphase = collisionDetection.broadphase;
-    var l0 = spatialGrid.cells.length;
-    var l1 = broadphase.optimizedCollisionsByGroupBox.length;
-    var l2 = broadphase.activeCollisionsByCell.length;
-    var l3 = broadphase.passiveCollisionsByCell.length;
-    print('$l0 | $l1 | $l2 | $l3 ');
 
     final cellsToRemove = unusedCells ?? _catchCellsForRemoval();
     for (final cell in cellsToRemove) {
@@ -444,45 +438,39 @@ mixin HasSpatialGridFramework on FlameGame
         broadphase.passiveCollisionsByCell.remove(entry.key);
       }
     }
-
-    // FIXME: memory leak here, this is dirty fix!
-    // suspendedCellsCache empty, but suspended cells exists!
-    for (final entry in spatialGrid.cells.entries.toList(growable: false)) {
-      if (entry.value.state == CellState.suspended &&
-          !spatialGrid.suspendedCellsCache.contains(entry.value)) {
-        entry.value.remove();
-      }
-    }
-
-    l0 = spatialGrid.cells.length;
-    l1 = broadphase.optimizedCollisionsByGroupBox.length;
-    l2 = broadphase.activeCollisionsByCell.length;
-    l3 = broadphase.passiveCollisionsByCell.length;
-    print('$l0 | $l1 | $l2 | $l3 ');
-
     return cellsToRemove.length;
   }
 
   List<Cell> _catchCellsForRemoval([bool forceCleanup = false]) {
     final cellsToRemove = <Cell>[];
-    if (forceCleanup) {
-      return spatialGrid.suspendedCellsCache
-          .take(spatialGrid.cells.length - cellsLimitToCleanup)
-          .toList(growable: false);
-    } else {
-      for (final cell in spatialGrid.suspendedCellsCache) {
+
+    var index = 0;
+    for (final cell in spatialGrid.cells.values) {
+      if (cell.state != CellState.suspended) {
+        continue;
+      }
+
+      if (forceCleanup) {
+        if (index < spatialGrid.cells.length - cellsLimitToCleanup) {
+          cellsToRemove.add(cell);
+        }
+        index++;
+      } else {
         if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
           cellsToRemove.add(cell);
         }
       }
     }
+
     return cellsToRemove;
   }
 
   void _countSuspendedCellsTimers(double dt) {
     if (_suspendedCellLifetime > 0) {
-      for (final cell in spatialGrid.suspendedCellsCache) {
-        cell.beingSuspendedTimeMicroseconds += dt;
+      for (final cell in spatialGrid.cells.values) {
+        if (cell.state == CellState.suspended) {
+          cell.beingSuspendedTimeMicroseconds += dt;
+        }
       }
     }
   }
@@ -567,6 +555,7 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   Future<void> _stepPrepareVariables() async {
+    LoadingProgressManager.lastProgressMinimum = 10;
     _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
     _prepareCollisionsStage = 0;
     _initializationStepStage = InitializationStepStage.cells;
