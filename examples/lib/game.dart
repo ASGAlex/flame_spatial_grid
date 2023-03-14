@@ -78,13 +78,12 @@ all collisions are disabled.
     const blockSize = 100.0;
     Size preloadRadius;
     if (kIsWeb) {
-      preloadRadius = const Size(3, 3);
+      preloadRadius = const Size(2, 2);
     } else {
-      preloadRadius = const Size(10, 10);
+      preloadRadius = const Size(5, 5);
     }
     await initializeSpatialGrid(
       debug: false,
-      activeRadius: const Size(3, 2),
       unloadRadius: const Size(2, 2),
       preloadRadius: preloadRadius,
       collisionOptimizerDefaultGroupLimit: 50,
@@ -149,7 +148,6 @@ all collisions are disabled.
     messageProvidersManager
         .getMessageProvider<LoadingProgressMessage<M>>('loading_progress')
         .sendMessage(message);
-    super.onLoadingProgress(message);
   }
 
   @override
