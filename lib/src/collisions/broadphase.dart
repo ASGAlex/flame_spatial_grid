@@ -30,12 +30,13 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @protected
   final activeCollisions = HashSet<T>();
 
-  @protected
+  @internal
   final passiveCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
 
-  @protected
+  @internal
   final activeCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
 
+  @internal
   final optimizedCollisionsByGroupBox =
       <Cell, Map<GroupHitbox, OptimizedCollisionList>>{};
 

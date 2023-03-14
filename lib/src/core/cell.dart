@@ -250,9 +250,14 @@ class Cell {
 
     spatialGrid.cells.remove(rect);
     spatialGrid.suspendedCellsCache.remove(this);
+
+    final broadphase = spatialGrid.game.collisionDetection.broadphase;
+    broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
+    broadphase.activeCollisionsByCell.remove(this)?.clear();
+    broadphase.passiveCollisionsByCell.remove(this)?.clear();
+
     for (final component in components) {
       component.removeFromParent();
-      component.currentCell = null;
     }
     components.clear();
     _state.dispose();

@@ -182,6 +182,10 @@ mixin HasGridSupport on PositionComponent {
   @override
   void onRemove() {
     boundingBox.transform.removeListener(_onBoundingBoxTransform);
+    if (children.whereType<BoundingHitbox>().isEmpty) {
+      // otherwise it will be removed with hitbox removal.
+      currentCell = null;
+    }
   }
 
   @override

@@ -415,6 +415,25 @@ mixin HasSpatialGridFramework on FlameGame
     for (final cell in cellsToRemove) {
       cell.remove();
     }
+    final broadphase = collisionDetection.broadphase;
+    for (final entry in broadphase.optimizedCollisionsByGroupBox.entries
+        .toList(growable: false)) {
+      if (entry.value.isEmpty) {
+        broadphase.optimizedCollisionsByGroupBox.remove(entry.key);
+      }
+    }
+    for (final entry
+        in broadphase.activeCollisionsByCell.entries.toList(growable: false)) {
+      if (entry.value.isEmpty) {
+        broadphase.activeCollisionsByCell.remove(entry.key);
+      }
+    }
+    for (final entry
+        in broadphase.passiveCollisionsByCell.entries.toList(growable: false)) {
+      if (entry.value.isEmpty) {
+        broadphase.passiveCollisionsByCell.remove(entry.key);
+      }
+    }
     return cellsToRemove.length;
   }
 
@@ -422,7 +441,7 @@ mixin HasSpatialGridFramework on FlameGame
     final cellsToRemove = <Cell>[];
     if (forceCleanup) {
       return spatialGrid.suspendedCellsCache
-          .take(cellsLimitToCleanup)
+          .take(spatialGrid.cells.length - cellsLimitToCleanup)
           .toList(growable: false);
     } else {
       for (final cell in spatialGrid.suspendedCellsCache) {
@@ -482,9 +501,20 @@ mixin HasSpatialGridFramework on FlameGame
       if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
         showLoadingComponent();
         pauseEngine();
+        print('==================');
+        final broadphase = collisionDetection.broadphase;
+        var l1 = broadphase.optimizedCollisionsByGroupBox.length;
+        var l2 = broadphase.activeCollisionsByCell.length;
+        var l3 = broadphase.passiveCollisionsByCell.length;
+        print('$l1 | $l2 | $l3 ');
         removeUnusedCells(toBeRemoved);
         _gameInitializationFinished = false;
         _initializationStepStage = InitializationStepStage.none;
+
+        l1 = broadphase.optimizedCollisionsByGroupBox.length;
+        l2 = broadphase.activeCollisionsByCell.length;
+        l3 = broadphase.passiveCollisionsByCell.length;
+        print('$l1 | $l2 | $l3 ');
         resumeEngine();
       } else {
         _buildNewCells();
