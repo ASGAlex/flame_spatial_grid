@@ -5,7 +5,6 @@ import 'dart:collection';
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 enum _CellCreationContext { left, top, right, bottom }
@@ -79,7 +78,7 @@ class Cell {
   /// Cell's central point.
   late final Vector2 center;
 
-  final _state = ValueNotifier<CellState>(CellState.suspended);
+  var _state = CellState.suspended;
 
   /// Collection of component currently places inside this cell.
   /// Should not be modified manually!
@@ -154,13 +153,13 @@ class Cell {
   /// of components inside the cell.
   /// See [CellState] for detailed description of states meaning.
   /// See [updateComponentsState] to understand a part of internal mechanics.
-  CellState get state => _state.value;
+  CellState get state => _state;
 
   @internal
   CellState tmpState = CellState.active;
 
   set state(CellState value) {
-    final oldValue = _state.value;
+    final oldValue = _state;
     if (oldValue == value) {
       return;
     }
@@ -168,7 +167,7 @@ class Cell {
       beingSuspendedTimeMicroseconds = 0;
     }
 
-    _state.value = value;
+    _state = value;
     if (isCellBuildFinished) {
       updateComponentsState();
     } else {
@@ -180,7 +179,7 @@ class Cell {
 
   @internal
   void updateComponentsState() {
-    switch (_state.value) {
+    switch (_state) {
       case CellState.active:
         _activateComponents();
         break;
@@ -263,7 +262,6 @@ class Cell {
       component.removeFromParent();
     }
     components.clear();
-    _state.dispose();
   }
 
   Cell _createCell(_CellCreationContext direction) =>
