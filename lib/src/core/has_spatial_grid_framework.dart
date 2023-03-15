@@ -496,7 +496,7 @@ mixin HasSpatialGridFramework on FlameGame
   ///
   /// The rest of operations are made inside of [SpatialGridCollisionDetection]
   @override
-  void update(double dt) {
+  Future<void> update(double dt) async {
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
       List<Cell>? toBeRemoved;
@@ -528,63 +528,70 @@ mixin HasSpatialGridFramework on FlameGame
         collisionDetection.run();
       }
     } else {
-      _doInitializationStep();
+      final stopwatch = Stopwatch()..start();
+      while (stopwatch.elapsedMilliseconds <= 250 &&
+          !_gameInitializationFinished) {
+        final doInterfaceUpdate = await _doInitializationStep();
+        if (doInterfaceUpdate) {
+          break;
+        }
+      }
+      stopwatch.stop();
     }
   }
 
   int _totalCellsToBuild = -1;
 
-  Future<void> _doInitializationStep() async {
+  Future<bool> _doInitializationStep() async {
     switch (_initializationStepStage) {
       case InitializationStepStage.none:
-        _stepPrepareVariables();
-        break;
+        return _stepPrepareVariables();
       case InitializationStepStage.cells:
-        _stepBuildCells();
-        break;
+        return _stepBuildCells();
       case InitializationStepStage.collisions:
-        _stepPrepareCollisions();
-        break;
+        return _stepPrepareCollisions();
       case InitializationStepStage.finalPass:
-        _stepRepeatCellsBuild();
-        break;
+        return _stepRepeatCellsBuild();
       case InitializationStepStage.done:
-        _stepDone();
-        break;
+        return _stepDone();
     }
   }
 
-  Future<void> _stepPrepareVariables() async {
+  Future<bool> _stepPrepareVariables() async {
     LoadingProgressManager.lastProgressMinimum = 10;
     _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
     _prepareCollisionsStage = 0;
     _initializationStepStage = InitializationStepStage.cells;
+    return true;
   }
 
-  Future<void> _stepBuildCells() async {
-    if (spatialGrid.cellsScheduledToBuild.isEmpty) {
-      _initializationStepStage = InitializationStepStage.collisions;
-      LoadingProgressManager.lastProgressMinimum = 90;
-      return;
-    }
-    final processed =
-        _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
+  Future<bool> _stepBuildCells() async {
     final progressManager = LoadingProgressManager<String>(
       'Build cells',
       this,
       max: 90,
     );
+    if (spatialGrid.cellsScheduledToBuild.isEmpty) {
+      _initializationStepStage = InitializationStepStage.collisions;
+      LoadingProgressManager.lastProgressMinimum = 90;
+      progressManager.setProgress(100, 'All cells loaded');
+      return true;
+    }
+    final processed =
+        _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
+
     final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
     await _buildOneCell(cell);
     progressManager.setProgress(
       processed * 100 ~/ _totalCellsToBuild,
       '$processed cells of $_totalCellsToBuild built',
     );
+    return false;
   }
 
   int _prepareCollisionsStage = 0;
 
-  Future<void> _stepPrepareCollisions() async {
+  Future<bool> _stepPrepareCollisions() async {
     final progressManager = LoadingProgressManager<String>(
       'Optimize collisions',
       this,
@@ -593,7 +600,7 @@ mixin HasSpatialGridFramework on FlameGame
     if (_prepareCollisionsStage == 0) {
       _prepareCollisionsStage = 1;
       progressManager.setProgress(10);
-      return;
+      return false;
     }
 
     if (_prepareCollisionsStage == 1) {
@@ -601,7 +608,7 @@ mixin HasSpatialGridFramework on FlameGame
       super.update(0.001);
       progressManager.setProgress(40);
       _prepareCollisionsStage++;
-      return;
+      return true;
     } else {
       pauseEngine();
       await layersManager.waitForComponents();
@@ -613,13 +620,14 @@ mixin HasSpatialGridFramework on FlameGame
       _initializationStepStage = InitializationStepStage.finalPass;
       _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
       LoadingProgressManager.lastProgressMinimum = 95;
+      return true;
     }
   }
 
-  Future<void> _stepRepeatCellsBuild() async {
+  Future<bool> _stepRepeatCellsBuild() async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _initializationStepStage = InitializationStepStage.done;
-      return;
+      return true;
     }
 
     final progressManager = LoadingProgressManager<String>(
@@ -636,9 +644,10 @@ mixin HasSpatialGridFramework on FlameGame
       processed * 100 ~/ _totalCellsToBuild,
       '$processed cells of $_totalCellsToBuild built',
     );
+    return false;
   }
 
-  Future<void> _stepDone() async {
+  Future<bool> _stepDone() async {
     final progressManager = LoadingProgressManager<String>(
       'Done',
       this,
@@ -647,6 +656,7 @@ mixin HasSpatialGridFramework on FlameGame
 
     _gameInitializationFinished = true;
     onInitializationDone();
+    return true;
   }
 
   @protected
