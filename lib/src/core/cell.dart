@@ -250,7 +250,11 @@ class Cell {
     rawBottom = null;
 
     spatialGrid.cells.remove(rect);
-    final broadphase = spatialGrid.game.collisionDetection.broadphase;
+
+    final game = spatialGrid.game;
+    game.layersManager.layers.remove(this)?.clear();
+
+    final broadphase = game.collisionDetection.broadphase;
     broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
     broadphase.activeCollisionsByCell.remove(this)?.clear();
     broadphase.passiveCollisionsByCell.remove(this)?.clear();
