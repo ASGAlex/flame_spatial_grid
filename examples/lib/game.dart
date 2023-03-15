@@ -90,10 +90,11 @@ all collisions are disabled.
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
-      buildCellsPerUpdate: 1,
-      cellsLimitToCleanup: 100,
-      suspendedCellLifetime: const Duration(minutes: 5),
-      processCellsLimitToPauseEngine: (preloadRadius.width + 1).toInt(),
+      buildCellsPerUpdate: 5,
+      cellsLimitToCleanup: 200,
+      suspendedCellLifetime: const Duration(seconds: 120),
+      suspendCellPrecision: const Duration(seconds: 60),
+      processCellsLimitToPauseEngine: (20).toInt(),
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -149,6 +150,7 @@ all collisions are disabled.
     messageProvidersManager
         .getMessageProvider<LoadingProgressMessage<M>>('loading_progress')
         .sendMessage(message);
+    super.onLoadingProgress(message);
   }
 
   @override
@@ -232,14 +234,14 @@ all collisions are disabled.
   void onScroll(PointerScrollInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(1, 8.0);
   }
 
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(1, 8.0);
   }
 
   @override
