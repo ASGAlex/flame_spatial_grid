@@ -262,6 +262,7 @@ class Cell {
       component.removeFromParent();
     }
     components.clear();
+    _cachedRects.clear();
   }
 
   Cell _createCell(_CellCreationContext direction) =>

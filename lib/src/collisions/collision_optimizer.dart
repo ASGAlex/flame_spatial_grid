@@ -20,24 +20,14 @@ class CollisionOptimizer {
   HasSpatialGridFramework get game => parentLayer.game;
 
   void optimize() {
-    final cell = parentLayer.currentCell;
+    final cell = clear();
     if (cell == null) {
       return;
     }
 
     final optimizedCollisionsByGroupBox =
         game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
-    var collisionsListByGroup = optimizedCollisionsByGroupBox[cell];
-
-    if (collisionsListByGroup == null) {
-      optimizedCollisionsByGroupBox[cell] = collisionsListByGroup = {};
-    }
-    for (final optimized in _createdCollisionLists) {
-      collisionsListByGroup.remove(optimized.boundingBox);
-      parentLayer.remove(optimized.boundingBox, internalCall: true);
-    }
-    _createdCollisionLists.clear();
-    _alreadyProcessed.clear();
+    final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
 
     for (final child in parentLayer.children) {
       if (child is! HasGridSupport) {
@@ -145,6 +135,28 @@ class CollisionOptimizer {
     }
     return hitboxes;
   }
+
+  Cell? clear() {
+    final cell = parentLayer.currentCell;
+    if (cell == null) {
+      return null;
+    }
+
+    final optimizedCollisionsByGroupBox =
+        game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
+    var collisionsListByGroup = optimizedCollisionsByGroupBox[cell];
+
+    if (collisionsListByGroup == null) {
+      optimizedCollisionsByGroupBox[cell] = collisionsListByGroup = {};
+    }
+    for (final optimized in _createdCollisionLists) {
+      collisionsListByGroup.remove(optimized.boundingBox);
+      optimized.clear();
+    }
+    _createdCollisionLists.clear();
+    _alreadyProcessed.clear();
+    return cell;
+  }
 }
 
 extension RectSpecialOverlap on Rect {
@@ -212,6 +224,13 @@ class OptimizedCollisionList {
       size: rect.size.toVector2(),
     )..collisionType = CollisionType.passive;
     parentLayer.add(_boundingBox, internalCall: true);
+  }
+
+  void clear() {
+    _hitboxes.clear();
+    if (_boundingBox.parent != null) {
+      parentLayer.remove(_boundingBox, internalCall: true);
+    }
   }
 }
 

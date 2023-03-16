@@ -196,6 +196,15 @@ abstract class CellLayer extends PositionComponent
     if (cell != null) {
       game.layersManager.removeLayer(name: name, cell: cell);
     }
+    //needed for removing listeners
+    for (final component in children) {
+      final callback = _listenerChildrenUpdate.remove(component);
+      if (callback != null && component is HasGridSupport) {
+        component.transform.removeListener(callback);
+      }
+    }
+    _pendingComponents.clear();
+    collisionOptimizer.clear();
     super.onRemove();
   }
 

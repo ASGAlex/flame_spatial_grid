@@ -410,10 +410,10 @@ mixin HasSpatialGridFramework on FlameGame
 
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
-  int removeUnusedCells([List<Cell>? unusedCells]) {
+  int removeUnusedCells({bool forceCleanup = false, List<Cell>? unusedCells}) {
     final broadphase = collisionDetection.broadphase;
 
-    final cellsToRemove = unusedCells ?? _catchCellsForRemoval();
+    final cellsToRemove = unusedCells ?? _catchCellsForRemoval(forceCleanup);
     for (final cell in cellsToRemove) {
       cell.remove();
     }
@@ -515,7 +515,7 @@ mixin HasSpatialGridFramework on FlameGame
       if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
         showLoadingComponent();
         pauseEngine();
-        removeUnusedCells(toBeRemoved);
+        removeUnusedCells(unusedCells: toBeRemoved);
         _gameInitializationFinished = false;
         _initializationStepStage = InitializationStepStage.none;
 

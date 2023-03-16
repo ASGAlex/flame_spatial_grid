@@ -81,9 +81,9 @@ class SpatialGridCollisionDetection
           ),
         );
       }
-      if (spatialGridSupportComponent.parent == null) {
-        spatialGridSupportComponent.currentCell = null;
-      }
+      // if (spatialGridSupportComponent.parent == null) {
+      spatialGridSupportComponent.currentCell = null;
+      // }
     }
 
     broadphase.remove(item);

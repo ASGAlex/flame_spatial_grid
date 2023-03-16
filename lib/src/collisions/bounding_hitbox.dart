@@ -30,10 +30,7 @@ class BoundingHitbox extends RectangleHitbox {
     _parentWithGridSupport = parentWithGridSupport;
     minDistanceX = size.x / 2;
     minDistanceY = size.y / 2;
-    size.addListener(() {
-      minDistanceX = size.x / 2;
-      minDistanceY = size.y / 2;
-    });
+    size.addListener(_updateMinDistance);
   }
 
   bool _aabbCenterNotSet = true;
@@ -63,6 +60,11 @@ class BoundingHitbox extends RectangleHitbox {
   set aabbCenter(Vector2? value) {
     assert(value != null);
     _aabbCenter.setFrom(value!);
+  }
+
+  void _updateMinDistance() {
+    minDistanceX = size.x / 2;
+    minDistanceY = size.y / 2;
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
@@ -132,6 +134,8 @@ class BoundingHitbox extends RectangleHitbox {
       }
     }
     _broadphaseCheckCache.clear();
+
+    size.removeListener(_updateMinDistance);
   }
 }
 

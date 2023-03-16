@@ -38,7 +38,17 @@ class SpatialGridCameraWrapper extends PositionComponent
   void onAfterZoom() {
     try {
       game.onAfterZoom();
-    // ignore: avoid_catches_without_on_clauses, empty_catches
+      // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
+  }
+
+  @override
+  void onRemove() {
+    // ignore: invalid_use_of_internal_member
+    cameraComponent.viewfinder.transform.offset
+        .removeListener(onPositionChange);
+    // ignore: invalid_use_of_internal_member
+    cameraComponent.viewfinder.transform.scale.removeListener(onPositionChange);
+    super.onRemove();
   }
 }

@@ -39,9 +39,7 @@ class LayersManager {
   /// removal or if the layer become empty, without components inside.
   void removeLayer({required String name, required Cell cell}) {
     final layer = layers[cell]?.remove(name);
-    if (layer != null) {
-      layersRootComponent.remove(layer);
-    }
+    layer?.removeFromParent();
   }
 
   /// Gets a layer by it's unique [name] and [cell].
