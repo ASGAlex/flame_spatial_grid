@@ -38,8 +38,15 @@ class LayersManager {
   /// managed by the Framework and will be automatically removed in cell's
   /// removal or if the layer become empty, without components inside.
   void removeLayer({required String name, required Cell cell}) {
-    final layer = layers[cell]?.remove(name);
+    final cellLayers = layers[cell];
+    if (cellLayers == null) {
+      return;
+    }
+    final layer = cellLayers.remove(name);
     layer?.removeFromParent();
+    if (cellLayers.isEmpty) {
+      layers.remove(cell);
+    }
   }
 
   /// Gets a layer by it's unique [name] and [cell].

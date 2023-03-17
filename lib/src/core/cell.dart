@@ -251,7 +251,13 @@ class Cell {
     spatialGrid.cells.remove(rect);
 
     final game = spatialGrid.game;
-    game.layersManager.layers.remove(this)?.clear();
+    final cellLayers = game.layersManager.layers[this];
+    if (cellLayers != null) {
+      for (final layer in cellLayers.values) {
+        layer.removeFromParent();
+      }
+    }
+    game.layersManager.layers.remove(this);
 
     final broadphase = game.collisionDetection.broadphase;
     broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
