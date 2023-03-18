@@ -577,6 +577,9 @@ mixin HasSpatialGridFramework on FlameGame
       progressManager.setProgress(100, 'All cells loaded');
       return true;
     }
+    if (_totalCellsToBuild == 0) {
+      _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
+    }
     final processed =
         _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
 
@@ -663,4 +666,13 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> showLoadingComponent() async {}
 
   Future<void> hideLoadingComponent() async {}
+}
+
+extension QueueTree on Component {
+  void processQueuesTree() {
+    lifecycle.processQueues();
+    for (final child in children) {
+      child.processQueuesTree();
+    }
+  }
 }

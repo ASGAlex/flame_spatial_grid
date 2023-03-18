@@ -71,9 +71,21 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         final cell = operation.cell;
         if (operation.active) {
           activeCollisions.remove(operation.hitbox as T);
-          activeCollisionsByCell[cell]?.remove(operation.hitbox);
+          final cellCollisions = activeCollisionsByCell[cell];
+          if (cellCollisions != null) {
+            cellCollisions.remove(operation.hitbox);
+            if (cellCollisions.isEmpty) {
+              activeCollisionsByCell.remove(cell);
+            }
+          }
         } else {
-          passiveCollisionsByCell[cell]?.remove(operation.hitbox);
+          final cellCollisions = passiveCollisionsByCell[cell];
+          if (cellCollisions != null) {
+            cellCollisions.remove(operation.hitbox);
+            if (cellCollisions.isEmpty) {
+              passiveCollisionsByCell.remove(cell);
+            }
+          }
         }
       }
     }

@@ -259,15 +259,17 @@ class Cell {
     }
     game.layersManager.layers.remove(this);
 
-    final broadphase = game.collisionDetection.broadphase;
-    broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
-    broadphase.activeCollisionsByCell.remove(this)?.clear();
-    broadphase.passiveCollisionsByCell.remove(this)?.clear();
-
     for (final component in components) {
       component.removeFromParent();
     }
     components.clear();
+
+    game.processQueuesTree();
+
+    final broadphase = game.collisionDetection.broadphase;
+    broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
+    broadphase.activeCollisionsByCell.remove(this)?.clear();
+    broadphase.passiveCollisionsByCell.remove(this)?.clear();
     _cachedRects.clear();
   }
 

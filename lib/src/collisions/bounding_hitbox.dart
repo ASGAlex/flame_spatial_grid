@@ -136,6 +136,7 @@ class BoundingHitbox extends RectangleHitbox {
     _broadphaseCheckCache.clear();
 
     size.removeListener(_updateMinDistance);
+    _parentWithGridSupport = null;
   }
 }
 

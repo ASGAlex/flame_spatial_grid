@@ -199,7 +199,7 @@ abstract class CellLayer extends PositionComponent
     //needed for removing listeners
     for (final component in children) {
       final callback = _listenerChildrenUpdate.remove(component);
-      if (callback != null && component is HasGridSupport) {
+      if (callback != null && component is PositionComponent) {
         component.transform.removeListener(callback);
       }
     }

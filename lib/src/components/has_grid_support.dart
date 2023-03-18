@@ -113,7 +113,7 @@ mixin HasGridSupport on PositionComponent {
 
   /// If this component is that component which all spatial grid system keeps
   /// in center of grid?
-  bool get isTracked => this == currentCell?.spatialGrid.trackedComponent;
+  bool get isTracked => this == spatialGrid.trackedComponent;
 
   /// Bounding box for component and it's additional hitboxes. By default it is
   /// disabled from collision detection system, but you can change it's
@@ -181,6 +181,10 @@ mixin HasGridSupport on PositionComponent {
 
   @override
   void onRemove() {
+    if (isTracked) {
+      spatialGrid.trackedComponent = null;
+    }
+
     boundingBox.transform.removeListener(_onBoundingBoxTransform);
     if (children.whereType<BoundingHitbox>().isEmpty) {
       // otherwise it will be removed with hitbox removal.

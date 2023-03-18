@@ -191,7 +191,7 @@ all collisions are disabled.
         isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
       }
       if (key == LogicalKeyboardKey.keyR) {
-        removeUnusedCells();
+        removeUnusedCells(forceCleanup: true);
       }
       if (key == LogicalKeyboardKey.keyT) {
         teleportMode = !teleportMode;
@@ -745,6 +745,12 @@ class Npc extends Player {
     final picture = recorder.endRecording();
     coloredSprite = picture.toImageSync(8, 8);
     picture.dispose();
+  }
+
+  @override
+  void onRemove() {
+    game.world.npcList.remove(this);
+    super.onRemove();
   }
 }
 
