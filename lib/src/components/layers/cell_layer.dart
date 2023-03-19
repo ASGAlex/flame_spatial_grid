@@ -26,8 +26,6 @@ abstract class CellLayer extends PositionComponent
 
   bool optimizeCollisions = false;
 
-  bool doUpdateComponentsPriority = false;
-
   final bool isRenewable;
 
   @protected
@@ -146,14 +144,15 @@ abstract class CellLayer extends PositionComponent
   void updateTree(double dt) {
     if (isUpdateNeeded) {
       if (isRenewable) {
-        _updateTree(dt);
+        processQueuesTree();
         if (optimizeCollisions) {
           collisionOptimizer.optimize();
         }
         final futures = List<Future>.from(_pendingComponents, growable: false);
         for (final future in futures) {
+          //TODO: let it be cancellable
           future.then((void _) {
-            _updateTree(dt);
+            processQueuesTree();
           });
         }
         Future.wait<void>(futures).whenComplete(() {
@@ -161,32 +160,16 @@ abstract class CellLayer extends PositionComponent
         });
         _pendingComponents.clear();
       } else {
-        _updateTree(dt);
+        processQueuesTree();
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
+        //TODO: let it be cancellable
         Future.wait<void>(futures).then<void>((value) {
           compileToSingleLayer(nonRenewableComponents).then((void _) {
             nonRenewableComponents.clear();
           });
         });
       }
-    }
-  }
-
-  void _updateTree(double dt) {
-    if (doUpdateComponentsPriority) {
-      super.updateTree(dt);
-    } else {
-      _coreUpdateTreeOverride(dt);
-      isUpdateNeeded = false;
-    }
-  }
-
-  void _coreUpdateTreeOverride(double dt) {
-    lifecycle.processQueues();
-    update(dt);
-    for (final c in children) {
-      c.updateTree(dt);
     }
   }
 

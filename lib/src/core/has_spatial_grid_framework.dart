@@ -438,6 +438,16 @@ mixin HasSpatialGridFramework on FlameGame
         broadphase.passiveCollisionsByCell.remove(entry.key);
       }
     }
+
+    var i = 0;
+    for (final wr in Cell.weakRefCells.toList(growable: false)) {
+      final cell = wr.target;
+      if (cell != null) {
+        i++;
+      }
+    }
+    print('total: ${Cell.weakRefCells.length}; Not null: $i');
+
     return cellsToRemove.length;
   }
 
@@ -638,6 +648,10 @@ mixin HasSpatialGridFramework on FlameGame
       this,
       max: 99,
     );
+
+    if (_totalCellsToBuild == 0) {
+      _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
+    }
 
     final processed =
         _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;

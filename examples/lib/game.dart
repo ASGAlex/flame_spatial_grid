@@ -17,6 +17,7 @@ import 'package:flutter/services.dart';
 //#region World
 
 const tileSize = 8.0;
+const blockSize = 100.0;
 
 class SpatialGridExample extends FlameGame
     with
@@ -70,39 +71,41 @@ all collisions are disabled.
     player = world.player;
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
+    cameraComponent.moveTo(player.position);
     cameraComponent.follow(player, maxSpeed: 40);
 
     // check that manual loading works correctly (not necessary line)
     tilesetManager.loadTileset('tileset.tsx');
 
-    const blockSize = 100.0;
     Size preloadRadius;
     if (kIsWeb) {
       preloadRadius = const Size(2, 2);
     } else {
-      preloadRadius = const Size(5, 5);
+      preloadRadius = const Size(0, 0);
     }
     await initializeSpatialGrid(
       debug: false,
-      unloadRadius: const Size(2, 2),
+      activeRadius: const Size(1, 1),
+      trackWindowSize: false,
+      unloadRadius: const Size(1, 1),
       preloadRadius: preloadRadius,
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
-      buildCellsPerUpdate: 5,
-      cellsLimitToCleanup: 200,
-      suspendedCellLifetime: const Duration(seconds: 120),
-      suspendCellPrecision: const Duration(seconds: 60),
+      buildCellsPerUpdate: 50,
+      cellsLimitToCleanup: 10,
+      suspendedCellLifetime: const Duration(seconds: 5),
+      suspendCellPrecision: const Duration(seconds: 5),
       processCellsLimitToPauseEngine: (20).toInt(),
       cellBuilderNoMap: noMapCellBuilder,
-      maps: [
-        DemoMapLoader(Vector2(600, 0)),
-      ],
-      worldLoader: WorldLoader(
-        fileName: 'example.world',
-        mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
-      ),
+      // maps: [
+      //   DemoMapLoader(Vector2(600, 0)),
+      // ],
+      // worldLoader: WorldLoader(
+      //   fileName: 'example.world',
+      //   mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
+      // ),
     );
     // await demoMapLoader.init(this);
     layersManager.layersRootComponent.add(player);
@@ -263,17 +266,15 @@ all collisions are disabled.
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
     // return;
-    final map = TiledMapLoader.loadedMaps.whereType<DemoMapLoader>().first;
-
-    final spriteBrick = map.getPreloadedTileData('tileset', 'Brick')?.sprite;
+    final spriteBrick = tilesetManager.getTile('tileset', 'Brick')?.sprite;
     final waterAnimation =
-        map.getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
+        tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;
 
-    for (var i = 0; i < 200; i++) {
+    for (var i = 0; i < 0; i++) {
       final random = Random();
-      final diffX = random.nextInt((map.blockSize / 2 - 25).ceil()).toDouble() *
+      final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((map.blockSize / 2 - 25).ceil()).toDouble() *
+      final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
       final position = (cell.rect.size / 2).toVector2()
         ..add(Vector2(diffX, diffY));
@@ -290,11 +291,11 @@ all collisions are disabled.
       (layer as CellStaticLayer).renderAsImage = true;
     }
 
-    for (var i = 0; i < 200; i++) {
+    for (var i = 0; i < 0; i++) {
       final random = Random();
-      final diffX = random.nextInt((map.blockSize / 2 - 20).ceil()).toDouble() *
+      final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((map.blockSize / 2 - 20).ceil()).toDouble() *
+      final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
       final position = (cell.rect.size / 2).toVector2()
         ..add(Vector2(diffX, diffY));
@@ -317,7 +318,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-    position: Vector2(0, 0),
+    position: Vector2(-560, -560),
     size: Vector2.all(tileSize),
     priority: 10,
   );
@@ -334,6 +335,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam() {
+    return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
@@ -469,8 +471,6 @@ class DemoMapLoader extends TiledMapLoader {
     }
   }
 
-  final blockSize = 100.0;
-
   Future<void> onBackgroundBuilder(CellBuilderContext context) async {
     var priority = -1;
     if (context.layerInfo.name == 'bricks') {
@@ -539,6 +539,7 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
+    return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;

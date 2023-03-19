@@ -216,34 +216,33 @@ abstract class TiledMapLoader {
     if (provider == null) {
       return;
     }
-    TileComponent.fromProvider(provider).then((component) {
-      component.currentCell = context.cell;
-      component.position = context.position;
-      component.size = context.size;
-      var priority = -100;
-      if (context.priorityOverride != null) {
-        priority = context.priorityOverride!;
-      } else {
-        priority = context.layerInfo.priority;
-      }
-      if (component.sprite != null) {
-        game.layersManager.addComponent(
-          component: component,
-          layerName: 'static-${context.layerInfo.name}',
-          layerType: MapLayerType.static,
-          isRenewable: false,
-          priority: priority,
-        );
-      } else if (component.animation != null) {
-        game.layersManager.addComponent(
-          component: component,
-          layerName: 'animated-${context.layerInfo.name}',
-          layerType: MapLayerType.animated,
-          isRenewable: false,
-          priority: priority,
-        );
-      }
-    });
+    final component = await TileComponent.fromProvider(provider);
+    component.currentCell = context.cell;
+    component.position = context.position;
+    component.size = context.size;
+    var priority = -100;
+    if (context.priorityOverride != null) {
+      priority = context.priorityOverride!;
+    } else {
+      priority = context.layerInfo.priority;
+    }
+    if (component.sprite != null) {
+      game.layersManager.addComponent(
+        component: component,
+        layerName: 'static-${context.layerInfo.name}',
+        layerType: MapLayerType.static,
+        isRenewable: false,
+        priority: priority,
+      );
+    } else if (component.animation != null) {
+      game.layersManager.addComponent(
+        component: component,
+        layerName: 'animated-${context.layerInfo.name}',
+        layerType: MapLayerType.animated,
+        isRenewable: false,
+        priority: priority,
+      );
+    }
   }
 
   /// Is useful when working with worlds with multiple maps and areas without

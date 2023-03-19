@@ -31,15 +31,16 @@ typedef CellBuilderFunction = Future<void> Function(
 class SpatialGrid {
   /// See [HasSpatialGridFramework.initializeSpatialGrid] function for full
   /// description of arguments.
-  SpatialGrid(
-      {required this.blockSize,
-      HasGridSupport? trackedComponent,
-      Vector2? initialPosition,
-      required this.game,
-      bool lazyLoad = true,
-      Size? activeRadius,
-      required Size? unloadRadius,
-      Size? preloadRadius}) {
+  SpatialGrid({
+    required this.blockSize,
+    HasGridSupport? trackedComponent,
+    Vector2? initialPosition,
+    required this.game,
+    bool lazyLoad = true,
+    Size? activeRadius,
+    required Size? unloadRadius,
+    Size? preloadRadius,
+  }) {
     this.activeRadius = activeRadius ?? const Size(2, 2);
     this.unloadRadius = unloadRadius ?? const Size(5, 5);
     this.preloadRadius = preloadRadius ?? const Size(5, 5);

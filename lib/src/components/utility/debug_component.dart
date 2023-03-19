@@ -31,6 +31,11 @@ class SpatialGridDebugComponent extends PositionComponent
     paintFillUnloaded.color = Colors.black54;
     setPaint('unloaded', paintFillUnloaded);
 
+    final paintFillBroken = Paint();
+    paintFillBroken.style = PaintingStyle.fill;
+    paintFillBroken.color = Colors.orange;
+    setPaint('broken', paintFillBroken);
+
     final paintBorder = Paint();
     paintBorder.style = PaintingStyle.stroke;
     paintBorder.color = Colors.redAccent;
@@ -52,6 +57,7 @@ class SpatialGridDebugComponent extends PositionComponent
     final fill = getPaint('fill');
     final inactive = getPaint('inactive');
     final unloaded = getPaint('unloaded');
+    final broken = getPaint('broken');
     final border = getPaint('border');
     for (final element in spatialGrid.cells.entries) {
       if (element.value.state == CellState.active) {
@@ -89,6 +95,14 @@ class SpatialGridDebugComponent extends PositionComponent
           element.key.bottom - 15,
         );
         textPaintOK.render(canvas, 'B', pos);
+      }
+    }
+
+    for (final wr in Cell.weakRefCells.toList(growable: false)) {
+      final cell = wr.target;
+      if (cell != null) {
+        canvas.drawRect(cell.rect, broken);
+        canvas.drawRect(cell.rect, border);
       }
     }
   }

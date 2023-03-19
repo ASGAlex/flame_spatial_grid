@@ -75,6 +75,9 @@ mixin HasGridSupport on PositionComponent {
 
   set currentCell(Cell? value) {
     final previousCell = _currentCell;
+    if (previousCell == value) {
+      return;
+    }
     if (previousCell != null && !previousCell.isRemoving) {
       previousCell.components.remove(this);
     }
