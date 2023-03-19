@@ -195,6 +195,8 @@ mixin HasSpatialGridFramework on FlameGame
       onComponentTypeCheck: onComponentTypeCheck,
     );
 
+    spatialGrid.updateCellsStateByRadius();
+
     isSpatialGridDebugEnabled = debug ?? false;
 
     progressManager.setProgress(10, 'Loading worlds and maps');
@@ -617,16 +619,16 @@ mixin HasSpatialGridFramework on FlameGame
     }
 
     if (_prepareCollisionsStage == 1) {
-      collisionDetection.run();
-      super.update(0.001);
+      collisionDetection.broadphase.update();
+      processQueuesTree();
       progressManager.setProgress(40);
       _prepareCollisionsStage++;
       return true;
     } else {
       pauseEngine();
       await layersManager.waitForComponents();
-      collisionDetection.run();
-      super.update(0.001);
+      collisionDetection.broadphase.update();
+      processQueuesTree();
       progressManager.setProgress(90);
       resumeEngine();
 

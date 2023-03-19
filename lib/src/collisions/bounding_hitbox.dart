@@ -137,6 +137,7 @@ class BoundingHitbox extends RectangleHitbox {
 
     size.removeListener(_updateMinDistance);
     _parentWithGridSupport = null;
+    super.onRemove();
   }
 }
 

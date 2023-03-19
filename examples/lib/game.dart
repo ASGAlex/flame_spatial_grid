@@ -71,8 +71,7 @@ all collisions are disabled.
     player = world.player;
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
-    cameraComponent.moveTo(player.position);
-    cameraComponent.follow(player, maxSpeed: 40);
+    cameraComponent.follow(player, maxSpeed: 40, snap: true);
 
     // check that manual loading works correctly (not necessary line)
     tilesetManager.loadTileset('tileset.tsx');
@@ -335,7 +334,6 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam() {
-    return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
@@ -346,7 +344,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
         priority: player.priority,
       );
       add(npc);
-      npcList.add(npc);
+      // npcList.add(npc);
       npcCount++;
     }
   }
