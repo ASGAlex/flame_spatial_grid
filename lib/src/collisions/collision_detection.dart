@@ -29,7 +29,7 @@ class SpatialGridCollisionDetection
     item.onAabbChanged = () => _scheduledUpdateAfterTransform.add(item);
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent != null) {
-      withGridSupportComponent.setSpatialGrid(spatialGrid);
+      withGridSupportComponent.spatialGrid = spatialGrid;
       // ignore: prefer_function_declarations_over_variables
       final listenerCollisionType = () {
         if (item.isMounted) {

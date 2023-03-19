@@ -100,23 +100,16 @@ mixin HasGridSupport on PositionComponent {
       if (hitbox is! ShapeHitbox) {
         continue;
       }
-      spatialGrid.game.collisionDetection.broadphase
+      spatialGrid?.game.collisionDetection.broadphase
           .updateHitboxIndexes(hitbox, previousCell);
     }
   }
 
-  SpatialGrid? _spatialGrid;
-
-  SpatialGrid get spatialGrid => _spatialGrid!;
-
-  @internal
-  void setSpatialGrid(SpatialGrid spatialGrid) {
-    _spatialGrid ??= spatialGrid;
-  }
+  SpatialGrid? spatialGrid;
 
   /// If this component is that component which all spatial grid system keeps
   /// in center of grid?
-  bool get isTracked => this == spatialGrid.trackedComponent;
+  bool get isTracked => this == spatialGrid?.trackedComponent;
 
   /// Bounding box for component and it's additional hitboxes. By default it is
   /// disabled from collision detection system, but you can change it's
@@ -185,7 +178,7 @@ mixin HasGridSupport on PositionComponent {
   @override
   void onRemove() {
     if (isTracked) {
-      spatialGrid.trackedComponent = null;
+      spatialGrid?.trackedComponent = null;
     }
 
     boundingBox.transform.removeListener(_onBoundingBoxTransform);
@@ -238,6 +231,10 @@ mixin HasGridSupport on PositionComponent {
   /// [currentCell], probably create new one...
   @internal
   void updateTransform() {
+    final spatialGrid = this.spatialGrid;
+    if(spatialGrid == null) {
+      return;
+    }
     boundingBox.aabbCenter = boundingBox.aabb.center;
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;

@@ -269,7 +269,7 @@ all collisions are disabled.
     final waterAnimation =
         tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;
 
-    for (var i = 0; i < 0; i++) {
+    for (var i = 0; i < 2; i++) {
       final random = Random();
       final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
@@ -290,7 +290,7 @@ all collisions are disabled.
       (layer as CellStaticLayer).renderAsImage = true;
     }
 
-    for (var i = 0; i < 0; i++) {
+    for (var i = 0; i < 2; i++) {
       final random = Random();
       final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
@@ -537,7 +537,6 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
-    return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
