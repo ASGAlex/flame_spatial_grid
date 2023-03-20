@@ -537,6 +537,7 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
+    return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
@@ -826,7 +827,7 @@ class Bullet extends PositionComponent
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable {
+    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Brick({required super.position, required super.sprite, this.context}) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
@@ -850,7 +851,7 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteAnimationComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable {
+    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
   Water({required super.position, required super.animation, this.context}) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;

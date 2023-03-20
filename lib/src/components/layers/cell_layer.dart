@@ -170,6 +170,7 @@ abstract class CellLayer extends PositionComponent
           });
         });
       }
+      isUpdateNeeded = false;
     }
   }
 
