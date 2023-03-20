@@ -269,7 +269,7 @@ all collisions are disabled.
     final waterAnimation =
         tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;
 
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < 200; i++) {
       final random = Random();
       final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
@@ -290,7 +290,7 @@ all collisions are disabled.
       (layer as CellStaticLayer).renderAsImage = true;
     }
 
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < 200; i++) {
       final random = Random();
       final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
           (random.nextBool() ? -1 : 1);
