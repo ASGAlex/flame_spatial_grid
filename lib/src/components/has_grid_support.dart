@@ -154,6 +154,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   @override
+  @mustCallSuper
   FutureOr<void>? add(Component component) {
     if (component != boundingBox && component is ShapeHitbox) {
       final currentRect = boundingBox.shouldFillParent
@@ -176,6 +177,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   @override
+  @mustCallSuper
   void onRemove() {
     if (isTracked) {
       spatialGrid?.trackedComponent = null;
@@ -232,7 +234,7 @@ mixin HasGridSupport on PositionComponent {
   @internal
   void updateTransform() {
     final spatialGrid = this.spatialGrid;
-    if(spatialGrid == null) {
+    if (spatialGrid == null) {
       return;
     }
     boundingBox.aabbCenter = boundingBox.aabb.center;

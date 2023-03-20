@@ -21,34 +21,37 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.purple,
       ),
       home: GameWidget.controlled(
-          gameFactory: SpatialGridExample.new,
-          overlayBuilderMap: {
-            'loading': (BuildContext ctx, SpatialGridExample game) {
-              return Material(
-                  type: MaterialType.transparency,
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(
-                      sigmaX: 5.0,
-                      sigmaY: 5.0,
-                    ),
-                    child: StreamBuilder<LoadingProgressMessage<String>>(
-                      stream: game.loadingStream,
-                      builder: (context, snapshot) {
-                        final progress = snapshot.data?.progress ?? 0;
-                        return Center(
-                            child: Text(
-                          'Loading: $progress% ',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ));
-                      },
-                    ),
-                  ));
-            }
-          }),
+        gameFactory: SpatialGridExample.new,
+        overlayBuilderMap: {
+          'loading': (BuildContext ctx, SpatialGridExample game) {
+            return Material(
+              type: MaterialType.transparency,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(
+                  sigmaX: 5.0,
+                  sigmaY: 5.0,
+                ),
+                child: StreamBuilder<LoadingProgressMessage<String>>(
+                  stream: game.loadingStream,
+                  builder: (context, snapshot) {
+                    final progress = snapshot.data?.progress ?? 0;
+                    return Center(
+                      child: Text(
+                        'Loading: $progress% ',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            );
+          }
+        },
+      ),
     );
   }
 }

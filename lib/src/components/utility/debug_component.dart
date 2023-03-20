@@ -97,13 +97,5 @@ class SpatialGridDebugComponent extends PositionComponent
         textPaintOK.render(canvas, 'B', pos);
       }
     }
-
-    for (final wr in Cell.weakRefCells.toList(growable: false)) {
-      final cell = wr.target;
-      if (cell != null) {
-        canvas.drawRect(cell.rect, broken);
-        canvas.drawRect(cell.rect, border);
-      }
-    }
   }
 }

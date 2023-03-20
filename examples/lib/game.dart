@@ -74,7 +74,7 @@ all collisions are disabled.
     cameraComponent.follow(player, maxSpeed: 40, snap: true);
 
     // check that manual loading works correctly (not necessary line)
-    tilesetManager.loadTileset('tileset.tsx');
+    await tilesetManager.loadTileset('tileset.tsx');
 
     Size preloadRadius;
     if (kIsWeb) {
@@ -826,7 +826,7 @@ class Bullet extends PositionComponent
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
+    with CollisionCallbacks, HasGridSupport, GameCollideable {
   Brick({required super.position, required super.sprite, this.context}) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
@@ -850,7 +850,7 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteAnimationComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
+    with CollisionCallbacks, HasGridSupport, GameCollideable {
   Water({required super.position, required super.animation, this.context}) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;

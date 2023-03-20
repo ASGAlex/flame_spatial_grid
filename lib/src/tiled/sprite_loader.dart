@@ -56,8 +56,10 @@ extension SpriteLoader on Tile {
     }
 
     return Future.wait<void>(futures).then<SpriteAnimation>((value) {
-      return SpriteAnimation.variableSpriteList(spriteList,
-          stepTimes: stepTimes);
+      return SpriteAnimation.variableSpriteList(
+        spriteList,
+        stepTimes: stepTimes,
+      );
     });
   }
 

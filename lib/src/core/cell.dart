@@ -34,8 +34,6 @@ enum CellState {
 /// Usually you do not need to use any of it's methods. But you absolutely
 /// should to ensure that component's [HasGridSupport.currentCell] is not null.
 class Cell {
-  static final weakRefCells = <WeakReference<Cell>>[];
-
   Cell({
     required this.spatialGrid,
     required this.rect,
@@ -273,8 +271,6 @@ class Cell {
     broadphase.activeCollisionsByCell.remove(this)?.clear();
     broadphase.passiveCollisionsByCell.remove(this)?.clear();
     _cachedRects.clear();
-
-    weakRefCells.add(WeakReference(this));
   }
 
   Cell _createCell(_CellCreationContext direction) =>

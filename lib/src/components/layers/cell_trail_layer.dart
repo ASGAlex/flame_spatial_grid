@@ -82,7 +82,9 @@ class CellTrailLayer extends CellStaticLayer {
       );
       final newPicture = recorder.endRecording();
       final newImage = newPicture.toImageSync(
-          imageSize.width.toInt(), imageSize.height.toInt());
+        imageSize.width.toInt(),
+        imageSize.height.toInt(),
+      );
       newPicture.dispose();
 
       recorder = PictureRecorder();

@@ -441,14 +441,14 @@ mixin HasSpatialGridFramework on FlameGame
       }
     }
 
-    var i = 0;
-    for (final wr in Cell.weakRefCells.toList(growable: false)) {
-      final cell = wr.target;
-      if (cell != null) {
-        i++;
-      }
-    }
-    print('total: ${Cell.weakRefCells.length}; Not null: $i');
+    // var i = 0;
+    // for (final wr in BoundingHitbox.weakRef.toList(growable: false)) {
+    //   final hb = wr.target;
+    //   if (hb != null) {
+    //     i++;
+    //   }
+    // }
+    // print('total: ${BoundingHitbox.weakRef.length}; Not null: $i');
 
     return cellsToRemove.length;
   }

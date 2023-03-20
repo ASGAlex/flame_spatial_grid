@@ -8,9 +8,10 @@ class TileComponent extends SpriteComponent
     implements SpriteAnimationComponent {
   static Future<TileComponent> fromProvider(TileDataProvider provider) async {
     final cache = TileCache(
-        sprite: await provider.getSprite(),
-        spriteAnimation: await provider.getSpriteAnimation(),
-        properties: provider.tile.properties);
+      sprite: await provider.getSprite(),
+      spriteAnimation: await provider.getSpriteAnimation(),
+      properties: provider.tile.properties,
+    );
     return TileComponent(cache);
   }
 

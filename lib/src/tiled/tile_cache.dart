@@ -8,8 +8,11 @@ import 'package:tiled/tiled.dart';
 /// Also read about [TiledMapLoader.preloadTileSets]
 @immutable
 class TileCache {
-  const TileCache(
-      {this.sprite, this.spriteAnimation, required this.properties});
+  const TileCache({
+    this.sprite,
+    this.spriteAnimation,
+    required this.properties,
+  });
 
   final Sprite? sprite;
   final SpriteAnimation? spriteAnimation;
