@@ -62,7 +62,9 @@ class CellTrailLayer extends CellStaticLayer {
       canvas.drawPicture(layerPicture!);
     }
     canvas.drawPicture(newComponentsPicture);
+    newComponentsPicture.dispose();
 
+    layerPicture?.dispose();
     layerPicture = recorder.endRecording();
     if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&
         _imageRenderInProgress == false) {
@@ -90,6 +92,7 @@ class CellTrailLayer extends CellStaticLayer {
       recorder = PictureRecorder();
       canvas = Canvas(recorder);
       canvas.drawImage(newImage, imageOffset.toOffset(), paint);
+      layerPicture!.dispose();
       layerPicture = recorder.endRecording();
       _operationsCount = 0;
 
@@ -112,6 +115,7 @@ class CellTrailLayer extends CellStaticLayer {
     fadeOutDecorator.applyChain(_drawOldPicture, canvas);
 
     _fadeOutDt = 0;
+    layerPicture?.dispose();
     layerPicture = recorder.endRecording();
   }
 

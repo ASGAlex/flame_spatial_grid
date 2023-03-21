@@ -80,31 +80,28 @@ all collisions are disabled.
     if (kIsWeb) {
       preloadRadius = const Size(2, 2);
     } else {
-      preloadRadius = const Size(0, 0);
+      preloadRadius = const Size(5, 5);
     }
     await initializeSpatialGrid(
       debug: false,
-      activeRadius: const Size(1, 1),
-      trackWindowSize: false,
-      unloadRadius: const Size(1, 1),
+      unloadRadius: const Size(2, 2),
       preloadRadius: preloadRadius,
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
-      buildCellsPerUpdate: 50,
-      cellsLimitToCleanup: 10,
-      suspendedCellLifetime: const Duration(seconds: 5),
-      suspendCellPrecision: const Duration(seconds: 5),
-      processCellsLimitToPauseEngine: (20).toInt(),
+      buildCellsPerUpdate: 5,
+      cellsLimitToCleanup: 5,
+      suspendedCellLifetime: const Duration(seconds: 120),
+      processCellsLimitToPauseEngine: 100,
       cellBuilderNoMap: noMapCellBuilder,
-      // maps: [
-      //   DemoMapLoader(Vector2(600, 0)),
-      // ],
-      // worldLoader: WorldLoader(
-      //   fileName: 'example.world',
-      //   mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
-      // ),
+      maps: [
+        DemoMapLoader(Vector2(600, 0)),
+      ],
+      worldLoader: WorldLoader(
+        fileName: 'example.world',
+        mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
+      ),
     );
     // await demoMapLoader.init(this);
     layersManager.layersRootComponent.add(player);
@@ -317,7 +314,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
-    position: Vector2(-560, -560),
+    position: Vector2(0, 0),
     size: Vector2.all(tileSize),
     priority: 10,
   );
@@ -344,7 +341,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
         priority: player.priority,
       );
       add(npc);
-      // npcList.add(npc);
+      npcList.add(npc);
       npcCount++;
     }
   }
