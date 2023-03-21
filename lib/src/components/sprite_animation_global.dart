@@ -9,7 +9,16 @@ class SpriteAnimationGlobalController {
   static SpriteAnimationGlobalController? _instance;
 
   static void dispose() {
-    _instance?._animations.clear();
+    final animations = _instance?._animations;
+    if (animations != null) {
+      for (final entry in animations.entries) {
+        for (final component in entry.value.trackedComponents) {
+          component.removeFromParent();
+        }
+        entry.value.trackedComponents.clear();
+      }
+      animations.clear();
+    }
     _instance = null;
   }
 
@@ -38,9 +47,13 @@ class SpriteAnimationGlobalController {
     for (final element in _animations.values) {
       element.globalAnimation.update(dt);
       for (final tracked in element.trackedComponents) {
-        tracked.animation?.clock = element.globalAnimation.clock;
-        tracked.animation?.elapsed = element.globalAnimation.elapsed;
-        tracked.animation?.currentIndex = element.globalAnimation.currentIndex;
+        final animation = tracked.animation;
+        if (animation == null) {
+          continue;
+        }
+        animation.clock = element.globalAnimation.clock;
+        animation.elapsed = element.globalAnimation.elapsed;
+        animation.currentIndex = element.globalAnimation.currentIndex;
       }
     }
   }

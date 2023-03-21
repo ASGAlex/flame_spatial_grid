@@ -55,17 +55,18 @@ class CellStaticLayer extends CellLayer {
           canvas,
         );
       }
-      layerPicture = recorder.endRecording();
-      layerImage = layerPicture?.toImageSync(
+      final newPicture = recorder.endRecording();
+      layerImage?.dispose();
+      layerImage = newPicture.toImageSync(
         layerCalculatedSize.width.toInt(),
         layerCalculatedSize.height.toInt(),
       );
-      layerPicture?.dispose();
-      layerPicture = null;
+      newPicture.dispose();
     } else {
       for (final component in renderingChildren) {
         component.decorator.applyChain(component.render, canvas);
       }
+      layerPicture?.dispose();
       layerPicture = recorder.endRecording();
     }
   }

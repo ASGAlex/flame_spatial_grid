@@ -537,7 +537,6 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
-    return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
