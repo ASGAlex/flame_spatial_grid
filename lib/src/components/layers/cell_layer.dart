@@ -164,7 +164,6 @@ abstract class CellLayer extends PositionComponent
         });
         _pendingComponents.clear();
       } else {
-        processQueuesTree();
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
         result = Future.wait<void>(futures).whenComplete(() {

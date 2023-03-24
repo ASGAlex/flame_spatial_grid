@@ -81,18 +81,21 @@ all collisions are disabled.
     double buildCellsPerUpdate;
     double cleanupCellsPerUpdate;
     int processCellsLimitToPauseEngine;
+    double operationsLimitToSavePicture;
     if (kIsWeb) {
       preloadRadius = const Size(1, 1);
       unloadRadius = const Size(1, 1);
       processCellsLimitToPauseEngine = 20;
       buildCellsPerUpdate = 1;
       cleanupCellsPerUpdate = 1;
+      operationsLimitToSavePicture = 5;
     } else {
       preloadRadius = const Size(5, 5);
       unloadRadius = const Size(3, 3);
       processCellsLimitToPauseEngine = 150;
       buildCellsPerUpdate = 2;
       cleanupCellsPerUpdate = 2;
+      operationsLimitToSavePicture = 15;
     }
     await initializeSpatialGrid(
       debug: false,
@@ -116,6 +119,7 @@ all collisions are disabled.
         mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
       ),
     );
+    fadeOutConfig.operationsLimitToSavePicture = operationsLimitToSavePicture;
     // await demoMapLoader.init(this);
     layersManager.layersRootComponent.add(player);
     add(FpsTextComponent());
@@ -135,7 +139,6 @@ all collisions are disabled.
 
   final fadeOutConfig = FadeOutConfig(
     fadeOutTimeout: const Duration(seconds: 1),
-    operationsLimitToSavePicture: 10,
     transparencyPerStep: 0.1,
   );
 
