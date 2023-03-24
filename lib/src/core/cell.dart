@@ -264,8 +264,6 @@ class Cell {
     }
     components.clear();
 
-    game.processQueuesTree();
-
     final broadphase = game.collisionDetection.broadphase;
     broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
     broadphase.activeCollisionsByCell.remove(this)?.clear();

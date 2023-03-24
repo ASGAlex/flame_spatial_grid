@@ -105,7 +105,8 @@ all collisions are disabled.
       rootComponent: world,
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
-      suspendedCellLifetime: const Duration(seconds: 120),
+      suspendedCellLifetime: const Duration(seconds: 30),
+      suspendCellPrecision: const Duration(seconds: 10),
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),

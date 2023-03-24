@@ -52,13 +52,13 @@ mixin HasSpatialGridFramework on FlameGame
   WorldLoader? worldLoader;
   CellBuilderFunction? _cellBuilderNoMap;
   CellBuilderFunction? _onAfterCellBuild;
-  double buildCellsPerUpdate = -1;
+  double buildCellsPerUpdate = 1;
   double _buildCellsNow = 0;
 
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
   double _precisionDtCounter = 0;
-  double cleanupCellsPerUpdate = -1;
+  double cleanupCellsPerUpdate = 1;
 
   int collisionOptimizerGroupLimit = 25;
   int processCellsLimitToPauseEngine = 250;
@@ -144,8 +144,8 @@ mixin HasSpatialGridFramework on FlameGame
     Duration suspendedCellLifetime = Duration.zero,
     Duration suspendCellPrecision = const Duration(minutes: 1),
     int processCellsLimitToPauseEngine = 250,
-    double buildCellsPerUpdate = -1,
-    double cleanupCellsPerUpdate = -1,
+    double buildCellsPerUpdate = 1,
+    double cleanupCellsPerUpdate = 1,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -411,33 +411,10 @@ mixin HasSpatialGridFramework on FlameGame
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
   int removeUnusedCells({bool forceCleanup = false, List<Cell>? unusedCells}) {
-    final broadphase = collisionDetection.broadphase;
-
     final cellsToRemove = unusedCells ?? _catchCellsForRemoval(forceCleanup);
     print('removing unused cells: ${cellsToRemove.length}');
     for (final cell in cellsToRemove) {
       cell.remove();
-    }
-
-    for (final entry in broadphase.optimizedCollisionsByGroupBox.entries
-        .toList(growable: false)) {
-      if (entry.value.isEmpty ||
-          entry.key.isRemoving ||
-          !spatialGrid.cells.containsKey(entry.key.rect)) {
-        broadphase.optimizedCollisionsByGroupBox.remove(entry.key);
-      }
-    }
-    for (final entry
-        in broadphase.activeCollisionsByCell.entries.toList(growable: false)) {
-      if (entry.value.isEmpty || entry.key.isRemoving) {
-        broadphase.activeCollisionsByCell.remove(entry.key);
-      }
-    }
-    for (final entry
-        in broadphase.passiveCollisionsByCell.entries.toList(growable: false)) {
-      if (entry.value.isEmpty || entry.key.isRemoving) {
-        broadphase.passiveCollisionsByCell.remove(entry.key);
-      }
     }
 
     // var i = 0;
