@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -44,14 +45,14 @@ class CellTrailLayer extends CellStaticLayer {
   void remove(Component component, {bool internalCall = false}) {}
 
   @override
-  Future compileToSingleLayer(Iterable<Component> children) async {
+  FutureOr compileToSingleLayer(Iterable<Component> children) {
     final cell = currentCell;
     if (cell == null) {
-      return;
+      return null;
     }
 
     if (noTrail && nonRenewableComponents.isEmpty) {
-      return;
+      return null;
     }
     _updateLayerPictureWithFade();
     final newComponentsPicture = _drawNewComponents();

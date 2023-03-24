@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -29,17 +30,17 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
-  Future compileToSingleLayer(Iterable<Component> children) async {
+  FutureOr compileToSingleLayer(Iterable<Component> children) {
     final renderingChildren =
         children.whereType<HasGridSupport>().toList(growable: false);
     if (renderingChildren.isEmpty) {
       removeFromParent();
-      return;
+      return null;
     }
 
     final cell = currentCell;
     if (cell == null) {
-      return;
+      return null;
     }
 
     final recorder = PictureRecorder();

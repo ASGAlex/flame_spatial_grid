@@ -31,7 +31,7 @@ abstract class CellLayer extends PositionComponent
   @protected
   final nonRenewableComponents = <Component>[];
 
-  @protected
+  @internal
   late final CollisionOptimizer collisionOptimizer;
 
   @protected
@@ -45,7 +45,7 @@ abstract class CellLayer extends PositionComponent
   final _pendingComponents = <Future>[];
 
   @protected
-  Future compileToSingleLayer(Iterable<Component> children);
+  FutureOr compileToSingleLayer(Iterable<Component> children);
 
   final String name;
 
@@ -155,7 +155,6 @@ abstract class CellLayer extends PositionComponent
         }
         final futures = List<Future>.from(_pendingComponents, growable: false);
         for (final future in futures) {
-          //TODO: let it be cancellable
           future.then((void _) {
             processQueuesTree();
           });
@@ -168,11 +167,13 @@ abstract class CellLayer extends PositionComponent
         processQueuesTree();
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
-        //TODO: let it be cancellable
-        result = Future.wait<void>(futures).then<void>((value) {
-          return compileToSingleLayer(nonRenewableComponents).then((void _) {
+        result = Future.wait<void>(futures).whenComplete(() {
+          final result = compileToSingleLayer(nonRenewableComponents);
+          if (result is Future) {
+            result.whenComplete(nonRenewableComponents.clear);
+          } else {
             nonRenewableComponents.clear();
-          });
+          }
         });
       }
       isUpdateNeeded = false;

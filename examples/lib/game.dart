@@ -273,7 +273,7 @@ all collisions are disabled.
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
-    return;
+    // return;
     final spriteBrick = tilesetManager.getTile('tileset', 'Brick')?.sprite;
     final waterAnimation =
         tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;

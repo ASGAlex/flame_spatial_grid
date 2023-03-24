@@ -370,19 +370,19 @@ mixin HasSpatialGridFramework on FlameGame
 
   Future<void> _buildNewCells([
     bool forceAll = false,
-    int progressMax = 80,
   ]) async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       return;
     }
 
+    final futures = <Future<void>>[];
     if (!forceAll && buildCellsPerUpdate > 0) {
       _buildCellsNow += buildCellsPerUpdate;
       var cellsToProcess = _buildCellsNow.floor();
       for (var i = 0; i < cellsToProcess; i++) {
         if (spatialGrid.cellsScheduledToBuild.isNotEmpty) {
           final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
-          await _buildOneCell(cell);
+          futures.add(_buildOneCell(cell));
         } else {
           cellsToProcess = i;
           break;
@@ -391,23 +391,14 @@ mixin HasSpatialGridFramework on FlameGame
 
       _buildCellsNow -= cellsToProcess;
     } else {
-      final total = spatialGrid.cellsScheduledToBuild.length;
-      var processed = 0;
-      final progressManager = LoadingProgressManager<String>(
-        'Build cells',
-        this,
-        max: progressMax,
-      );
       for (final cell in spatialGrid.cellsScheduledToBuild) {
-        await _buildOneCell(cell);
-        processed++;
-        progressManager.setProgress(
-          processed * 100 ~/ total,
-          '$processed cells of $total built',
-        );
+        futures.add(_buildOneCell(cell));
       }
       spatialGrid.cellsScheduledToBuild.clear();
     }
+
+    await Future.wait<void>(futures);
+    return;
   }
 
   Future<void> _buildOneCell(Cell cell) async {
@@ -419,7 +410,6 @@ mixin HasSpatialGridFramework on FlameGame
 
   /// Manually remove outdated cells: cells in [spatialGrid.unloadRadius] and
   /// with [suspendedCellLifetime] is over.
-  /// FIXME: it blocks the game for 1-10 seconds!!!!!!
   int removeUnusedCells({bool forceCleanup = false, List<Cell>? unusedCells}) {
     final broadphase = collisionDetection.broadphase;
 
@@ -467,8 +457,10 @@ mixin HasSpatialGridFramework on FlameGame
     final cellsToRemove = <Cell>[];
 
     if (forceCleanup || cleanupCellsPerUpdate < 0) {
-      cellsToRemove.addAll(spatialGrid.cells.values
-          .where((element) => element.state == CellState.suspended));
+      cellsToRemove.addAll(
+        spatialGrid.cells.values
+            .where((element) => element.state == CellState.suspended),
+      );
     } else {
       for (final cell in spatialGrid.cells.values) {
         if (cellsToRemove.length >= cleanupCellsPerUpdate) {
@@ -511,6 +503,8 @@ mixin HasSpatialGridFramework on FlameGame
     } catch (e) {}
   }
 
+  final _cellsToBeRemoved = <Cell>[];
+
   /// Handles creating new cells and removing outdated.
   /// Also runs [SpriteAnimationGlobalController] to allow
   /// [CellStaticAnimationLayer] to work.
@@ -520,25 +514,20 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> update(double dt) async {
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
-      List<Cell>? toBeRemoved;
-      var cleanup = false;
       if (_precisionDtCounter * 1000000 >=
           suspendCellPrecision.inMicroseconds) {
         _countSuspendedCellsTimers(_precisionDtCounter);
-        toBeRemoved = _catchCellsForRemoval();
         _precisionDtCounter = 0;
-        if (toBeRemoved.isNotEmpty) {
-          cleanup = true;
-        }
       }
+      final toBeRemoved = _catchCellsForRemoval();
 
       final totalCellsToProcess =
-          spatialGrid.cellsScheduledToBuild.length + (toBeRemoved?.length ?? 0);
+          spatialGrid.cellsScheduledToBuild.length + (_cellsToBeRemoved.length);
 
       if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
         showLoadingComponent();
         pauseEngine();
-        if (cleanup) {
+        if (toBeRemoved.isNotEmpty) {
           removeUnusedCells(unusedCells: toBeRemoved);
         }
         _gameInitializationFinished = false;
@@ -546,7 +535,7 @@ mixin HasSpatialGridFramework on FlameGame
 
         resumeEngine();
       } else {
-        if (cleanup) {
+        if (toBeRemoved.isNotEmpty) {
           removeUnusedCells(unusedCells: toBeRemoved);
         }
         _buildNewCells();
@@ -557,7 +546,7 @@ mixin HasSpatialGridFramework on FlameGame
       }
     } else {
       final stopwatch = Stopwatch()..start();
-      while (stopwatch.elapsedMilliseconds <= 250 &&
+      while (stopwatch.elapsedMilliseconds <= 500 &&
           !_gameInitializationFinished) {
         final doInterfaceUpdate = await _doInitializationStep();
         if (doInterfaceUpdate) {
@@ -595,6 +584,8 @@ mixin HasSpatialGridFramework on FlameGame
     return true;
   }
 
+  final _cellsBuildingFutures = <Future>[];
+
   Future<bool> _stepBuildCells() async {
     final progressManager = LoadingProgressManager<String>(
       'Build cells',
@@ -604,7 +595,9 @@ mixin HasSpatialGridFramework on FlameGame
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _initializationStepStage = InitializationStepStage.collisions;
       LoadingProgressManager.lastProgressMinimum = 60;
+      await Future.wait<void>(_cellsBuildingFutures);
       progressManager.setProgress(100, 'All cells loaded');
+      _cellsBuildingFutures.clear();
       return true;
     }
     if (_totalCellsToBuild == 0) {
@@ -614,7 +607,7 @@ mixin HasSpatialGridFramework on FlameGame
         _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
 
     final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
-    await _buildOneCell(cell);
+    _cellsBuildingFutures.add(_buildOneCell(cell));
     progressManager.setProgress(
       processed * 100 ~/ _totalCellsToBuild,
       '$processed cells of $_totalCellsToBuild built',
@@ -666,10 +659,13 @@ mixin HasSpatialGridFramework on FlameGame
       _layersToUpdate.clear();
       for (final map in layersManager.layers.values) {
         _layersToUpdate.addAll(
-            map.values.where((element) => element.collisionOptimizer.isEmpty));
+          map.values.where((element) => element.collisionOptimizer.isEmpty),
+        );
       }
       _totalLayersToBuild = _layersToUpdate.length;
       LoadingProgressManager.lastProgressMinimum = 75;
+      Future.wait<void>(_cellsBuildingFutures);
+      _cellsBuildingFutures.clear();
       return true;
     }
 
@@ -686,7 +682,7 @@ mixin HasSpatialGridFramework on FlameGame
     final processed =
         _totalCellsToBuild - spatialGrid.cellsScheduledToBuild.length;
     final cell = spatialGrid.cellsScheduledToBuild.removeFirst();
-    await _buildOneCell(cell);
+    _cellsBuildingFutures.add(_buildOneCell(cell));
     progressManager.setProgress(
       processed * 100 ~/ _totalCellsToBuild,
       '$processed cells of $_totalCellsToBuild built',
@@ -696,6 +692,8 @@ mixin HasSpatialGridFramework on FlameGame
 
   Future<bool> _stepOptimizeLayers() async {
     if (_layersToUpdate.isEmpty) {
+      await Future.wait<void>(_cellsBuildingFutures);
+      _cellsBuildingFutures.clear();
       _initializationStepStage = InitializationStepStage.done;
       _layersToUpdate.clear();
       return true;
@@ -712,7 +710,7 @@ mixin HasSpatialGridFramework on FlameGame
 
     final processed = _totalLayersToBuild - _layersToUpdate.length;
     final layer = _layersToUpdate.removeLast();
-    await layer.updateLayer();
+    _cellsBuildingFutures.add(layer.updateLayer());
 
     progressManager.setProgress(
       processed * 100 ~/ _totalLayersToBuild,
@@ -741,6 +739,7 @@ mixin HasSpatialGridFramework on FlameGame
 
 extension QueueTree on Component {
   void processQueuesTree() {
+    // ignore: invalid_use_of_protected_member
     lifecycle.processQueues();
     for (final child in children) {
       child.processQueuesTree();
