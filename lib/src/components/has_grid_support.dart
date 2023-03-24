@@ -222,8 +222,7 @@ mixin HasGridSupport on PositionComponent {
   void renderTree(Canvas canvas) {
     if (currentCell?.state == CellState.active) {
       super.renderTree(canvas);
-    }
-    if (debugMode) {
+    } else if (debugMode) {
       decorator.applyChain(renderDebugMode, canvas);
     }
   }

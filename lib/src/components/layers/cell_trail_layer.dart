@@ -71,12 +71,10 @@ class CellTrailLayer extends CellStaticLayer {
         _imageRenderInProgress == false) {
       _imageRenderInProgress = true;
       final imageSize = layerCalculatedSize;
-      final imageOffset = correctionTopLeft.clone();
-
       var recorder = PictureRecorder();
       var canvas = Canvas(recorder);
       final decorator = Transform2DDecorator();
-      decorator.transform2d.position = imageOffset * -1;
+      decorator.transform2d.position = correctionTopLeft * -1;
       decorator.applyChain(
         (canvas) {
           canvas.drawPicture(layerPicture!);
@@ -92,7 +90,7 @@ class CellTrailLayer extends CellStaticLayer {
 
       recorder = PictureRecorder();
       canvas = Canvas(recorder);
-      canvas.drawImage(newImage, imageOffset.toOffset(), paint);
+      canvas.drawImage(newImage, correctionTopLeft.toOffset(), paint);
       layerPicture!.dispose();
       layerPicture = recorder.endRecording();
       _operationsCount = 0;
