@@ -624,8 +624,8 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
     paint.isAntiAlias = false;
     final playerCell = player.currentCell;
     if (playerCell != null) {
-      position = player.position;
-      size = player.size;
+      position = player.position + Vector2(0, 8);
+      size = Vector2(8, 2);
       currentCell = playerCell;
     }
   }
@@ -634,7 +634,7 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
   void render(Canvas canvas) {
     canvas.drawPoints(
       PointMode.points,
-      [Offset(1.5, size.y - 1), Offset(6.5, size.y)],
+      [const Offset(1.5, 1), const Offset(6.5, 0)],
       paint,
     );
   }
