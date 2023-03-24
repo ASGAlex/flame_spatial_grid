@@ -77,23 +77,35 @@ all collisions are disabled.
     await tilesetManager.loadTileset('tileset.tsx');
 
     Size preloadRadius;
+    Size unloadRadius;
+    double buildCellsPerUpdate;
+    double cleanupCellsPerUpdate;
+    int processCellsLimitToPauseEngine;
     if (kIsWeb) {
-      preloadRadius = const Size(2, 2);
+      preloadRadius = const Size(1, 1);
+      unloadRadius = const Size(1, 1);
+      processCellsLimitToPauseEngine = 20;
+      buildCellsPerUpdate = 1;
+      cleanupCellsPerUpdate = 1;
     } else {
       preloadRadius = const Size(5, 5);
+      unloadRadius = const Size(3, 3);
+      processCellsLimitToPauseEngine = 150;
+      buildCellsPerUpdate = 2;
+      cleanupCellsPerUpdate = 2;
     }
     await initializeSpatialGrid(
       debug: false,
-      unloadRadius: const Size(2, 2),
+      unloadRadius: unloadRadius,
       preloadRadius: preloadRadius,
+      processCellsLimitToPauseEngine: processCellsLimitToPauseEngine,
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       rootComponent: world,
-      buildCellsPerUpdate: 10,
-      cleanupCellsPerUpdate: 2,
+      buildCellsPerUpdate: buildCellsPerUpdate,
+      cleanupCellsPerUpdate: cleanupCellsPerUpdate,
       suspendedCellLifetime: const Duration(seconds: 120),
-      processCellsLimitToPauseEngine: 100,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -261,7 +273,7 @@ all collisions are disabled.
   }
 
   Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
-    // return;
+    return;
     final spriteBrick = tilesetManager.getTile('tileset', 'Brick')?.sprite;
     final waterAnimation =
         tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;

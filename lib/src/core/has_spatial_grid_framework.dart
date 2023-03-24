@@ -58,7 +58,7 @@ mixin HasSpatialGridFramework on FlameGame
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
   double _precisionDtCounter = 0;
-  int cleanupCellsPerUpdate = -1;
+  double cleanupCellsPerUpdate = -1;
 
   int collisionOptimizerGroupLimit = 25;
   int processCellsLimitToPauseEngine = 250;
@@ -145,7 +145,7 @@ mixin HasSpatialGridFramework on FlameGame
     Duration suspendCellPrecision = const Duration(minutes: 1),
     int processCellsLimitToPauseEngine = 250,
     double buildCellsPerUpdate = -1,
-    int cleanupCellsPerUpdate = -1,
+    double cleanupCellsPerUpdate = -1,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -584,7 +584,6 @@ mixin HasSpatialGridFramework on FlameGame
         return _stepOptimizeLayers();
       case InitializationStepStage.done:
         return _stepDone();
-        break;
     }
   }
 
@@ -658,12 +657,16 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
+  final _layersToUpdate = <CellLayer>[];
+  var _totalLayersToBuild = 0;
+
   Future<bool> _stepRepeatCellsBuild() async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _initializationStepStage = InitializationStepStage.layers;
       _layersToUpdate.clear();
       for (final map in layersManager.layers.values) {
-        _layersToUpdate.addAll(map.values);
+        _layersToUpdate.addAll(
+            map.values.where((element) => element.collisionOptimizer.isEmpty));
       }
       _totalLayersToBuild = _layersToUpdate.length;
       LoadingProgressManager.lastProgressMinimum = 75;
@@ -690,9 +693,6 @@ mixin HasSpatialGridFramework on FlameGame
     );
     return false;
   }
-
-  final _layersToUpdate = <CellLayer>[];
-  var _totalLayersToBuild = 0;
 
   Future<bool> _stepOptimizeLayers() async {
     if (_layersToUpdate.isEmpty) {
