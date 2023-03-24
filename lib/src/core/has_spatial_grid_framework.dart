@@ -8,7 +8,14 @@ import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 
-enum InitializationStepStage { none, cells, collisions, finalPass, done }
+enum InitializationStepStage {
+  none,
+  cells,
+  collisions,
+  finalPass,
+  layers,
+  done
+}
 
 /// This class is starting point to add Framework's abilities into you game
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary!
@@ -51,7 +58,7 @@ mixin HasSpatialGridFramework on FlameGame
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
   double _precisionDtCounter = 0;
-  int cellsLimitToCleanup = 50;
+  int cleanupCellsPerUpdate = -1;
 
   int collisionOptimizerGroupLimit = 25;
   int processCellsLimitToPauseEngine = 250;
@@ -138,7 +145,7 @@ mixin HasSpatialGridFramework on FlameGame
     Duration suspendCellPrecision = const Duration(minutes: 1),
     int processCellsLimitToPauseEngine = 250,
     double buildCellsPerUpdate = -1,
-    int cellsLimitToCleanup = 5,
+    int cleanupCellsPerUpdate = -1,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -164,7 +171,7 @@ mixin HasSpatialGridFramework on FlameGame
     _onAfterCellBuild = onAfterCellBuild;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.suspendCellPrecision = suspendCellPrecision;
-    this.cellsLimitToCleanup = cellsLimitToCleanup;
+    this.cleanupCellsPerUpdate = cleanupCellsPerUpdate;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
@@ -459,16 +466,16 @@ mixin HasSpatialGridFramework on FlameGame
   List<Cell> _catchCellsForRemoval([bool forceCleanup = false]) {
     final cellsToRemove = <Cell>[];
 
-    for (final cell in spatialGrid.cells.values) {
-      if (cell.state != CellState.suspended) {
-        continue;
-      }
-
-      if (forceCleanup) {
-        cellsToRemove.add(cell);
-      } else {
-        if (cellsToRemove.length >= cellsLimitToCleanup) {
+    if (forceCleanup || cleanupCellsPerUpdate < 0) {
+      cellsToRemove.addAll(spatialGrid.cells.values
+          .where((element) => element.state == CellState.suspended));
+    } else {
+      for (final cell in spatialGrid.cells.values) {
+        if (cellsToRemove.length >= cleanupCellsPerUpdate) {
           break;
+        }
+        if (cell.state != CellState.suspended) {
+          continue;
         }
         if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
           cellsToRemove.add(cell);
@@ -514,11 +521,15 @@ mixin HasSpatialGridFramework on FlameGame
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
       List<Cell>? toBeRemoved;
+      var cleanup = false;
       if (_precisionDtCounter * 1000000 >=
           suspendCellPrecision.inMicroseconds) {
         _countSuspendedCellsTimers(_precisionDtCounter);
         toBeRemoved = _catchCellsForRemoval();
         _precisionDtCounter = 0;
+        if (toBeRemoved.isNotEmpty) {
+          cleanup = true;
+        }
       }
 
       final totalCellsToProcess =
@@ -527,12 +538,17 @@ mixin HasSpatialGridFramework on FlameGame
       if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
         showLoadingComponent();
         pauseEngine();
-        removeUnusedCells(unusedCells: toBeRemoved);
+        if (cleanup) {
+          removeUnusedCells(unusedCells: toBeRemoved);
+        }
         _gameInitializationFinished = false;
         _initializationStepStage = InitializationStepStage.none;
 
         resumeEngine();
       } else {
+        if (cleanup) {
+          removeUnusedCells(unusedCells: toBeRemoved);
+        }
         _buildNewCells();
 
         SpriteAnimationGlobalController.instance().update(dt);
@@ -564,8 +580,11 @@ mixin HasSpatialGridFramework on FlameGame
         return _stepPrepareCollisions();
       case InitializationStepStage.finalPass:
         return _stepRepeatCellsBuild();
+      case InitializationStepStage.layers:
+        return _stepOptimizeLayers();
       case InitializationStepStage.done:
         return _stepDone();
+        break;
     }
   }
 
@@ -581,11 +600,11 @@ mixin HasSpatialGridFramework on FlameGame
     final progressManager = LoadingProgressManager<String>(
       'Build cells',
       this,
-      max: 90,
+      max: 60,
     );
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
       _initializationStepStage = InitializationStepStage.collisions;
-      LoadingProgressManager.lastProgressMinimum = 90;
+      LoadingProgressManager.lastProgressMinimum = 60;
       progressManager.setProgress(100, 'All cells loaded');
       return true;
     }
@@ -608,9 +627,9 @@ mixin HasSpatialGridFramework on FlameGame
 
   Future<bool> _stepPrepareCollisions() async {
     final progressManager = LoadingProgressManager<String>(
-      'Optimize collisions',
+      'Prepare collisions',
       this,
-      max: 95,
+      max: 70,
     );
     if (_prepareCollisionsStage == 0) {
       _prepareCollisionsStage = 1;
@@ -634,21 +653,27 @@ mixin HasSpatialGridFramework on FlameGame
 
       _initializationStepStage = InitializationStepStage.finalPass;
       _totalCellsToBuild = spatialGrid.cellsScheduledToBuild.length;
-      LoadingProgressManager.lastProgressMinimum = 95;
+      LoadingProgressManager.lastProgressMinimum = 70;
       return true;
     }
   }
 
   Future<bool> _stepRepeatCellsBuild() async {
     if (spatialGrid.cellsScheduledToBuild.isEmpty) {
-      _initializationStepStage = InitializationStepStage.done;
+      _initializationStepStage = InitializationStepStage.layers;
+      _layersToUpdate.clear();
+      for (final map in layersManager.layers.values) {
+        _layersToUpdate.addAll(map.values);
+      }
+      _totalLayersToBuild = _layersToUpdate.length;
+      LoadingProgressManager.lastProgressMinimum = 75;
       return true;
     }
 
     final progressManager = LoadingProgressManager<String>(
       'Build additional cells',
       this,
-      max: 99,
+      max: 75,
     );
 
     if (_totalCellsToBuild == 0) {
@@ -662,6 +687,36 @@ mixin HasSpatialGridFramework on FlameGame
     progressManager.setProgress(
       processed * 100 ~/ _totalCellsToBuild,
       '$processed cells of $_totalCellsToBuild built',
+    );
+    return false;
+  }
+
+  final _layersToUpdate = <CellLayer>[];
+  var _totalLayersToBuild = 0;
+
+  Future<bool> _stepOptimizeLayers() async {
+    if (_layersToUpdate.isEmpty) {
+      _initializationStepStage = InitializationStepStage.done;
+      _layersToUpdate.clear();
+      return true;
+    }
+
+    final progressManager = LoadingProgressManager<String>(
+      'Build layers',
+      this,
+    );
+
+    if (_totalLayersToBuild == 0) {
+      _totalLayersToBuild = _layersToUpdate.length;
+    }
+
+    final processed = _totalLayersToBuild - _layersToUpdate.length;
+    final layer = _layersToUpdate.removeLast();
+    await layer.updateLayer();
+
+    progressManager.setProgress(
+      processed * 100 ~/ _totalLayersToBuild,
+      '$processed layers of $_totalLayersToBuild built',
     );
     return false;
   }

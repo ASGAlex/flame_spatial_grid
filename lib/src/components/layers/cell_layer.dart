@@ -142,6 +142,11 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void updateTree(double dt) {
+    updateLayer();
+  }
+
+  Future<void> updateLayer() {
+    Future<void>? result;
     if (isUpdateNeeded) {
       if (isRenewable) {
         processQueuesTree();
@@ -155,7 +160,7 @@ abstract class CellLayer extends PositionComponent
             processQueuesTree();
           });
         }
-        Future.wait<void>(futures).whenComplete(() {
+        result = Future.wait<void>(futures).whenComplete(() {
           compileToSingleLayer(children);
         });
         _pendingComponents.clear();
@@ -164,14 +169,16 @@ abstract class CellLayer extends PositionComponent
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
         //TODO: let it be cancellable
-        Future.wait<void>(futures).then<void>((value) {
-          compileToSingleLayer(nonRenewableComponents).then((void _) {
+        result = Future.wait<void>(futures).then<void>((value) {
+          return compileToSingleLayer(nonRenewableComponents).then((void _) {
             nonRenewableComponents.clear();
           });
         });
       }
       isUpdateNeeded = false;
     }
+
+    return result ??= Future<void>.value();
   }
 
   @override
