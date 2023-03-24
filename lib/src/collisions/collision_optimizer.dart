@@ -103,6 +103,8 @@ class CollisionOptimizer {
         }
       }
     }
+
+    _alreadyProcessed.clear();
   }
 
   LinkedHashSet<ShapeHitbox> _findOverlappingRects(
