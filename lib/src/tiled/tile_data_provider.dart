@@ -56,7 +56,7 @@ class TileDataProvider {
 
 /// This class represents the tile's data and the cell's context in which this
 /// tile was built
-/// [position] and [size] represents tile's global position on the game field
+/// [absolutePosition] and [size] represents tile's global position on the game field
 /// and it's dimensions.
 /// If this context contains information about tiled object, [tiledObject] will
 /// be not null.
@@ -69,7 +69,7 @@ class CellBuilderContext {
   CellBuilderContext({
     this.tileDataProvider,
     this.tiledObject,
-    required this.position,
+    required this.absolutePosition,
     required this.size,
     required this.cellRect,
     required this.spatialGrid,
@@ -80,7 +80,7 @@ class CellBuilderContext {
   Rect cellRect;
 
   ///Tile's position in the global game's coordinates space
-  Vector2 position;
+  Vector2 absolutePosition;
 
   ///Tiles width and height
   Vector2 size;

@@ -71,6 +71,7 @@ class LayersManager {
     required String layerName,
     bool absolutePosition = true,
     bool optimizeCollisions = true,
+    bool optimizeGraphics = true,
     bool isRenewable = true,
     int priority = 1,
   }) {
@@ -120,6 +121,7 @@ class LayersManager {
       addLayer(layer);
       layer.priority = priority;
       layer.optimizeCollisions = optimizeCollisions;
+      layer.optimizeGraphics = optimizeGraphics;
     }
 
     return layer;

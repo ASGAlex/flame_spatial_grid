@@ -160,7 +160,7 @@ abstract class TiledMapLoader {
             }
             final context = CellBuilderContext(
               tiledObject: object,
-              position: position,
+              absolutePosition: position,
               size: size,
               cellRect: rect,
               spatialGrid: game.spatialGrid,
@@ -218,7 +218,7 @@ abstract class TiledMapLoader {
     }
     final component = await TileComponent.fromProvider(provider);
     component.currentCell = context.cell;
-    component.position = context.position;
+    component.position = context.absolutePosition;
     component.size = context.size;
     var priority = -100;
     if (context.priorityOverride != null) {
@@ -317,7 +317,7 @@ abstract class TiledMapLoader {
               tileId = tileId - firstGid;
             }
             final tileData = tileset.tiles[tileId];
-            final position = Vector2(
+            final absolutePosition = Vector2(
                   xOffset.toDouble() * tileMap.map.tileWidth,
                   yOffset.toDouble() * tileMap.map.tileWidth,
                 ) +
@@ -341,15 +341,15 @@ abstract class TiledMapLoader {
 
             Rect rect;
             if (lazyLoad) {
-              rect = game.spatialGrid.getCellRectAtPosition(position);
+              rect = game.spatialGrid.getCellRectAtPosition(absolutePosition);
             } else {
-              final cell =
-                  game.spatialGrid.createNewCellAtPosition(position + size / 2);
+              final cell = game.spatialGrid
+                  .createNewCellAtPosition(absolutePosition + size / 2);
               rect = cell.rect;
             }
             final context = CellBuilderContext(
               tileDataProvider: tileDataProvider,
-              position: position,
+              absolutePosition: absolutePosition,
               size: size,
               cellRect: rect,
               spatialGrid: game.spatialGrid,
@@ -382,7 +382,7 @@ abstract class TiledMapLoader {
 
           final context = CellBuilderContext(
             tiledObject: object,
-            position: position,
+            absolutePosition: position,
             size: size,
             cellRect: rect,
             spatialGrid: game.spatialGrid,

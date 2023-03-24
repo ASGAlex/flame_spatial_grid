@@ -20,11 +20,17 @@ class CellStaticLayer extends CellLayer {
 
   @override
   void render(Canvas canvas) {
-    if (renderAsImage && layerImage != null) {
-      canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+    if (optimizeGraphics) {
+      if (renderAsImage && layerImage != null) {
+        canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+      } else {
+        if (layerPicture != null) {
+          canvas.drawPicture(layerPicture!);
+        }
+      }
     } else {
-      if (layerPicture != null) {
-        canvas.drawPicture(layerPicture!);
+      for (final c in children) {
+        c.renderTree(canvas);
       }
     }
   }

@@ -425,15 +425,17 @@ class DemoMapLoader extends TiledMapLoader {
   Future<void> onBuildBrick(CellBuilderContext context) async {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
     final brick = Brick(
-      position: context.position,
+      position: context.absolutePosition,
       sprite: spriteBrick,
       context: context,
     );
     brick.currentCell = context.cell;
+    brick.priority = 2;
     game.layersManager.addComponent(
       component: brick,
       layerType: MapLayerType.static,
       layerName: 'Brick',
+      optimizeGraphics: false,
       priority: 2,
     );
   }
@@ -442,7 +444,7 @@ class DemoMapLoader extends TiledMapLoader {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
     final water = Water(
-      position: context.position,
+      position: context.absolutePosition,
       animation: waterAnimation,
       context: context,
     );
@@ -462,11 +464,11 @@ class DemoMapLoader extends TiledMapLoader {
     if (stepSize == null) {
       return;
     }
-    for (var y = context.position.y;
-        y < context.position.y + context.size.y;
+    for (var y = context.absolutePosition.y;
+        y < context.absolutePosition.y + context.size.y;
         y += stepSize) {
-      for (var x = context.position.x;
-          x < context.position.x + context.size.x;
+      for (var x = context.absolutePosition.x;
+          x < context.absolutePosition.x + context.size.x;
           x += stepSize) {
         final water = Water(
           position: Vector2(x, y),
