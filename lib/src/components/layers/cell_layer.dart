@@ -25,6 +25,7 @@ abstract class CellLayer extends PositionComponent
   }
 
   bool optimizeCollisions = false;
+  bool optimizeGraphics = true;
 
   final bool isRenewable;
 
@@ -149,20 +150,17 @@ abstract class CellLayer extends PositionComponent
     Future<void>? result;
     if (isUpdateNeeded) {
       if (isRenewable) {
-        processQueuesTree();
-        if (optimizeCollisions) {
-          collisionOptimizer.optimize();
-        }
-        final futures = List<Future>.from(_pendingComponents, growable: false);
-        for (final future in futures) {
-          future.then((void _) {
+        result = waitForComponents().whenComplete(() async {
+          processQueuesTree();
+          if (optimizeCollisions) {
+            collisionOptimizer.optimize();
             processQueuesTree();
-          });
-        }
-        result = Future.wait<void>(futures).whenComplete(() {
-          compileToSingleLayer(children);
+          }
+          if (optimizeGraphics) {
+            await compileToSingleLayer(children);
+          }
+          _pendingComponents.clear();
         });
-        _pendingComponents.clear();
       } else {
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
