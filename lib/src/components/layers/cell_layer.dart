@@ -17,9 +17,9 @@ abstract class CellLayer extends PositionComponent
   CellLayer(Cell cell, {this.name = '', bool? isRenewable})
       : isRenewable = isRenewable ?? true,
         super(
-        position: cell.rect.topLeft.toVector2(),
-        size: cell.rect.size.toVector2(),
-      ) {
+          position: cell.rect.topLeft.toVector2(),
+          size: cell.rect.size.toVector2(),
+        ) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
   }
@@ -153,11 +153,18 @@ abstract class CellLayer extends PositionComponent
     updateLayer();
   }
 
+  Future<void>? _updateLayerFuture;
+
   Future<void> updateLayer() {
-    Future<void>? result;
     if (isUpdateNeeded) {
+      if (_updateLayerFuture != null) {
+        return Future<void>.value();
+      }
       if (isRenewable) {
-        result = waitForComponents().whenComplete(() async {
+        _updateLayerFuture = waitForComponents().whenComplete(() async {
+          if (isRemovedLayer) {
+            return;
+          }
           processQueuesTree();
           if (optimizeCollisions) {
             collisionOptimizer.optimize();
@@ -167,24 +174,41 @@ abstract class CellLayer extends PositionComponent
             await compileToSingleLayer(children);
           }
           _pendingComponents.clear();
+          _updateLayerFuture = null;
         });
       } else {
         final futures = List<Future>.from(_pendingComponents, growable: false);
         _pendingComponents.clear();
-        result = Future.wait<void>(futures).whenComplete(() {
+        _updateLayerFuture = Future.wait<void>(futures).whenComplete(() {
+          if (isRemovedLayer) {
+            return;
+          }
           final result = compileToSingleLayer(nonRenewableComponents);
           if (result is Future) {
-            result.whenComplete(nonRenewableComponents.clear);
+            result.whenComplete(
+              () {
+                nonRenewableComponents.clear();
+                _updateLayerFuture = null;
+              },
+            );
           } else {
             nonRenewableComponents.clear();
+            _updateLayerFuture = null;
           }
         });
       }
       isUpdateNeeded = false;
     }
 
-    return result ??= Future<void>.value();
+    return _updateLayerFuture ?? Future<void>.value();
   }
+
+  bool get isRemovedLayer =>
+      isRemoving ||
+      isRemoved ||
+      currentCell == null ||
+      // ignore: use_if_null_to_convert_nulls_to_bools
+      currentCell?.isRemoving == true;
 
   @override
   void onRemove() {
