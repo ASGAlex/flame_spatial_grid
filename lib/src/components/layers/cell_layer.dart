@@ -17,9 +17,9 @@ abstract class CellLayer extends PositionComponent
   CellLayer(Cell cell, {this.name = '', bool? isRenewable})
       : isRenewable = isRenewable ?? true,
         super(
-          position: cell.rect.topLeft.toVector2(),
-          size: cell.rect.size.toVector2(),
-        ) {
+        position: cell.rect.topLeft.toVector2(),
+        size: cell.rect.size.toVector2(),
+      ) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
   }
@@ -40,6 +40,13 @@ abstract class CellLayer extends PositionComponent
 
   @protected
   final correctionBottomRight = Vector2.zero();
+
+  set persistentCorrection(double value) {
+    correctionTopLeft.x = -value;
+    correctionTopLeft.y = -value;
+    correctionBottomRight.x = size.x + value;
+    correctionBottomRight.y = size.y + value;
+  }
 
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
