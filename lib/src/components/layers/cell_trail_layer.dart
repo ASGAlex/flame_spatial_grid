@@ -46,6 +46,9 @@ class CellTrailLayer extends CellStaticLayer {
 
   @override
   FutureOr compileToSingleLayer(Iterable<Component> children) {
+    if (isRemovedLayer) {
+      return null;
+    }
     final cell = currentCell;
     if (cell == null) {
       return null;
