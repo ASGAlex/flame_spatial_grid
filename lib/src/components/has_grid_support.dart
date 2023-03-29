@@ -107,6 +107,14 @@ mixin HasGridSupport on PositionComponent {
 
   SpatialGrid? spatialGrid;
 
+  HasSpatialGridFramework get sgGame {
+    final game = spatialGrid?.game;
+    if (game == null) {
+      throw 'Spatial grid did not initialized correctly';
+    }
+    return game;
+  }
+
   /// If this component is that component which all spatial grid system keeps
   /// in center of grid?
   bool get isTracked => this == spatialGrid?.trackedComponent;
