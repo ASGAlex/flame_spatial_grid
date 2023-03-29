@@ -54,6 +54,7 @@ class BoundingHitbox extends RectangleHitbox {
 
   double minDistanceX = 0.0;
   double minDistanceY = 0.0;
+  bool isDistanceCallbackEnabled = false;
 
   final groupCollisionsTags = <String>[];
 

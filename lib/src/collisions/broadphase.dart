@@ -251,8 +251,22 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       minDistanceY += potential.size.y / 2;
     }
 
-    if ((activeItemCenter.x - potentialCenter.x).abs() < minDistanceX &&
-        (activeItemCenter.y - potentialCenter.y).abs() < minDistanceY) {
+    final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
+    final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+
+    if (activeItem is BoundingHitbox &&
+        potential is BoundingHitbox &&
+        activeItem.isDistanceCallbackEnabled &&
+        potential.isDistanceCallbackEnabled) {
+      final component = activeItem.parentWithGridSupport;
+      final other = potential.parentWithGridSupport;
+      if (component != null && other != null) {
+        component.onCalculateDistance(other, distanceX, distanceY);
+        other.onCalculateDistance(component, distanceX, distanceY);
+      }
+    }
+
+    if (distanceX < minDistanceX && distanceY < minDistanceY) {
       return true;
     }
     return false;

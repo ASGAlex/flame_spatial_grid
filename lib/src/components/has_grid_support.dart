@@ -184,6 +184,12 @@ mixin HasGridSupport on PositionComponent {
     _minDistanceY = boundingBox.height / 2;
   }
 
+  void onCalculateDistance(
+    Component other,
+    double distanceX,
+    double distanceY,
+  ) {}
+
   @override
   @mustCallSuper
   void onRemove() {
