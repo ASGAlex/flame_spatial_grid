@@ -204,6 +204,7 @@ abstract class CellLayer extends PositionComponent
   }
 
   bool get isRemovedLayer =>
+      !isMounted ||
       isRemoving ||
       isRemoved ||
       currentCell == null ||
