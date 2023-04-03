@@ -130,7 +130,10 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  void remove(Component component, {bool internalCall = false}) {
+  void remove(Component component, {bool internalCall = false}) =>
+      _remove(component, internalCall: internalCall);
+
+  void _remove(Component component, {bool internalCall = false}) {
     if (isRenewable) {
       final callback = _listenerChildrenUpdate.remove(component);
       if (callback != null && component is HasGridSupport) {
@@ -140,9 +143,15 @@ abstract class CellLayer extends PositionComponent
       if (!internalCall) {
         onBeforeChildrenChanged(component, ChildrenChangeType.removed);
       }
-      super.remove(component);
     } else {
       nonRenewableComponents.remove(component);
+    }
+  }
+
+  @override
+  void onChildrenChanged(Component child, ChildrenChangeType type) {
+    if (type == ChildrenChangeType.removed) {
+      _remove(child);
     }
   }
 
@@ -165,10 +174,10 @@ abstract class CellLayer extends PositionComponent
           if (isRemovedLayer) {
             return;
           }
-          processQueuesTree();
+          game.processLifecycleEvents();
           if (optimizeCollisions) {
             collisionOptimizer.optimize();
-            processQueuesTree();
+            game.processLifecycleEvents();
           }
           if (optimizeGraphics) {
             await compileToSingleLayer(children);

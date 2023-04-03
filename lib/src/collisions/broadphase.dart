@@ -16,7 +16,6 @@ typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
 /// detailed description of its initialization parameters.
 class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   SpatialGridBroadphase({
-    super.items,
     required this.spatialGrid,
     required this.broadphaseCheck,
     ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
@@ -361,6 +360,12 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
     }
   }
+
+  @override
+  void add(T item) => throw UnimplementedError();
+
+  @override
+  List<T> get items => throw UnimplementedError();
 }
 
 @internal

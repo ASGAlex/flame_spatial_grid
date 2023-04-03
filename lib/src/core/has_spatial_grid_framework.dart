@@ -608,7 +608,7 @@ mixin HasSpatialGridFramework on FlameGame
 
     if (_prepareCollisionsStage == 1) {
       collisionDetection.broadphase.update();
-      processQueuesTree();
+      processLifecycleEvents();
       progressManager.setProgress(40);
       _prepareCollisionsStage++;
       return true;
@@ -616,7 +616,7 @@ mixin HasSpatialGridFramework on FlameGame
       pauseEngine();
       await layersManager.waitForComponents();
       collisionDetection.broadphase.update();
-      processQueuesTree();
+      processLifecycleEvents();
       progressManager.setProgress(90);
       resumeEngine();
 
@@ -712,14 +712,4 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> showLoadingComponent() async {}
 
   Future<void> hideLoadingComponent() async {}
-}
-
-extension QueueTree on Component {
-  void processQueuesTree() {
-    // ignore: invalid_use_of_protected_member
-    lifecycle.processQueues();
-    for (final child in children) {
-      child.processQueuesTree();
-    }
-  }
 }
