@@ -18,6 +18,8 @@ class CellTrailLayer extends CellStaticLayer {
 
   bool get isFadeOut => fadeOutConfig.isFadeOut;
 
+  /// This opacity level is barely visible so there is no reason to keep image
+  /// in memory
   bool get noTrail => _calculatedOpacity < 0.01;
 
   late FadeOutConfig fadeOutConfig;
@@ -31,9 +33,6 @@ class CellTrailLayer extends CellStaticLayer {
   bool get doFadeOut =>
       fadeOutConfig.isFadeOut &&
       _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
-
-  @override
-  bool get isUpdateNeeded => true;
 
   @override
   bool get renderAsImage => false;
@@ -55,8 +54,13 @@ class CellTrailLayer extends CellStaticLayer {
     }
 
     if (noTrail && nonRenewableComponents.isEmpty) {
+      isUpdateNeeded = false;
       return null;
     }
+    if (_imageRenderInProgress) {
+      return null;
+    }
+    _imageRenderInProgress = true;
     _updateLayerPictureWithFade();
     final newComponentsPicture = _drawNewComponents();
 
@@ -70,9 +74,7 @@ class CellTrailLayer extends CellStaticLayer {
 
     layerPicture?.dispose();
     layerPicture = recorder.endRecording();
-    if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture &&
-        _imageRenderInProgress == false) {
-      _imageRenderInProgress = true;
+    if (_operationsCount >= fadeOutConfig.operationsLimitToSavePicture) {
       final imageSize = layerCalculatedSize;
       var recorder = PictureRecorder();
       var canvas = Canvas(recorder);
@@ -96,12 +98,10 @@ class CellTrailLayer extends CellStaticLayer {
       canvas.drawImage(newImage, correctionTopLeft.toOffset(), paint);
       layerPicture!.dispose();
       layerPicture = recorder.endRecording();
+      newImage.dispose();
       _operationsCount = 0;
-
-      _imageRenderInProgress = false;
-    } else {
-      _imageRenderInProgress = false;
     }
+    _imageRenderInProgress = false;
   }
 
   void _updateLayerPictureWithFade() {
@@ -117,7 +117,6 @@ class CellTrailLayer extends CellStaticLayer {
     fadeOutDecorator.applyChain(_drawOldPicture, canvas);
 
     _fadeOutDt = 0;
-    layerPicture?.dispose();
     layerPicture = recorder.endRecording();
   }
 
@@ -140,7 +139,7 @@ class CellTrailLayer extends CellStaticLayer {
 
   @override
   void render(Canvas canvas) {
-    if (layerPicture != null) {
+    if (layerPicture != null && !noTrail) {
       canvas.drawPicture(layerPicture!);
     }
     if (debugMode) {
@@ -168,23 +167,37 @@ class CellTrailLayer extends CellStaticLayer {
 
   @override
   void updateTree(double dt) {
+    if (nonRenewableComponents.isNotEmpty) {
+      isUpdateNeeded = true;
+      super.updateTree(dt);
+      return;
+    }
+
     if (noTrail) {
-      layerPicture?.dispose();
-      layerPicture = null;
-      layerImage?.dispose();
-      layerImage = null;
-    } else if (fadeOutConfig.isFadeOut) {
+      if (layerPicture != null) {
+        layerPicture!.dispose();
+        layerPicture = null;
+      }
+      if (layerImage != null) {
+        layerImage!.dispose();
+        layerImage = null;
+      }
+      return;
+    }
+
+    if (fadeOutConfig.isFadeOut) {
       _fadeOutDt += dt;
       if (doFadeOut) {
         isUpdateNeeded = true;
+        super.updateTree(dt);
       }
     }
-    super.updateTree(dt);
   }
 
   @override
   void onResume(double dtElapsedWhileSuspended) {
     _fadeOutDt += dtElapsedWhileSuspended;
+    isUpdateNeeded = true;
   }
 }
 
