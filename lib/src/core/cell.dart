@@ -3,6 +3,7 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
@@ -238,6 +239,19 @@ class Cell {
     if (_remove) {
       return;
     }
+
+    final trackedComponent = spatialGrid.trackedComponent;
+    if (trackedComponent is SpatialGridCameraWrapper) {
+      final follow = trackedComponent.cameraComponent.viewfinder.children
+          .whereType<FollowBehavior>();
+      try {
+        final target = follow.first.target;
+        if (target is HasGridSupport && target.currentCell == this) {
+          return;
+        }
+      } catch (e) {}
+    }
+
     _remove = true;
     rawLeft?.rawRight = null;
     rawLeft = null;
