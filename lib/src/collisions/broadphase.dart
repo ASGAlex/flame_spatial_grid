@@ -129,6 +129,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @override
   HashSet<CollisionProspect<T>> query() {
     final result = HashSet<CollisionProspect<T>>();
+    final activeChecked = HashMap<ShapeHitbox, HashSet<ShapeHitbox>>();
     for (final activeItem in activeCollisions) {
       final asShapeItem = activeItem as ShapeHitbox;
       final withGridSupport = asShapeItem.parentWithGridSupport;
@@ -160,7 +161,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         if (cell != null) {
           cellsToCheck = [cell];
         } else {
-          cellsToCheck = [];
+          continue;
         }
       }
 
@@ -183,23 +184,33 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
             asShapeItem,
             itemsActive,
             result,
+            activeChecked,
           );
         }
       }
     }
-
     return result;
   }
 
   void _compareItemWithPotentials(
     ShapeHitbox asShapeItem,
     Set<ShapeHitbox> potentials,
-    HashSet<CollisionProspect<T>> result,
-  ) {
+    HashSet<CollisionProspect<T>> result, [
+    HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
+  ]) {
     for (final potential in potentials) {
       if (potential.parent == asShapeItem.parent &&
           asShapeItem.parent != null) {
         continue;
+      }
+      if (activeChecked != null) {
+        if (activeChecked[asShapeItem]?.contains(potential) ?? false) {
+          continue;
+        } else {
+          var checked = activeChecked[potential];
+          checked ??= activeChecked[potential] = HashSet<ShapeHitbox>();
+          checked.add(asShapeItem);
+        }
       }
       var canToCollide = true;
       if (asShapeItem is BoundingHitbox) {
