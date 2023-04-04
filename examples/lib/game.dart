@@ -80,7 +80,6 @@ all collisions are disabled.
     double buildCellsPerUpdate;
     double cleanupCellsPerUpdate;
     int processCellsLimitToPauseEngine;
-    double operationsLimitToSavePicture;
     if (kIsWeb) {
       preloadRadius = const Size(1, 1);
       unloadRadius = const Size(1, 1);
@@ -188,7 +187,7 @@ all collisions are disabled.
       if (key == LogicalKeyboardKey.space) {
         _fireBullet = true;
       }
-      if (key == LogicalKeyboardKey.keyC) {
+      if (key == LogicalKeyboardKey.keyG) {
         final collisionType = player.boundingBox.collisionType;
         if (collisionType == CollisionType.active) {
           player.boundingBox.collisionType = CollisionType.inactive;
