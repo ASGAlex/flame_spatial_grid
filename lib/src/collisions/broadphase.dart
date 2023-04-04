@@ -126,6 +126,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return result;
   }
 
+  final hasCollisionsLastTime = HashSet<ShapeHitbox>();
+
   @override
   HashSet<CollisionProspect<T>> query() {
     final result = HashSet<CollisionProspect<T>>();
@@ -142,12 +144,14 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       if (activeItem is BoundingHitbox) {
         final boundingHitbox = activeItem as BoundingHitbox;
         if (boundingHitbox.collisionCheckFrequency < 1) {
-          if (boundingHitbox.collisionCheckCounter < 1) {
-            boundingHitbox.collisionCheckCounter +=
-                boundingHitbox.collisionCheckFrequency;
-            continue;
-          } else {
-            boundingHitbox.collisionCheckCounter = 0;
+          if (!hasCollisionsLastTime.contains(asShapeItem)) {
+            if (boundingHitbox.collisionCheckCounter < 1) {
+              boundingHitbox.collisionCheckCounter +=
+                  boundingHitbox.collisionCheckFrequency;
+              continue;
+            } else {
+              boundingHitbox.collisionCheckCounter = 0;
+            }
           }
         }
       }
@@ -300,6 +304,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     broadphaseCheckCache.clear();
   }
 
+  @override
   void remove(T item) {
     final checkCache = broadphaseCheckCache[item];
     if (checkCache != null) {
@@ -312,6 +317,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
       broadphaseCheckCache.remove(item);
     }
+    hasCollisionsLastTime.remove(item);
   }
 
   @internal

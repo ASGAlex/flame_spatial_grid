@@ -87,14 +87,12 @@ all collisions are disabled.
       processCellsLimitToPauseEngine = 20;
       buildCellsPerUpdate = 1;
       cleanupCellsPerUpdate = 1;
-      operationsLimitToSavePicture = 5;
     } else {
       preloadRadius = const Size(5, 5);
       unloadRadius = const Size(3, 3);
       processCellsLimitToPauseEngine = 150;
       buildCellsPerUpdate = 2;
       cleanupCellsPerUpdate = 2;
-      operationsLimitToSavePicture = 50;
     }
     await initializeSpatialGrid(
       debug: false,
@@ -107,8 +105,7 @@ all collisions are disabled.
       rootComponent: world,
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
-      suspendedCellLifetime: const Duration(seconds: 30),
-      suspendCellPrecision: const Duration(seconds: 10),
+      suspendedCellLifetime: const Duration(minutes: 10),
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
@@ -118,7 +115,6 @@ all collisions are disabled.
         mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
       ),
     );
-    fadeOutConfig.operationsLimitToSavePicture = operationsLimitToSavePicture;
     // await demoMapLoader.init(this);
     layersManager.layersRootComponent.add(player);
     add(FpsTextComponent());
@@ -217,7 +213,7 @@ all collisions are disabled.
         world.npcList.clear();
       }
       if (key == LogicalKeyboardKey.keyC) {
-        world.spawnNpcTeam();
+        world.spawnNpcTeam(true);
       }
       if (key == LogicalKeyboardKey.keyI) {
         isAIEnabled = !isAIEnabled;
@@ -335,6 +331,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   );
 
   final bullets = Component();
+  final actors = Component();
 
   int npcCount = 0;
 
@@ -342,10 +339,11 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   Future<void> onLoad() async {
     bullets.priority = 100;
     add(bullets);
+    add(actors);
     spawnNpcTeam();
   }
 
-  void spawnNpcTeam() {
+  void spawnNpcTeam([bool aiEnabled = false]) {
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
@@ -355,7 +353,8 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
         size: Vector2.all(tileSize),
         priority: player.priority,
       );
-      add(npc);
+      npc.isAIEnabled = aiEnabled;
+      actors.add(npc);
       npcList.add(npc);
       npcCount++;
     }
@@ -551,7 +550,7 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
-    return;
+    // return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
@@ -599,7 +598,9 @@ class Player extends SpriteComponent
         final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
         position.setFrom(newPos);
       } else {
+        final vector = positionNoCollision - position;
         position.setFrom(positionNoCollision);
+        positionNoCollision.add(vector);
       }
     }
     super.onCollision(intersectionPoints, other);
@@ -708,11 +709,11 @@ class Npc extends Player {
       final yValue = rand.nextDouble();
       vector.setValues(xValue * xSign, yValue * ySign);
       if (vector.x.abs() < 0.05 && vector.y.abs() < 0.05) {
-        boundingBox.collisionCheckFrequency = 0.25;
+        boundingBox.collisionCheckFrequency = 0.01;
       } else if (vector.x.abs() < 0.2 && vector.y.abs() < 0.2) {
-        boundingBox.collisionCheckFrequency = 0.5;
+        boundingBox.collisionCheckFrequency = 0.05;
       } else {
-        boundingBox.collisionCheckFrequency = 1;
+        boundingBox.collisionCheckFrequency = 0.1;
       }
     }
   }

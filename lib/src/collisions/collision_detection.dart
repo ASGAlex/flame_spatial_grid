@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
 import 'package:flutter/foundation.dart';
@@ -102,9 +103,9 @@ class SpatialGridCollisionDetection
 
   @override
   void run() {
+    broadphase.update();
     _scheduledUpdateAfterTransform.forEach(_updateTransform);
     _scheduledUpdateAfterTransform.clear();
-    broadphase.update();
     final allPotentials = broadphase.query();
     final repeatBroadphaseForItems = _runForPotentials(allPotentials);
     if (repeatBroadphaseForItems.isNotEmpty) {
@@ -177,5 +178,23 @@ class SpatialGridCollisionDetection
       }
     }
     return repeatBroadphaseForItems;
+  }
+
+  @override
+  void handleCollisionStart(
+    Set<Vector2> intersectionPoints,
+    ShapeHitbox hitboxA,
+    ShapeHitbox hitboxB,
+  ) {
+    broadphase.hasCollisionsLastTime.add(hitboxA);
+    super.handleCollisionStart(intersectionPoints, hitboxA, hitboxB);
+  }
+
+  @override
+  void handleCollisionEnd(ShapeHitbox hitboxA, ShapeHitbox hitboxB) {
+    if (hitboxA.activeCollisions.isEmpty) {
+      broadphase.hasCollisionsLastTime.remove(hitboxA);
+    }
+    super.handleCollisionEnd(hitboxA, hitboxB);
   }
 }

@@ -205,7 +205,7 @@ class FadeOutConfig {
   FadeOutConfig({
     double transparencyPerStep = 0,
     this.fadeOutTimeout = Duration.zero,
-    this.operationsLimitToSavePicture = 50,
+    this.operationsLimitToSavePicture = 3,
   }) {
     this.transparencyPerStep = transparencyPerStep;
   }
