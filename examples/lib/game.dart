@@ -25,7 +25,6 @@ class SpatialGridExample extends FlameGame
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
-        HasTappableComponents,
         HasMessageProviders {
   SpatialGridExample() {
     loadingStream = messageProvidersManager
@@ -556,18 +555,16 @@ class Player extends SpriteComponent
     if (stepDone >= stepSize) {
       stepDone = 0;
       final step = PlayerStep(this);
-      final stepCell = step.currentCell;
-      if (stepCell != null) {
-        final layer = game.layersManager.addComponent(
-          component: step,
-          layerType: MapLayerType.trail,
-          layerName: 'trail',
-          optimizeCollisions: false,
-        );
+      final layer = game.layersManager.addComponent(
+        component: step,
+        currentCell: currentCell,
+        layerType: MapLayerType.trail,
+        layerName: 'trail',
+        optimizeCollisions: false,
+      );
 
-        if (layer is CellTrailLayer) {
-          layer.fadeOutConfig = game.fadeOutConfig;
-        }
+      if (layer is CellTrailLayer) {
+        layer.fadeOutConfig = game.fadeOutConfig;
       }
     }
   }
@@ -617,7 +614,7 @@ class Player extends SpriteComponent
   }
 }
 
-class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
+class PlayerStep extends PositionComponent with HasPaint {
   PlayerStep(Player player) {
     paint.color = Colors.white38;
     paint.strokeWidth = 1;
@@ -626,7 +623,7 @@ class PlayerStep extends PositionComponent with HasGridSupport, HasPaint {
     if (playerCell != null) {
       position = player.position + Vector2(0, 8);
       size = Vector2(8, 2);
-      currentCell = playerCell;
+      // currentCell = playerCell;
     }
   }
 

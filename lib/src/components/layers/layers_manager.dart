@@ -66,20 +66,29 @@ class LayersManager {
   /// Change [isRenewable] to "false" if you are sure that components will
   /// newer be changed, added or removed to the layer.
   CellLayer addComponent({
-    required HasGridSupport component,
+    required PositionComponent component,
     required MapLayerType layerType,
     required String layerName,
+    Cell? currentCell,
     bool absolutePosition = true,
     bool optimizeCollisions = true,
     bool optimizeGraphics = true,
     bool isRenewable = true,
     int priority = 1,
   }) {
-    var cell = component.currentCell;
-    cell ??= component.currentCell =
-        game.spatialGrid.findExistingCellByPosition(component.position);
-    cell ??= component.currentCell =
-        game.spatialGrid.createNewCellAtPosition(component.position);
+    Cell? cell;
+    if (currentCell == null && component is HasGridSupport) {
+      cell = component.currentCell;
+      cell ??= component.currentCell =
+          game.spatialGrid.findExistingCellByPosition(component.position);
+      cell ??= component.currentCell =
+          game.spatialGrid.createNewCellAtPosition(component.position);
+    } else if (currentCell != null) {
+      cell = currentCell;
+    } else {
+      throw 'The "component" should be "HasGridSupport" subtype or '
+          '"currentCell" parameter should be passed.';
+    }
     var layer = getLayer(name: layerName, cell: cell);
     final isNew = layer == null;
     switch (layerType) {

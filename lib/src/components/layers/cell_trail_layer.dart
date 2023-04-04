@@ -125,7 +125,7 @@ class CellTrailLayer extends CellStaticLayer {
     final canvas = Canvas(recorder);
     if (nonRenewableComponents.isNotEmpty) {
       for (final component in nonRenewableComponents) {
-        if (component is! HasGridSupport) {
+        if (component is! PositionComponent) {
           continue;
         }
         component.decorator.applyChain(component.render, canvas);
