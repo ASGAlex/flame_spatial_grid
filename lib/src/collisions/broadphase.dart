@@ -39,6 +39,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   final optimizedCollisionsByGroupBox =
       <Cell, Map<GroupHitbox, OptimizedCollisionList>>{};
 
+  @internal
+  double dt = 0;
+
   ExternalBroadphaseCheck broadphaseCheck;
   late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
 
@@ -143,11 +146,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
       if (activeItem is BoundingHitbox) {
         final boundingHitbox = activeItem as BoundingHitbox;
-        if (boundingHitbox.collisionCheckFrequency < 1) {
+        if (boundingHitbox.collisionCheckFrequency != -1) {
           if (!hasCollisionsLastTime.contains(asShapeItem)) {
-            if (boundingHitbox.collisionCheckCounter < 1) {
-              boundingHitbox.collisionCheckCounter +=
-                  boundingHitbox.collisionCheckFrequency;
+            if (boundingHitbox.collisionCheckCounter <
+                boundingHitbox.collisionCheckFrequency) {
+              boundingHitbox.collisionCheckCounter += dt;
               continue;
             } else {
               boundingHitbox.collisionCheckCounter = 0;

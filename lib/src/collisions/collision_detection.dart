@@ -5,6 +5,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
 import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
@@ -23,6 +24,9 @@ class SpatialGridCollisionDetection
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
   final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
   final SpatialGrid spatialGrid;
+
+  @internal
+  double dt = 0;
 
   @override
   void add(ShapeHitbox item) {
@@ -103,6 +107,7 @@ class SpatialGridCollisionDetection
 
   @override
   void run() {
+    broadphase.dt = dt;
     broadphase.update();
     _scheduledUpdateAfterTransform.forEach(_updateTransform);
     _scheduledUpdateAfterTransform.clear();

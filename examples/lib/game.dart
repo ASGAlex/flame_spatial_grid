@@ -714,11 +714,11 @@ class Npc extends Player {
       final yValue = rand.nextDouble();
       vector.setValues(xValue * xSign, yValue * ySign);
       if (vector.x.abs() < 0.05 && vector.y.abs() < 0.05) {
-        boundingBox.collisionCheckFrequency = 0.01;
+        boundingBox.collisionCheckFrequency = 2;
       } else if (vector.x.abs() < 0.2 && vector.y.abs() < 0.2) {
-        boundingBox.collisionCheckFrequency = 0.05;
+        boundingBox.collisionCheckFrequency = 1;
       } else {
-        boundingBox.collisionCheckFrequency = 0.1;
+        boundingBox.collisionCheckFrequency = 0.8;
       }
     }
   }

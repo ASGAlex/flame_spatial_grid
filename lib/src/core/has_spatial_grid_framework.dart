@@ -519,6 +519,7 @@ mixin HasSpatialGridFramework on FlameGame
 
         SpriteAnimationGlobalController.instance().update(dt);
         super.update(dt);
+        collisionDetection.dt = dt;
         collisionDetection.run();
       }
     } else {
