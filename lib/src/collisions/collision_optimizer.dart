@@ -209,7 +209,7 @@ class OptimizedCollisionList {
 
   void _updateBoundingBox() {
     if (_boundingBox.parent != null) {
-      parentLayer.remove(_boundingBox, internalCall: true);
+      _boundingBox.removeFromParent();
     }
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
@@ -225,13 +225,13 @@ class OptimizedCollisionList {
       position: rect.topLeft.toVector2(),
       size: rect.size.toVector2(),
     )..collisionType = CollisionType.passive;
-    parentLayer.add(_boundingBox, internalCall: true);
+    parentLayer.add(_boundingBox);
   }
 
   void clear() {
     _hitboxes.clear();
     if (_boundingBox.parent != null) {
-      parentLayer.remove(_boundingBox, internalCall: true);
+      _boundingBox.removeFromParent();
     }
   }
 }

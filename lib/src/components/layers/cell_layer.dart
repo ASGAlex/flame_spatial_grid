@@ -99,66 +99,66 @@ abstract class CellLayer extends PositionComponent
   }
 
   @override
-  FutureOr<void>? add(Component component, {bool internalCall = false}) async {
-    updateCorrections(component);
-
+  FutureOr<void>? add(Component component) async {
     if (isRenewable) {
-      if (component is HasGridSupport) {
-        component.transform.addListener(onChildrenUpdate);
-        _listenerChildrenUpdate[component] = onChildrenUpdate;
-      }
-      if (!internalCall) {
-        onBeforeChildrenChanged(component, ChildrenChangeType.added);
-      }
-      final future = component.loaded;
-      _pendingComponents.add(future);
       super.add(component);
-      return future;
     } else {
-      nonRenewableComponents.add(component);
-      if (component is HasGridSupport) {
-        component.currentCell = null;
-      }
-      if (!component.isLoaded) {
-        final future = component.onLoad();
-        if (future is Future) {
-          _pendingComponents.add(future);
-        }
-        return future;
-      }
+      onChildrenChanged(component, ChildrenChangeType.added);
     }
   }
 
   @override
-  void remove(Component component, {bool internalCall = false}) =>
-      _remove(component, internalCall: internalCall);
-
-  void _remove(
-    Component component, {
-    bool internalCall = false,
-    bool alreadyRemoved = false,
-  }) {
+  void remove(Component component, {bool internalCall = false}) {
     if (isRenewable) {
-      final callback = _listenerChildrenUpdate.remove(component);
-      if (callback != null && component is HasGridSupport) {
-        component.transform.removeListener(callback);
-      }
-
-      if (!internalCall) {
-        onBeforeChildrenChanged(component, ChildrenChangeType.removed);
-      }
-      if (!alreadyRemoved) {
-        super.remove(component);
-      }
+      super.remove(component);
     } else {
-      nonRenewableComponents.remove(component);
+      onChildrenChanged(component, ChildrenChangeType.removed);
     }
   }
 
   @override
   void onChildrenChanged(Component child, ChildrenChangeType type) {
-    if (type == ChildrenChangeType.removed) {
-      _remove(child, alreadyRemoved: true);
+    switch (type) {
+      case ChildrenChangeType.added:
+        updateCorrections(child);
+
+        if (isRenewable) {
+          if (child is HasGridSupport) {
+            child.transform.addListener(onChildrenUpdate);
+            _listenerChildrenUpdate[child] = onChildrenUpdate;
+          }
+          if (child is! GroupHitbox) {
+            scheduleLayerUpdate(child, ChildrenChangeType.added);
+          }
+          final future = child.loaded;
+          _pendingComponents.add(future);
+        } else {
+          nonRenewableComponents.add(child);
+          if (child is HasGridSupport) {
+            child.currentCell = null;
+          }
+          if (!child.isLoaded) {
+            final future = child.onLoad();
+            if (future is Future) {
+              _pendingComponents.add(future);
+            }
+          }
+        }
+        break;
+      case ChildrenChangeType.removed:
+        if (isRenewable) {
+          final callback = _listenerChildrenUpdate.remove(child);
+          if (callback != null && child is HasGridSupport) {
+            child.transform.removeListener(callback);
+          }
+
+          if (child is! GroupHitbox) {
+            scheduleLayerUpdate(child, ChildrenChangeType.removed);
+          }
+        } else {
+          nonRenewableComponents.remove(child);
+        }
+        break;
     }
   }
 
@@ -271,7 +271,11 @@ abstract class CellLayer extends PositionComponent
       return true;
     }
 
-    if (cell.isRemoving || !cell.isCellBuildFinished) {
+    if (parent == null ||
+        isRemoving ||
+        isRemoved ||
+        cell.isRemoving ||
+        !cell.isCellBuildFinished) {
       return true;
     }
 
@@ -285,7 +289,7 @@ abstract class CellLayer extends PositionComponent
     isUpdateNeeded = true;
   }
 
-  void onBeforeChildrenChanged(Component child, ChildrenChangeType type) {
+  void scheduleLayerUpdate(Component child, ChildrenChangeType type) {
     if (_isUpdateProhibited()) {
       return;
     }

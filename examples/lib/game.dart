@@ -94,7 +94,7 @@ all collisions are disabled.
       processCellsLimitToPauseEngine = 150;
       buildCellsPerUpdate = 2;
       cleanupCellsPerUpdate = 2;
-      operationsLimitToSavePicture = 15;
+      operationsLimitToSavePicture = 50;
     }
     await initializeSpatialGrid(
       debug: false,
@@ -551,6 +551,7 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
+    return;
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
