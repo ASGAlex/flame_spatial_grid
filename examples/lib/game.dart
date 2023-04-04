@@ -129,6 +129,7 @@ all collisions are disabled.
   var _killWater = false;
 
   bool teleportMode = true;
+  bool trailsEnabled = true;
   bool isAIEnabled = true;
 
   final fadeOutConfig = FadeOutConfig(
@@ -198,6 +199,9 @@ all collisions are disabled.
 
       if (key == LogicalKeyboardKey.keyM) {
         isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
+      }
+      if (key == LogicalKeyboardKey.keyL) {
+        trailsEnabled = !trailsEnabled;
       }
       if (key == LogicalKeyboardKey.keyR) {
         removeUnusedCells(forceCleanup: true);
@@ -549,7 +553,9 @@ class Player extends SpriteComponent
   }
 
   void createTrail(int value) {
-    // return;
+    if (!game.trailsEnabled) {
+      return;
+    }
     stepDone += vector.x.abs() / value + vector.y.abs() / value;
     if (stepDone >= stepSize) {
       stepDone = 0;
