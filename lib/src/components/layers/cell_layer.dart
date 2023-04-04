@@ -133,7 +133,11 @@ abstract class CellLayer extends PositionComponent
   void remove(Component component, {bool internalCall = false}) =>
       _remove(component, internalCall: internalCall);
 
-  void _remove(Component component, {bool internalCall = false}) {
+  void _remove(
+    Component component, {
+    bool internalCall = false,
+    bool alreadyRemoved = false,
+  }) {
     if (isRenewable) {
       final callback = _listenerChildrenUpdate.remove(component);
       if (callback != null && component is HasGridSupport) {
@@ -143,6 +147,9 @@ abstract class CellLayer extends PositionComponent
       if (!internalCall) {
         onBeforeChildrenChanged(component, ChildrenChangeType.removed);
       }
+      if (!alreadyRemoved) {
+        super.remove(component);
+      }
     } else {
       nonRenewableComponents.remove(component);
     }
@@ -151,7 +158,7 @@ abstract class CellLayer extends PositionComponent
   @override
   void onChildrenChanged(Component child, ChildrenChangeType type) {
     if (type == ChildrenChangeType.removed) {
-      _remove(child);
+      _remove(child, alreadyRemoved: true);
     }
   }
 
