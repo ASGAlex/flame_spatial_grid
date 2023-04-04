@@ -186,7 +186,7 @@ class OptimizedCollisionList {
     _updateBoundingBox();
   }
 
-  List<ShapeHitbox> get hitboxes => _hitboxes.toList(growable: false);
+  Set<ShapeHitbox> get hitboxes => _hitboxes;
   var _hitboxes = <ShapeHitbox>{};
   var _boundingBox = GroupHitbox(tag: '');
   final CellLayer parentLayer;

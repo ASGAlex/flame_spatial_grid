@@ -115,8 +115,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       if (cell == null) {
         continue;
       }
-      final hitboxes =
-          optimizedCollisionsByGroupBox[cell]?[groupBox]?.hitboxes.toList();
+      final hitboxes = optimizedCollisionsByGroupBox[cell]?[groupBox]?.hitboxes;
       if (hitboxes == null || hitboxes.isEmpty) {
         continue;
       }
@@ -173,7 +172,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         if (items != null && items.isNotEmpty) {
           _compareItemWithPotentials(
             asShapeItem,
-            items.toList(growable: false),
+            items,
             result,
           );
         }
@@ -182,7 +181,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         if (itemsActive != null && itemsActive.isNotEmpty) {
           _compareItemWithPotentials(
             asShapeItem,
-            itemsActive.toList(growable: false),
+            itemsActive,
             result,
           );
         }
@@ -194,7 +193,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   void _compareItemWithPotentials(
     ShapeHitbox asShapeItem,
-    List<ShapeHitbox> potentials,
+    Set<ShapeHitbox> potentials,
     HashSet<CollisionProspect<T>> result,
   ) {
     for (final potential in potentials) {
