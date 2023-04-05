@@ -10,6 +10,7 @@ export 'src/components/layers/cell_layer.dart';
 export 'src/components/layers/cell_static_animation_layer.dart';
 export 'src/components/layers/cell_static_layer.dart';
 export 'src/components/layers/cell_trail_layer.dart';
+export 'src/components/layers/has_trail_support.dart';
 export 'src/components/layers/layers_manager.dart';
 export 'src/components/sprite_animation_global.dart';
 export 'src/components/tile_component.dart';

@@ -44,6 +44,14 @@ class CellTrailLayer extends CellStaticLayer {
   void remove(Component component, {bool internalCall = false}) {}
 
   @override
+  FutureOr<void>? add(Component component) {
+    if (component is HasTrailSupport) {
+      component.addedToTrailLayer = true;
+    }
+    return super.add(component);
+  }
+
+  @override
   FutureOr compileToSingleLayer(Iterable<Component> children) {
     if (isRemovedLayer) {
       return null;
@@ -129,7 +137,13 @@ class CellTrailLayer extends CellStaticLayer {
           component.removeFromParent();
           continue;
         }
-        component.decorator.applyChain(component.render, canvas);
+        if (component is HasTrailSupport) {
+          component.renderCalledFromTrailLayer = true;
+          component.decorator.applyChain(component.render, canvas);
+          component.renderCalledFromTrailLayer = false;
+        } else {
+          component.decorator.applyChain(component.render, canvas);
+        }
         component.removeFromParent();
       }
       _calculatedOpacity = 1;
