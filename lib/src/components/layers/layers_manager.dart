@@ -124,10 +124,14 @@ class LayersManager {
           .setFrom(component.position - cell.rect.topLeft.toVector2());
     }
 
-    if (component.isMounted) {
-      component.parent = layer;
-    } else {
+    if (layerType == MapLayerType.trail) {
       layer.add(component);
+    } else {
+      if (component.isMounted) {
+        component.parent = layer;
+      } else {
+        layer.add(component);
+      }
     }
 
     if (isNew) {

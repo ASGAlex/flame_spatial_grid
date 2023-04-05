@@ -126,6 +126,7 @@ class CellTrailLayer extends CellStaticLayer {
     if (nonRenewableComponents.isNotEmpty) {
       for (final component in nonRenewableComponents) {
         if (component is! PositionComponent || component is BoundingHitbox) {
+          component.removeFromParent();
           continue;
         }
         component.decorator.applyChain(component.render, canvas);
