@@ -125,10 +125,11 @@ class CellTrailLayer extends CellStaticLayer {
     final canvas = Canvas(recorder);
     if (nonRenewableComponents.isNotEmpty) {
       for (final component in nonRenewableComponents) {
-        if (component is! PositionComponent) {
+        if (component is! PositionComponent || component is BoundingHitbox) {
           continue;
         }
         component.decorator.applyChain(component.render, canvas);
+        component.removeFromParent();
       }
       _calculatedOpacity = 1;
     }

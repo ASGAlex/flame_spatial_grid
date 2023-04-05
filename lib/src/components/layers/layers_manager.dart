@@ -124,7 +124,11 @@ class LayersManager {
           .setFrom(component.position - cell.rect.topLeft.toVector2());
     }
 
-    layer.add(component);
+    if (component.isMounted) {
+      component.parent = layer;
+    } else {
+      layer.add(component);
+    }
 
     if (isNew) {
       addLayer(layer);
