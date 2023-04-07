@@ -75,6 +75,9 @@ class Cell {
 
   final SpatialGrid spatialGrid;
   final Rect rect;
+  int outOfBoundsCounter = 0;
+
+  bool get hasOutOfBoundsComponents => outOfBoundsCounter > 0;
 
   /// Cell's central point.
   late final Vector2 center;
@@ -195,7 +198,8 @@ class Cell {
 
   void _activateComponents() {
     for (final component in components) {
-      for (final hitbox in component.children) {
+      final allChildren = component.descendants();
+      for (final hitbox in allChildren) {
         if (hitbox is! ShapeHitbox) {
           continue;
         }
@@ -208,7 +212,8 @@ class Cell {
 
   void _deactivateComponents() {
     for (final component in components) {
-      for (final hitbox in component.children) {
+      final allChildren = component.descendants();
+      for (final hitbox in allChildren) {
         if (hitbox is! ShapeHitbox) {
           continue;
         }

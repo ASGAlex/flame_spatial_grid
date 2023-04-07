@@ -28,8 +28,8 @@ class BoundingHitbox extends RectangleHitbox {
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;
-    minDistanceX = size.x / 2;
-    minDistanceY = size.y / 2;
+    minCollisionDistanceX = size.x / 2;
+    minCollisionDistanceY = size.y / 2;
     size.addListener(_updateMinDistance);
   }
 
@@ -53,8 +53,9 @@ class BoundingHitbox extends RectangleHitbox {
   @internal
   double collisionCheckCounter = 0;
 
-  double minDistanceX = 0.0;
-  double minDistanceY = 0.0;
+  double minCollisionDistanceX = 0.0;
+  double minCollisionDistanceY = 0.0;
+  void Function()? minCollisionDistanceOverride;
   bool isDistanceCallbackEnabled = false;
 
   final groupCollisionsTags = <String>[];
@@ -65,8 +66,8 @@ class BoundingHitbox extends RectangleHitbox {
   }
 
   void _updateMinDistance() {
-    minDistanceX = size.x / 2;
-    minDistanceY = size.y / 2;
+    minCollisionDistanceX = size.x / 2;
+    minCollisionDistanceY = size.y / 2;
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {

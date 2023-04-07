@@ -160,21 +160,17 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
 
       var cellsToCheck = <Cell>[];
-
-      if (withGridSupport.isOutOfCellBounds) {
-        cellsToCheck = withGridSupport.currentCell?.neighboursAndMe ?? [];
-      } else {
-        final cell = withGridSupport.currentCell;
-        if (cell != null) {
-          cellsToCheck = [cell];
-        } else {
-          continue;
-        }
-      }
-
-      if (cellsToCheck.isEmpty) {
+      final currentCell = withGridSupport.currentCell;
+      if (currentCell == null) {
         continue;
       }
+
+      if (currentCell.hasOutOfBoundsComponents) {
+        cellsToCheck = currentCell.neighboursAndMe;
+      } else {
+        cellsToCheck = [currentCell];
+      }
+
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
@@ -252,16 +248,16 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
     if (activeItem is BoundingHitbox) {
-      minDistanceX = activeItem.minDistanceX;
-      minDistanceY = activeItem.minDistanceY;
+      minDistanceX = activeItem.minCollisionDistanceX;
+      minDistanceY = activeItem.minCollisionDistanceY;
     } else {
       minDistanceX = activeItem.size.x / 2;
       minDistanceY = activeItem.size.y / 2;
     }
 
     if (potential is BoundingHitbox) {
-      minDistanceX += potential.minDistanceX;
-      minDistanceY += potential.minDistanceY;
+      minDistanceX += potential.minCollisionDistanceX;
+      minDistanceY += potential.minCollisionDistanceY;
     } else {
       minDistanceX += potential.size.x / 2;
       minDistanceY += potential.size.y / 2;

@@ -144,6 +144,7 @@ mixin HasGridSupport on PositionComponent {
 
   double get minDistanceY => _minDistanceY;
 
+  bool _outOfCellBoundsPrevious = false;
   bool _outOfCellBounds = false;
 
   /// If component fully lays inside cell bounds or overlaps other cells?
@@ -254,14 +255,18 @@ mixin HasGridSupport on PositionComponent {
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
+    Cell? previousCell;
+    List<Cell>? previousCellNeighbours;
     current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
         spatialGrid.createNewCellAtPosition(componentCenter);
     if (current.rect.containsPoint(componentCenter)) {
       currentCell = current;
     } else {
+      previousCell = currentCell;
       Cell? newCell;
       //look close neighbours
-      for (final cell in current.neighbours) {
+      previousCellNeighbours = current.neighbours;
+      for (final cell in previousCellNeighbours) {
         if (cell.rect.containsPoint(componentCenter)) {
           newCell = cell;
           break;
@@ -269,6 +274,7 @@ mixin HasGridSupport on PositionComponent {
       }
       //if nothing - search among all cells
       if (newCell == null) {
+        previousCellNeighbours = null;
         for (final cell in spatialGrid.cells.entries) {
           if (cell.value.rect.containsPoint(componentCenter)) {
             newCell = cell.value;
@@ -285,6 +291,41 @@ mixin HasGridSupport on PositionComponent {
         spatialGrid.currentCell = newCell;
       }
     }
-    _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
+    if (boundingBox.size.isZero()) {
+      _outOfCellBounds = false;
+    } else {
+      _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
+
+      if (previousCell != null) {
+        (previousCellNeighbours ??= previousCell.neighbours).add(previousCell);
+        for (final cell in previousCellNeighbours) {
+          if (cell.outOfBoundsCounter > 0) {
+            cell.outOfBoundsCounter--;
+          }
+        }
+        if (_outOfCellBounds) {
+          final cellNeighbours = currentCell!.neighboursAndMe;
+          for (final cell in cellNeighbours) {
+            cell.outOfBoundsCounter++;
+          }
+        }
+      }
+
+      if (_outOfCellBounds != _outOfCellBoundsPrevious) {
+        final cellNeighbours = currentCell!.neighboursAndMe;
+        var diff = 0;
+        if (_outOfCellBounds) {
+          diff = 1;
+        } else {
+          diff = -1;
+        }
+        for (final cell in cellNeighbours) {
+          if (diff > 0 || cell.outOfBoundsCounter > 0) {
+            cell.outOfBoundsCounter += diff;
+          }
+        }
+      }
+      _outOfCellBoundsPrevious = _outOfCellBounds;
+    }
   }
 }

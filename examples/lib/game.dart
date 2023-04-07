@@ -372,8 +372,9 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     gameRef.spatialGrid.cells.forEach((rect, cell) {
       if (cell.rect.containsPoint(tapPosition)) {
         cellsUnderCursor.add(cell);
+        print(cell.outOfBoundsCounter);
         // print('State:  + ${cell.state}');
-        // print('Rect: $rect');
+        print('Rect: $rect');
 
         // print('Components count: ${cell.components.length}');
       }

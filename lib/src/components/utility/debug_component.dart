@@ -61,11 +61,23 @@ class SpatialGridDebugComponent extends PositionComponent
     final border = getPaint('border');
     for (final element in spatialGrid.cells.entries) {
       if (element.value.state == CellState.active) {
-        canvas.drawRect(element.key, fill);
+        if (element.value.hasOutOfBoundsComponents) {
+          canvas.drawRect(element.key, broken);
+        } else {
+          canvas.drawRect(element.key, fill);
+        }
       } else if (element.value.state == CellState.inactive) {
-        canvas.drawRect(element.key, inactive);
+        if (element.value.hasOutOfBoundsComponents) {
+          canvas.drawRect(element.key, broken);
+        } else {
+          canvas.drawRect(element.key, inactive);
+        }
       } else {
-        canvas.drawRect(element.key, unloaded);
+        if (element.value.hasOutOfBoundsComponents) {
+          canvas.drawRect(element.key, broken);
+        } else {
+          canvas.drawRect(element.key, unloaded);
+        }
       }
       canvas.drawRect(element.key, border);
       if (element.value.rawLeft != null) {

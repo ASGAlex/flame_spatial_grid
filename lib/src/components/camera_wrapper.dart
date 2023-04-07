@@ -28,10 +28,14 @@ class SpatialGridCameraWrapper extends PositionComponent
   }
 
   final CameraComponent cameraComponent;
+  final _previousPosition = Vector2.zero();
 
   /// Camera's viewfinder tracking.
   void onPositionChange() {
-    position.setFrom(cameraComponent.viewfinder.position);
+    if (_previousPosition != cameraComponent.viewfinder.position) {
+      _previousPosition.setFrom(position);
+      position.setFrom(cameraComponent.viewfinder.position);
+    }
   }
 
   /// Camera's viewfinder zoom tracking
