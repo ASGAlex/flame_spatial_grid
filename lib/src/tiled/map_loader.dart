@@ -247,30 +247,30 @@ abstract class TiledMapLoader {
 
   /// Is useful when working with worlds with multiple maps and areas without
   /// any map at all
-  bool isCellOutsideOfMap(Cell cell) {
+  int cellPointsOutsideOfMap(Cell cell) {
     final checkList = [
       cell.rect.topLeft,
       cell.rect.bottomLeft,
       cell.rect.topRight,
       cell.rect.bottomRight
     ];
-    var isCellOutsideOfMap = true;
     for (final map in TiledMapLoader.loadedMaps) {
       if (map.mapRect == Rect.zero) {
         continue;
       }
-      for (final cellPoint in checkList) {
+      final tmpList = checkList.toList();
+      for (final cellPoint in tmpList) {
         if (map.mapRect.contains(cellPoint)) {
-          isCellOutsideOfMap = false;
-          break;
+          checkList.remove(cellPoint);
+        }
+        if (checkList.isEmpty) {
+          return 0;
         }
       }
     }
 
-    return isCellOutsideOfMap;
+    return checkList.length;
   }
-
-  bool isCellInsideOfMap(Cell cell) => !isCellOutsideOfMap(cell);
 
   List<Layer> _getLayers(
     RenderableTiledMap tileMap,

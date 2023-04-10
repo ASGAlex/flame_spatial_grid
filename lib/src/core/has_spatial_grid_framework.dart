@@ -279,27 +279,16 @@ mixin HasSpatialGridFramework on FlameGame
       return _cellBuilderNoMap?.call(cell, rootComponent);
     }
 
-    var cellOnMap = false;
-    for (final map in maps) {
-      if (map.isCellOutsideOfMap(cell)) {
-        continue;
-      }
-      cellOnMap = true;
-      await map.cellBuilder(cell, rootComponent);
-    }
-
-    if (worldMaps != null) {
-      for (final map in worldMaps) {
-        if (map.isCellOutsideOfMap(cell)) {
-          continue;
-        }
-        cellOnMap = true;
+    for (final map in TiledMapLoader.loadedMaps) {
+      final pointsOutside = map.cellPointsOutsideOfMap(cell);
+      if (pointsOutside == 0) {
+        await map.cellBuilder(cell, rootComponent);
+      } else if (pointsOutside == 4) {
+        await _cellBuilderNoMap?.call(cell, rootComponent);
+      } else {
+        await _cellBuilderNoMap?.call(cell, rootComponent);
         await map.cellBuilder(cell, rootComponent);
       }
-    }
-
-    if (!cellOnMap) {
-      return _cellBuilderNoMap?.call(cell, rootComponent);
     }
   }
 
