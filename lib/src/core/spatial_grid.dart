@@ -11,6 +11,7 @@ import 'package:meta/meta.dart';
 typedef CellBuilderFunction = Future<void> Function(
   Cell cell,
   Component rootComponent,
+  bool isFullyOutside,
 );
 
 /// Main class, responsible for grid creation, searching grid's cells, changing

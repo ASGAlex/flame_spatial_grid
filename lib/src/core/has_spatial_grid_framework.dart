@@ -273,23 +273,33 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
-  Future<void> _cellBuilderMulti(Cell cell, Component rootComponent) async {
-    final worldMaps = worldLoader?.maps;
-    if (maps.isEmpty && (worldMaps == null || worldMaps.isEmpty)) {
-      return _cellBuilderNoMap?.call(cell, rootComponent);
+  Future<bool> _cellBuilderMulti(Cell cell, Component rootComponent) async {
+    if (TiledMapLoader.loadedMaps.isEmpty) {
+      await _cellBuilderNoMap?.call(cell, rootComponent, true);
+      return true;
     }
 
+    final cache = <Rect, int>{};
+    var isFullyOutside = false;
     for (final map in TiledMapLoader.loadedMaps) {
-      final pointsOutside = map.cellPointsOutsideOfMap(cell);
+      var pointsOutside = cache[cell.rect];
+      if (pointsOutside == null) {
+        cache[cell.rect] = pointsOutside = map.cellPointsOutsideOfMap(cell);
+      } else {
+        pointsOutside = cache[cell.rect];
+      }
       if (pointsOutside == 0) {
         await map.cellBuilder(cell, rootComponent);
       } else if (pointsOutside == 4) {
-        await _cellBuilderNoMap?.call(cell, rootComponent);
+        isFullyOutside = true;
+        await _cellBuilderNoMap?.call(cell, rootComponent, true);
       } else {
-        await _cellBuilderNoMap?.call(cell, rootComponent);
+        await _cellBuilderNoMap?.call(cell, rootComponent, false);
         await map.cellBuilder(cell, rootComponent);
       }
     }
+
+    return isFullyOutside;
   }
 
   set isSpatialGridDebugEnabled(bool debug) {
@@ -391,8 +401,8 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   Future<void> _buildOneCell(Cell cell) async {
-    await _cellBuilderMulti(cell, rootComponent);
-    await _onAfterCellBuild?.call(cell, rootComponent);
+    final isFullyOutside = await _cellBuilderMulti(cell, rootComponent);
+    await _onAfterCellBuild?.call(cell, rootComponent, isFullyOutside);
     cell.isCellBuildFinished = true;
     cell.updateComponentsState();
   }

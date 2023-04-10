@@ -274,8 +274,14 @@ all collisions are disabled.
     hideLoadingComponent();
   }
 
-  Future<void> noMapCellBuilder(Cell cell, Component rootComponent) async {
-    // return;
+  Future<void> noMapCellBuilder(
+    Cell cell,
+    Component rootComponent,
+    bool isFullyOutside,
+  ) async {
+    if (!isFullyOutside) {
+      return;
+    }
     final spriteBrick = tilesetManager.getTile('tileset', 'Brick')?.sprite;
     final waterAnimation =
         tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;
@@ -347,6 +353,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam([bool aiEnabled = false]) {
+    return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
