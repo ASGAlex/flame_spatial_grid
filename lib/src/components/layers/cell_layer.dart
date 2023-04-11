@@ -41,13 +41,6 @@ abstract class CellLayer extends PositionComponent
   @protected
   final correctionBottomRight = Vector2.zero();
 
-  set persistentCorrection(double value) {
-    correctionTopLeft.x = -value;
-    correctionTopLeft.y = -value;
-    correctionBottomRight.x = size.x + value;
-    correctionBottomRight.y = size.y + value;
-  }
-
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
   final _pendingComponents = <Future>[];
@@ -76,11 +69,12 @@ abstract class CellLayer extends PositionComponent
   @protected
   void updateCorrections(Component component) {
     if (component is PositionComponent) {
-      if (component.position.x < correctionTopLeft.x) {
-        correctionTopLeft.x = component.position.x;
+      final topLeftPosition = component.position - component.size;
+      if (topLeftPosition.x < correctionTopLeft.x) {
+        correctionTopLeft.x = topLeftPosition.x;
       }
-      if (component.position.y < correctionTopLeft.y) {
-        correctionTopLeft.y = component.position.y;
+      if (topLeftPosition.y < correctionTopLeft.y) {
+        correctionTopLeft.y = topLeftPosition.y;
       }
 
       final bottomRightPosition = component.position + component.size;
