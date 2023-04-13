@@ -160,17 +160,18 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void updateTree(double dt) {
-    updateLayer();
+    updateLayer(dt);
   }
 
   Future<void>? _updateLayerFuture;
 
-  Future<void> updateLayer() {
+  Future<void> updateLayer([double dt = 0.001]) {
     if (isUpdateNeeded) {
       if (_updateLayerFuture != null) {
         return Future<void>.value();
       }
       if (isRenewable) {
+        super.updateTree(dt);
         _updateLayerFuture = waitForComponents().whenComplete(() async {
           if (isRemovedLayer) {
             return;
