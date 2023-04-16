@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flutter/painting.dart';
 import 'package:meta/meta.dart';
 
 /// A special hitbox type which saves additional information:
@@ -141,6 +142,16 @@ class BoundingHitbox extends RectangleHitbox {
     size.removeListener(_updateMinDistance);
     super.onRemove();
     _parentWithGridSupport = null;
+  }
+
+  @override
+  void renderDebugMode(Canvas canvas) {
+    canvas.drawRect(
+      Rect.fromLTWH(position.x, position.y, size.x, size.y),
+      Paint()
+        ..color = const Color.fromRGBO(119, 0, 255, 1.0)
+        ..style = PaintingStyle.stroke,
+    );
   }
 }
 

@@ -252,10 +252,25 @@ abstract class CellLayer extends PositionComponent
     }
     if (game.isSpatialGridDebugEnabled) {
       for (final element in children) {
-        if (element is! GroupHitbox) {
-          continue;
+        if (element is GroupHitbox) {
+          decorator.applyChain(
+            element.renderDebugMode,
+            canvas,
+          );
+        } else if (element is HasGridSupport) {
+          decorator.applyChain(
+            (canvas) {
+              element.decorator.applyChain(
+                (canvas) {
+                  element.boundingBox.decorator
+                      .applyChain(element.boundingBox.renderDebugMode, canvas);
+                },
+                canvas,
+              );
+            },
+            canvas,
+          );
         }
-        decorator.applyChain(element.renderDebugMode, canvas);
       }
     }
   }
