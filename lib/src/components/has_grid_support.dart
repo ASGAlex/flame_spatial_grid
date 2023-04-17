@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -131,19 +130,6 @@ mixin HasGridSupport on PositionComponent {
   @internal
   double dtElapsedWhileSuspended = 0;
 
-  double _minDistanceQuad = 0;
-
-  double get minDistanceQuad => _minDistanceQuad;
-
-  double get minDistance => sqrt(_minDistanceQuad);
-
-  double _minDistanceX = 0;
-
-  double get minDistanceX => _minDistanceX;
-  double _minDistanceY = 0;
-
-  double get minDistanceY => _minDistanceY;
-
   bool _outOfCellBoundsPrevious = false;
   bool _outOfCellBounds = false;
 
@@ -156,9 +142,8 @@ mixin HasGridSupport on PositionComponent {
   @override
   @mustCallSuper
   FutureOr<void>? onLoad() {
-    boundingBox.size.setFrom(Rect.fromLTWH(0, 0, size.x, size.y).toVector2());
+    boundingBox.size.setFrom(size);
     add(boundingBox);
-    boundingBox.transform.addListener(_onBoundingBoxTransform);
     return null;
   }
 
@@ -177,14 +162,6 @@ mixin HasGridSupport on PositionComponent {
     return super.add(component);
   }
 
-  void _onBoundingBoxTransform() {
-    _minDistanceQuad =
-        (pow(boundingBox.width / 2, 2) + pow(boundingBox.height / 2, 2))
-            .toDouble();
-    _minDistanceX = boundingBox.width / 2;
-    _minDistanceY = boundingBox.height / 2;
-  }
-
   void onCalculateDistance(
     Component other,
     double distanceX,
@@ -198,7 +175,6 @@ mixin HasGridSupport on PositionComponent {
       spatialGrid?.trackedComponent = null;
     }
 
-    boundingBox.transform.removeListener(_onBoundingBoxTransform);
     if (children.whereType<BoundingHitbox>().isEmpty) {
       // otherwise it will be removed with hitbox removal.
       currentCell = null;

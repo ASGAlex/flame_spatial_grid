@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
@@ -29,9 +30,6 @@ class BoundingHitbox extends RectangleHitbox {
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;
-    minCollisionDistanceX = size.x / 2;
-    minCollisionDistanceY = size.y / 2;
-    size.addListener(_updateMinDistance);
   }
 
   bool _aabbCenterNotSet = true;
@@ -56,7 +54,7 @@ class BoundingHitbox extends RectangleHitbox {
 
   double minCollisionDistanceX = 0.0;
   double minCollisionDistanceY = 0.0;
-  void Function()? minCollisionDistanceOverride;
+
   bool isDistanceCallbackEnabled = false;
 
   final groupCollisionsTags = <String>[];
@@ -126,6 +124,13 @@ class BoundingHitbox extends RectangleHitbox {
     final boundingRect = aabb.toRect();
     return rect.topLeft < boundingRect.topLeft &&
         rect.bottomRight > boundingRect.bottomRight;
+  }
+
+  @override
+  FutureOr<void> onLoad() {
+    _updateMinDistance();
+    size.addListener(_updateMinDistance);
+    return super.onLoad();
   }
 
   @override
