@@ -69,7 +69,7 @@ abstract class CellLayer extends PositionComponent
   @protected
   void updateCorrections(Component component) {
     if (component is PositionComponent) {
-      final topLeftPosition = component.position - component.size;
+      final topLeftPosition = -component.size;
       if (topLeftPosition.x < correctionTopLeft.x) {
         correctionTopLeft.x = topLeftPosition.x;
       }
@@ -77,7 +77,7 @@ abstract class CellLayer extends PositionComponent
         correctionTopLeft.y = topLeftPosition.y;
       }
 
-      final bottomRightPosition = component.position + component.size;
+      final bottomRightPosition = size + component.size;
       if (bottomRightPosition.x > correctionBottomRight.x) {
         correctionBottomRight.x = bottomRightPosition.x;
       }
