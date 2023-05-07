@@ -271,8 +271,7 @@ mixin HasGridSupport on PositionComponent {
       _outOfCellBounds = false;
     } else {
       _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
-
-      if (previousCell != null) {
+      if (previousCell != null && previousCell != currentCell) {
         (previousCellNeighbours ??= previousCell.neighbours).add(previousCell);
         for (final cell in previousCellNeighbours) {
           if (cell.outOfBoundsCounter > 0) {
@@ -285,9 +284,7 @@ mixin HasGridSupport on PositionComponent {
             cell.outOfBoundsCounter++;
           }
         }
-      }
-
-      if (_outOfCellBounds != _outOfCellBoundsPrevious) {
+      } else if (_outOfCellBounds != _outOfCellBoundsPrevious) {
         final cellNeighbours = currentCell!.neighboursAndMe;
         var diff = 0;
         if (_outOfCellBounds) {

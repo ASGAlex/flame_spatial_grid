@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 
 class SpatialGridDebugComponent extends PositionComponent
     with HasPaint<String> {
-  SpatialGridDebugComponent(this.spatialGrid) : super(priority: -100);
+  SpatialGridDebugComponent(this.spatialGrid) : super(priority: 10000);
 
   final SpatialGrid spatialGrid;
 
@@ -16,29 +16,30 @@ class SpatialGridDebugComponent extends PositionComponent
 
   @override
   FutureOr<void> onLoad() {
+    const opacity = 0.8;
     final paintFill = Paint();
     paintFill.style = PaintingStyle.fill;
-    paintFill.color = Colors.lightGreen;
+    paintFill.color = Colors.lightGreen.withOpacity(opacity);
     setPaint('fill', paintFill);
 
     final paintFillInactive = Paint();
     paintFillInactive.style = PaintingStyle.fill;
-    paintFillInactive.color = Colors.blueGrey;
+    paintFillInactive.color = Colors.blueGrey.withOpacity(opacity);
     setPaint('inactive', paintFillInactive);
 
     final paintFillUnloaded = Paint();
     paintFillUnloaded.style = PaintingStyle.fill;
-    paintFillUnloaded.color = Colors.black54;
+    paintFillUnloaded.color = Colors.black54.withOpacity(opacity);
     setPaint('unloaded', paintFillUnloaded);
 
     final paintFillBroken = Paint();
     paintFillBroken.style = PaintingStyle.fill;
-    paintFillBroken.color = Colors.orange;
+    paintFillBroken.color = Colors.orange.withOpacity(opacity);
     setPaint('broken', paintFillBroken);
 
     final paintBorder = Paint();
     paintBorder.style = PaintingStyle.stroke;
-    paintBorder.color = Colors.redAccent;
+    paintBorder.color = Colors.redAccent.withOpacity(opacity);
     paintBorder.strokeWidth = 1;
     setPaint('border', paintBorder);
 
@@ -63,18 +64,33 @@ class SpatialGridDebugComponent extends PositionComponent
       if (element.value.state == CellState.active) {
         if (element.value.hasOutOfBoundsComponents) {
           canvas.drawRect(element.key, broken);
+          textPaintOK.render(
+            canvas,
+            element.value.outOfBoundsCounter.toString(),
+            element.key.center.toVector2(),
+          );
         } else {
           canvas.drawRect(element.key, fill);
         }
       } else if (element.value.state == CellState.inactive) {
         if (element.value.hasOutOfBoundsComponents) {
           canvas.drawRect(element.key, broken);
+          textPaintOK.render(
+            canvas,
+            element.value.outOfBoundsCounter.toString(),
+            element.key.center.toVector2(),
+          );
         } else {
           canvas.drawRect(element.key, inactive);
         }
       } else {
         if (element.value.hasOutOfBoundsComponents) {
           canvas.drawRect(element.key, broken);
+          textPaintOK.render(
+            canvas,
+            element.value.outOfBoundsCounter.toString(),
+            element.key.center.toVector2(),
+          );
         } else {
           canvas.drawRect(element.key, unloaded);
         }
