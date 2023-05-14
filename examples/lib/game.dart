@@ -70,7 +70,7 @@ all collisions are disabled.
     player = world.player;
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
-    cameraComponent.follow(player, maxSpeed: 40, snap: true);
+    cameraComponent.follow(player, maxSpeed: 200, snap: true);
 
     // check that manual loading works correctly (not necessary line)
     await tilesetManager.loadTileset('tileset.tsx');
@@ -101,6 +101,18 @@ all collisions are disabled.
       collisionOptimizerDefaultGroupLimit: 50,
       blockSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
+      initialPositionChecker: (layer, object, mapOffset, worldName) {
+        if (worldName == null) {
+          return null;
+        }
+        if (object.name == 'spawn_player') {
+          cameraComponent.viewfinder.position =
+              player.position = mapOffset + Vector2(object.x, object.y);
+
+          return player.position;
+        }
+        return null;
+      },
       rootComponent: world,
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
@@ -247,14 +259,14 @@ all collisions are disabled.
   void onScroll(PointerScrollInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.6, 8.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
     var zoom = cameraComponent.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.6, 8.0);
+    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
   @override

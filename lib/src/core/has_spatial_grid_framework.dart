@@ -149,6 +149,7 @@ mixin HasSpatialGridFramework on FlameGame
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
+    InitialPositionChecker? initialPositionChecker,
     CellBuilderFunction? cellBuilderNoMap,
     CellBuilderFunction? onAfterCellBuild,
     List<TiledMapLoader>? maps,
@@ -183,6 +184,27 @@ mixin HasSpatialGridFramework on FlameGame
       add(trackedComponent.cameraComponent);
       add(trackedComponent);
     }
+
+    if (initialPosition == null && initialPositionChecker != null) {
+      if (worldLoader != null) {
+        final position =
+            await worldLoader.searchInitialPosition(initialPositionChecker);
+        if (position != null) {
+          initialPosition = position;
+        }
+      }
+      if (initialPosition == null) {
+        for (final map in this.maps) {
+          final position =
+              await map.searchInitialPosition(initialPositionChecker);
+          if (position != null) {
+            initialPosition = position;
+            break;
+          }
+        }
+      }
+    }
+
     spatialGrid = SpatialGrid(
       blockSize: Size.square(blockSize),
       trackedComponent: trackedComponent,

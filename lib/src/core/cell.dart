@@ -322,6 +322,7 @@ class Cell {
           newRect = Rect.fromLTWH(rect.left, rect.bottom, width, height);
           break;
       }
+      newRect = newRect.toRounded();
       _cachedRects[creationContext] = newRect;
     }
     return newRect;
@@ -366,4 +367,20 @@ class Cell {
   }
 
   List<Cell> get neighboursAndMe => neighbours..add(this);
+}
+
+extension RoundPrecision on Rect {
+  Rect toRounded([int precision = 3]) {
+    var value = 1;
+    for (var i = 0; i < precision; i++) {
+      value = value * 10;
+    }
+
+    return Rect.fromLTRB(
+      (left * value).round() / value,
+      (top * value).round() / value,
+      (right * value).round() / value,
+      (bottom * value).round() / value,
+    );
+  }
 }

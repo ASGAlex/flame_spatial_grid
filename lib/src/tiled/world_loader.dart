@@ -9,9 +9,25 @@ class WorldLoader {
   final Map<String, TiledMapLoader> mapLoader;
   late final HasSpatialGridFramework game;
 
+  Future loadWorldData() async {
+    worldData ??= await WorldData.fromFile('assets/tiles/$fileName');
+  }
+
+  Future<Vector2?> searchInitialPosition(
+      InitialPositionChecker checkFunction) async {
+    await loadWorldData();
+    for (final map in maps) {
+      final result = await map.searchInitialPosition(checkFunction, fileName);
+      if (result != null) {
+        return result;
+      }
+    }
+    return null;
+  }
+
   Future init(HasSpatialGridFramework game) async {
     this.game = game;
-    worldData = await WorldData.fromFile('assets/tiles/$fileName');
+    await loadWorldData();
     final futures = <Future>[];
     for (final map in maps) {
       futures.add(map.init(game));

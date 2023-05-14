@@ -9,6 +9,13 @@ import 'package:meta/meta.dart';
 
 typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
 
+typedef InitialPositionChecker = Vector2? Function(
+  ObjectGroup layer,
+  TiledObject object,
+  Vector2 mapOffset,
+  String? worldName,
+);
+
 /// List of basic types of [CellLayer], supported natively by spatial grid
 /// framework
 enum MapLayerType {
@@ -77,6 +84,8 @@ abstract class TiledMapLoader {
   /// class and working with layers.
   late final HasSpatialGridFramework game;
 
+  TiledComponent? tiledComponent;
+
   Component get rootComponent => game.rootComponent;
 
   /// By default flame_tiled loads just tilesets that are really used in the
@@ -103,6 +112,56 @@ abstract class TiledMapLoader {
   TileCache? getPreloadedTileData(String tileSetName, String tileType) =>
       game.tilesetManager.getTile(tileSetName, tileType);
 
+  Future<TiledComponent> loadTiledComponent() async {
+    if (tiledComponent != null) {
+      return tiledComponent!;
+    } else {
+      tiledComponent = await TiledComponent.load(
+        fileName,
+        destTileSize,
+        priority: basePriority,
+      );
+      final widthInTiles = tiledComponent!.tileMap.map.width;
+      final heightInTiles = tiledComponent!.tileMap.map.height;
+      mapRect = Rect.fromLTWH(
+        initialPosition.x,
+        initialPosition.y,
+        widthInTiles * destTileSize.x,
+        heightInTiles * destTileSize.y,
+      );
+
+      return tiledComponent!;
+    }
+  }
+
+  Future<Vector2?> searchInitialPosition(
+    InitialPositionChecker checkFunction, [
+    String? worldName,
+  ]) async {
+    final renderableTiledMap = (await loadTiledComponent()).tileMap;
+
+    for (final renderableLayer in renderableTiledMap.renderableLayers) {
+      final layer = renderableLayer.layer;
+      if (layer.type != LayerType.objectGroup) {
+        continue;
+      }
+
+      final objects = (layer as ObjectGroup).objects;
+      for (final object in objects) {
+        final result = checkFunction.call(
+          layer,
+          object,
+          initialPosition,
+          worldName,
+        );
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
   /// Every map should be initialized after spatial grid initialization.
   /// This function triggers the process. After it the map is loaded and mounted
   /// into the [game].
@@ -114,20 +173,8 @@ abstract class TiledMapLoader {
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
     this.game = game;
 
-    final tiledComponent = await TiledComponent.load(
-      fileName,
-      destTileSize,
-      priority: basePriority,
-    );
-    final renderableTiledMap = tiledComponent.tileMap;
-    final widthInTiles = tiledComponent.tileMap.map.width;
-    final heightInTiles = tiledComponent.tileMap.map.height;
-    mapRect = Rect.fromLTWH(
-      initialPosition.x,
-      initialPosition.y,
-      widthInTiles * destTileSize.x,
-      heightInTiles * destTileSize.y,
-    );
+    final renderableTiledMap = (await loadTiledComponent()).tileMap;
+
     if (preloadTileSets) {
       await _preloadTileSets(renderableTiledMap.map);
     }
@@ -172,7 +219,7 @@ abstract class TiledMapLoader {
       }
     }
 
-    return tiledComponent;
+    return tiledComponent!;
   }
 
   Future<void> _preloadTileSets(TiledMap map) async {

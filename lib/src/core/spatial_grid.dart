@@ -46,16 +46,12 @@ class SpatialGrid {
     this.unloadRadius = unloadRadius ?? const Size(5, 5);
     this.preloadRadius = preloadRadius ?? const Size(5, 5);
     final position =
-        trackedComponent?.position ?? initialPosition ?? Vector2(0, 0);
+        initialPosition ?? trackedComponent?.position ?? Vector2(0, 0);
 
     final cell = Cell(
       spatialGrid: this,
       suspended: lazyLoad,
-      rect: Rect.fromCenter(
-        center: position.toOffset(),
-        width: blockSize.width,
-        height: blockSize.height,
-      ),
+      rect: getCellRectAtPosition(position),
     );
 
     if (!lazyLoad) {
@@ -439,6 +435,10 @@ class SpatialGrid {
   /// Cell [Rect] is useful for creating unique cell's keys in hash maps and
   /// hash sets, because only one cell could be in some position.
   Rect getCellRectAtPosition(Vector2 position) {
+    if (cells.isEmpty) {
+      return _createRectWithLimitedPrecision(position);
+    }
+
     final nearest = findNearestCellToPosition(position);
     if (nearest == null) {
       throw 'There are no cells probably? Position: $position';
@@ -468,13 +468,17 @@ class SpatialGrid {
       }
     }
 
+    return _createRectWithLimitedPrecision(startPoint);
+  }
+
+  Rect _createRectWithLimitedPrecision(Vector2 center) {
     final rect = Rect.fromCenter(
-      center: startPoint.toOffset(),
+      center: center.toOffset(),
       width: blockSize.width,
       height: blockSize.height,
     );
 
-    return rect;
+    return rect.toRounded();
   }
 
   /// Use this function if you want to create new cell manually. Do not access
