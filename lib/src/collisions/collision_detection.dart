@@ -69,9 +69,9 @@ class SpatialGridCollisionDetection
       _listenerCollisionType.remove(item);
     }
 
-    final spatialGridSupportComponent = item.parentWithGridSupport;
-    if (spatialGridSupportComponent != null) {
-      final currentCell = spatialGridSupportComponent.currentCell;
+    final withGridSupportComponent = item.parentWithGridSupport;
+    if (withGridSupportComponent != null) {
+      final currentCell = withGridSupportComponent.currentCell;
       if (currentCell != null) {
         broadphase.scheduledOperations.add(
           ScheduledHitboxOperation.removePassive(
@@ -86,8 +86,8 @@ class SpatialGridCollisionDetection
           ),
         );
       }
-      if (spatialGridSupportComponent.parent == null) {
-        spatialGridSupportComponent.currentCell = null;
+      if (withGridSupportComponent.parent == null) {
+        withGridSupportComponent.currentCell = null;
       }
     }
 

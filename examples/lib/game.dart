@@ -210,7 +210,7 @@ all collisions are disabled.
       }
 
       if (key == LogicalKeyboardKey.keyM) {
-        isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
+        // isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
       }
       if (key == LogicalKeyboardKey.keyL) {
         trailsEnabled = !trailsEnabled;
@@ -291,6 +291,7 @@ all collisions are disabled.
     Component rootComponent,
     bool isFullyOutside,
   ) async {
+    // return;
     if (!isFullyOutside) {
       return;
     }
@@ -365,7 +366,7 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam([bool aiEnabled = false]) {
-    return;
+    // return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;

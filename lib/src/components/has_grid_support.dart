@@ -130,11 +130,11 @@ mixin HasGridSupport on PositionComponent {
   @internal
   double dtElapsedWhileSuspended = 0;
 
-  bool _outOfCellBoundsPrevious = false;
-  bool _outOfCellBounds = false;
+  // bool _isOutOfCellBoundsPrevious = false;
+  bool _isOutOfCellBounds = false;
 
   /// If component fully lays inside cell bounds or overlaps other cells?
-  bool get isOutOfCellBounds => _outOfCellBounds;
+  bool get isOutOfCellBounds => _isOutOfCellBounds;
 
   /// [boundingBox] initialisation provided here. It is absolutely necessary for
   /// keeping framework to work correctly, so please never forgot to call
@@ -171,6 +171,10 @@ mixin HasGridSupport on PositionComponent {
   @override
   @mustCallSuper
   void onRemove() {
+    if (_isOutOfCellBounds && _previousOutOfBoundsCell != null) {
+      _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
+      _previousOutOfBoundsCell = null;
+    }
     if (isTracked) {
       spatialGrid?.trackedComponent = null;
     }
@@ -267,38 +271,52 @@ mixin HasGridSupport on PositionComponent {
         spatialGrid.currentCell = newCell;
       }
     }
-    if (boundingBox.size.isZero()) {
-      _outOfCellBounds = false;
-    } else {
-      _outOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
-      if (previousCell != null && previousCell != currentCell) {
-        (previousCellNeighbours ??= previousCell.neighbours).add(previousCell);
-        for (final cell in previousCellNeighbours) {
-          if (cell.outOfBoundsCounter > 0) {
-            cell.outOfBoundsCounter--;
-          }
+    _updateOutOfCellBounds();
+  }
+
+  Cell? _previousOutOfBoundsCell;
+
+  void _updateOutOfCellBounds() {
+    final current = currentCell;
+    if (boundingBox.size.isZero() ||
+        boundingBox.collisionType == CollisionType.inactive ||
+        current == null) {
+      _isOutOfCellBounds = false;
+      return;
+    }
+    _isOutOfCellBounds = !boundingBox.isFullyInsideRect(current.rect);
+    if (_isOutOfCellBounds) {
+      if (current != _previousOutOfBoundsCell) {
+        if (_previousOutOfBoundsCell != null) {
+          _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
         }
-        if (_outOfCellBounds) {
-          final cellNeighbours = currentCell!.neighboursAndMe;
-          for (final cell in cellNeighbours) {
-            cell.outOfBoundsCounter++;
-          }
-        }
-      } else if (_outOfCellBounds != _outOfCellBoundsPrevious) {
-        final cellNeighbours = currentCell!.neighboursAndMe;
-        var diff = 0;
-        if (_outOfCellBounds) {
-          diff = 1;
-        } else {
-          diff = -1;
-        }
-        for (final cell in cellNeighbours) {
-          if (diff > 0 || cell.outOfBoundsCounter > 0) {
-            cell.outOfBoundsCounter += diff;
-          }
-        }
+        _increaseOutOfBoundsCounter(current);
       }
-      _outOfCellBoundsPrevious = _outOfCellBounds;
+      _previousOutOfBoundsCell = current;
+    } else {
+      if (_previousOutOfBoundsCell != null) {
+        _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
+      }
+      _previousOutOfBoundsCell = null;
+      // _decreaseOutOfBoundsCounter(current);
+    }
+  }
+
+  void _increaseOutOfBoundsCounter(Cell centralCell) {
+    final cellNeighbours = centralCell.neighboursAndMe;
+    for (final cell in cellNeighbours) {
+      cell.outOfBoundsCounter++;
+    }
+  }
+
+  void _decreaseOutOfBoundsCounter(Cell centralCell) {
+    final cellNeighbours = centralCell.neighboursAndMe;
+    for (final cell in cellNeighbours) {
+      cell.outOfBoundsCounter--;
+      if (cell.outOfBoundsCounter < 0) {
+        print('outOfBoundsCounter should not be below zero!');
+        cell.outOfBoundsCounter = 0;
+      }
     }
   }
 }
