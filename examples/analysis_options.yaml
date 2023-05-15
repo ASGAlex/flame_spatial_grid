@@ -3,8 +3,8 @@
 
 analyzer:
   strong-mode:
-    implicit-casts: false
-    implicit-dynamic: false
+    # implicit-casts: false
+    # implicit-dynamic: false
   exclude:
     - "**/*.g.dart"
 
@@ -90,7 +90,6 @@ linter:
     - prefer_const_literals_to_create_immutables
     - prefer_constructors_over_static_methods
     - prefer_contains
-    - prefer_equal_for_default_values
     - prefer_final_fields
     - prefer_final_in_for_each
     - prefer_final_locals

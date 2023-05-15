@@ -14,7 +14,8 @@ class WorldLoader {
   }
 
   Future<Vector2?> searchInitialPosition(
-      InitialPositionChecker checkFunction) async {
+    InitialPositionChecker checkFunction,
+  ) async {
     await loadWorldData();
     for (final map in maps) {
       final result = await map.searchInitialPosition(checkFunction, fileName);

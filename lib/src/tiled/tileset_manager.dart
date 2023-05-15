@@ -35,9 +35,10 @@ class TilesetManager {
         continue;
       }
       tilesetCache[tileTypeName] = TileCache(
-          sprite: await tile.getSprite(tileSet),
-          spriteAnimation: await tile.getSpriteAnimation(tileSet),
-          properties: tile.properties);
+        sprite: await tile.getSprite(tileSet),
+        spriteAnimation: await tile.getSpriteAnimation(tileSet),
+        properties: tile.properties,
+      );
     }
     _preloadedTileSet[tilesetName] = tilesetCache;
   }

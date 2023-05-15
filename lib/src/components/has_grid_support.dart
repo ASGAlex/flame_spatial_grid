@@ -235,14 +235,12 @@ mixin HasGridSupport on PositionComponent {
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
-    Cell? previousCell;
     List<Cell>? previousCellNeighbours;
     current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
         spatialGrid.createNewCellAtPosition(componentCenter);
     if (current.rect.containsPoint(componentCenter)) {
       currentCell = current;
     } else {
-      previousCell = currentCell;
       Cell? newCell;
       //look close neighbours
       previousCellNeighbours = current.neighbours;

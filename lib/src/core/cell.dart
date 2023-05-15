@@ -254,7 +254,7 @@ class Cell {
         if (target is HasGridSupport && target.currentCell == this) {
           return;
         }
-      } catch (e) {}
+      } catch (_) {}
     }
 
     _remove = true;

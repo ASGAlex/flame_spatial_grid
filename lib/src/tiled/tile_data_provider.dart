@@ -56,8 +56,8 @@ class TileDataProvider {
 
 /// This class represents the tile's data and the cell's context in which this
 /// tile was built
-/// [absolutePosition] and [size] represents tile's global position on the game field
-/// and it's dimensions.
+/// [absolutePosition] and [size] represents tile's global position on the game
+/// field and it's dimensions.
 /// If this context contains information about tiled object, [tiledObject] will
 /// be not null.
 /// If the context contains information about tile, the [tileDataProvider]
