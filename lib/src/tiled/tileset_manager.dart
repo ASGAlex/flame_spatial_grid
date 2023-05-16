@@ -9,6 +9,10 @@ class TilesetManager {
   static final _preloadedTileSet =
       HashMap<String, HashMap<String, TileCache>>();
 
+  static void clear() {
+    _preloadedTileSet.clear();
+  }
+
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
   TileCache? getTile(String tileSetName, String tileType) =>

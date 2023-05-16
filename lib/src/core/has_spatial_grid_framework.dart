@@ -157,7 +157,8 @@ mixin HasSpatialGridFramework on FlameGame
     bool lazyLoad = true,
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
-    LoadingProgressManager.lastProgressMinimum = 0;
+    _clearStaticVariables();
+
     showLoadingComponent();
     final progressManager = LoadingProgressManager<String>(
       'spatial grid',
@@ -248,6 +249,14 @@ mixin HasSpatialGridFramework on FlameGame
         throw 'Lazy load initialization error!';
       }
     }
+  }
+
+  void _clearStaticVariables() {
+    LoadingProgressManager.lastProgressMinimum = 0;
+    HasGridSupport.cachedCenters.clear();
+    HasGridSupport.componentHitboxes.clear();
+    HasGridSupport.defaultCollisionType.clear();
+    TilesetManager.clear();
   }
 
   void onInitializationDone() {}
