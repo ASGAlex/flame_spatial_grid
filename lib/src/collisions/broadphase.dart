@@ -218,9 +218,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       var canToCollide = true;
       if (asShapeItem is BoundingHitbox) {
         if (asShapeItem.broadphaseCheckOnlyByType) {
-          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(
-                potential.hitboxParent.runtimeType,
-              ) ??
+          final type = _getPotentialRuntimeType(potential);
+          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
               _runExternalBroadphaseCheckByType(asShapeItem, potential);
         } else {
           canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
@@ -244,6 +243,17 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
       result.add(CollisionProspect(asShapeItem as T, potential as T));
     }
+  }
+
+  Type _getPotentialRuntimeType(ShapeHitbox potential) {
+    final potentialParent = potential.hitboxParent;
+    var type = potentialParent.runtimeType;
+    if (potentialParent is CellLayer) {
+      if (potentialParent.primaryCollisionType != null) {
+        type = potentialParent.primaryCollisionType!;
+      }
+    }
+    return type;
   }
 
   bool _minimumDistanceCheck(
@@ -314,7 +324,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     }
     final canToCollide = broadphaseCheck(active, potential);
     active.storeBroadphaseCheckCacheByType(
-      potential.hitboxParent.runtimeType,
+      _getPotentialRuntimeType(potential),
       canToCollide,
     );
 
