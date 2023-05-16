@@ -36,6 +36,9 @@ class BoundingHitbox extends RectangleHitbox {
   final Vector2 _aabbCenter = Vector2.zero();
 
   final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
+  final _broadphaseCheckByTypeCache = HashMap<Type, bool>();
+
+  bool broadphaseCheckOnlyByType = true;
 
   /// [aabb] calculates center at each call. This method provides
   /// caching.
@@ -78,8 +81,15 @@ class BoundingHitbox extends RectangleHitbox {
     }
   }
 
+  void storeBroadphaseCheckCacheByType(Type itemType, bool canCollide) {
+    _broadphaseCheckByTypeCache[itemType] = canCollide;
+  }
+
   bool? getBroadphaseCheckCache(ShapeHitbox item) =>
       _broadphaseCheckCache[item];
+
+  bool? getBroadphaseCheckCacheByType(Type itemType) =>
+      _broadphaseCheckByTypeCache[itemType];
 
   void removeBroadphaseCheckItem(ShapeHitbox item) {
     _broadphaseCheckCache.remove(item);

@@ -217,8 +217,15 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
       var canToCollide = true;
       if (asShapeItem is BoundingHitbox) {
-        canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
-            _runExternalBroadphaseCheck(asShapeItem, potential);
+        if (asShapeItem.broadphaseCheckOnlyByType) {
+          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(
+                potential.hitboxParent.runtimeType,
+              ) ??
+              _runExternalBroadphaseCheckByType(asShapeItem, potential);
+        } else {
+          canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
+              _runExternalBroadphaseCheck(asShapeItem, potential);
+        }
       } else {
         canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
             _runExternalBroadphaseCheck(asShapeItem, potential);
@@ -284,16 +291,32 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return false;
   }
 
-  bool _runExternalBroadphaseCheck(ShapeHitbox item0, ShapeHitbox item1) {
-    if (item0 is GroupHitbox || item1 is GroupHitbox) {
+  bool _runExternalBroadphaseCheck(ShapeHitbox active, ShapeHitbox potential) {
+    if (active is GroupHitbox || potential is GroupHitbox) {
       return true;
     }
-    final canToCollide = broadphaseCheck(item0, item1);
-    if (item0 is BoundingHitbox) {
-      item0.storeBroadphaseCheckCache(item1, canToCollide);
+    final canToCollide = broadphaseCheck(active, potential);
+    if (active is BoundingHitbox) {
+      active.storeBroadphaseCheckCache(potential, canToCollide);
     } else {
-      item0.storeBroadphaseCheckCache(item1, canToCollide);
+      active.storeBroadphaseCheckCache(potential, canToCollide);
     }
+
+    return canToCollide;
+  }
+
+  bool _runExternalBroadphaseCheckByType(
+    BoundingHitbox active,
+    ShapeHitbox potential,
+  ) {
+    if (active is GroupHitbox || potential is GroupHitbox) {
+      return true;
+    }
+    final canToCollide = broadphaseCheck(active, potential);
+    active.storeBroadphaseCheckCacheByType(
+      potential.hitboxParent.runtimeType,
+      canToCollide,
+    );
 
     return canToCollide;
   }
