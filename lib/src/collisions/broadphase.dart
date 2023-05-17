@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
+import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
@@ -22,6 +23,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }) {
     clear();
     this.minimumDistanceCheck = minimumDistanceCheck ?? _minimumDistanceCheck;
+    _fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
+    _fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
   }
 
   final SpatialGrid spatialGrid;
@@ -51,6 +54,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   @internal
   final scheduledOperations = <ScheduledHitboxOperation>[];
+
+  double _fastDistanceCheckMinX = -1;
+  double _fastDistanceCheckMinY = -1;
 
   @override
   void update() {
@@ -201,9 +207,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     HashSet<CollisionProspect<T>> result, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
   ]) {
+    final activeParent = asShapeItem.parent;
     for (final potential in potentials) {
-      if (potential.parent == asShapeItem.parent &&
-          asShapeItem.parent != null) {
+      if (activeParent != null && potential.parent == activeParent) {
         continue;
       }
       if (activeChecked != null) {
@@ -264,41 +270,71 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     final potentialCenter = potential.aabbCenter;
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
-    if (activeItem is BoundingHitbox) {
-      minDistanceX = activeItem.minCollisionDistanceX;
-      minDistanceY = activeItem.minCollisionDistanceY;
-    } else {
-      minDistanceX = activeItem.size.x / 2;
-      minDistanceY = activeItem.size.y / 2;
-    }
-
-    if (potential is BoundingHitbox) {
-      minDistanceX += potential.minCollisionDistanceX;
-      minDistanceY += potential.minCollisionDistanceY;
-    } else {
-      minDistanceX += potential.size.x / 2;
-      minDistanceY += potential.size.y / 2;
-    }
-
-    final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
-    final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
 
     if (activeItem is BoundingHitbox &&
         potential is BoundingHitbox &&
         activeItem.isDistanceCallbackEnabled &&
         potential.isDistanceCallbackEnabled) {
+      minDistanceX =
+          activeItem.minCollisionDistanceX + potential.minCollisionDistanceX;
+      minDistanceY =
+          activeItem.minCollisionDistanceY + potential.minCollisionDistanceY;
+
+      final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
+      final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+
       final component = activeItem.parentWithGridSupport;
       final other = potential.parentWithGridSupport;
       if (component != null && other != null) {
         component.onCalculateDistance(other, distanceX, distanceY);
         other.onCalculateDistance(component, distanceX, distanceY);
       }
-    }
 
-    if (distanceX < minDistanceX && distanceY < minDistanceY) {
-      return true;
+      if (distanceX < minDistanceX && distanceY < minDistanceY) {
+        return true;
+      }
+      return false;
+    } else {
+      final (canCollideFast, distanceX, distanceY) =
+          _fastDistanceCheck(activeItemCenter, potentialCenter);
+      if (canCollideFast) {
+        if (activeItem is BoundingHitbox) {
+          minDistanceX = activeItem.minCollisionDistanceX;
+          minDistanceY = activeItem.minCollisionDistanceY;
+        } else {
+          minDistanceX = activeItem.size.x / 2;
+          minDistanceY = activeItem.size.y / 2;
+        }
+
+        if (potential is BoundingHitbox) {
+          minDistanceX += potential.minCollisionDistanceX;
+          minDistanceY += potential.minCollisionDistanceY;
+        } else {
+          minDistanceX += potential.size.x / 2;
+          minDistanceY += potential.size.y / 2;
+        }
+        if (distanceX < minDistanceX && distanceY < minDistanceY) {
+          return true;
+        }
+        return false;
+      } else {
+        return false;
+      }
     }
-    return false;
+  }
+
+  (bool, double, double) _fastDistanceCheck(
+    Vector2 activeItemCenter,
+    Vector2 potentialCenter,
+  ) {
+    final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
+    final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+
+    if (distanceX < _fastDistanceCheckMinX &&
+        distanceY < _fastDistanceCheckMinY) {
+      return (true, distanceX, distanceY);
+    }
+    return (false, 0, 0);
   }
 
   bool _runExternalBroadphaseCheck(ShapeHitbox active, ShapeHitbox potential) {
