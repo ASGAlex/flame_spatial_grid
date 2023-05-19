@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
@@ -180,6 +181,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
+          print(items.length);
           _compareItemWithPotentials(
             asShapeItem,
             items,
@@ -295,6 +297,18 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
       return false;
     } else {
+      if (activeItem is BoundingHitbox) {
+        var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
+        if (skipTimes != null) {
+          if (skipTimes <= 0) {
+            activeItem.broadphaseMinimumDistanceSkip.remove(potential);
+          } else {
+            skipTimes--;
+            activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
+            return false;
+          }
+        }
+      }
       final (canCollideFast, distanceX, distanceY) =
           _fastDistanceCheck(activeItemCenter, potentialCenter);
       if (canCollideFast) {
@@ -318,6 +332,14 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
         return false;
       } else {
+        if (activeItem is BoundingHitbox) {
+          final parentSpeed = activeItem.parentSpeedGetter?.call();
+          if (parentSpeed != null) {
+            final skipTimes =
+                min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
+            activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
+          }
+        }
         return false;
       }
     }

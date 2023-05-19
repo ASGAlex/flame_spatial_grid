@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flutter/painting.dart';
 import 'package:meta/meta.dart';
 
 /// A special hitbox type which saves additional information:
@@ -38,6 +37,9 @@ class BoundingHitbox extends RectangleHitbox {
   final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
   final _broadphaseCheckByTypeCache = HashMap<Type, bool>();
 
+  @internal
+  final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
+
   bool broadphaseCheckOnlyByType = true;
 
   /// [aabb] calculates center at each call. This method provides
@@ -61,6 +63,12 @@ class BoundingHitbox extends RectangleHitbox {
   bool isDistanceCallbackEnabled = false;
 
   final groupCollisionsTags = <String>[];
+
+  double Function()? parentSpeedGetter;
+
+  void onParentSpeedChange() {
+    broadphaseMinimumDistanceSkip.clear();
+  }
 
   set aabbCenter(Vector2? value) {
     assert(value != null);
@@ -161,12 +169,12 @@ class BoundingHitbox extends RectangleHitbox {
 
   @override
   void renderDebugMode(Canvas canvas) {
-    canvas.drawRect(
-      Rect.fromLTWH(position.x, position.y, size.x, size.y),
-      Paint()
-        ..color = const Color.fromRGBO(119, 0, 255, 1.0)
-        ..style = PaintingStyle.stroke,
-    );
+    // canvas.drawRect(
+    //   Rect.fromLTWH(position.x, position.y, size.x, size.y),
+    //   Paint()
+    //     ..color = const Color.fromRGBO(119, 0, 255, 1.0)
+    //     ..style = PaintingStyle.stroke,
+    // );
   }
 }
 
