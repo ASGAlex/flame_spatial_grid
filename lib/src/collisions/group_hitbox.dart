@@ -18,6 +18,9 @@ class GroupHitbox extends BoundingHitbox {
   final String tag;
 
   @override
+  bool get optimized => false;
+
+  @override
   void renderDebugMode(Canvas canvas) {
     canvas.drawRect(
       Rect.fromLTWH(position.x, position.y, size.x, size.y),

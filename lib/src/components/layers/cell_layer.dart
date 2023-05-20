@@ -193,11 +193,6 @@ abstract class CellLayer extends PositionComponent
             await compileToSingleLayer(children);
           }
           _pendingComponents.clear();
-          final pc = game.collisionDetection.broadphase
-              .passiveCollisionsByCell[currentCell];
-          // for(final c in pc) {
-          // if(c)
-          // }
           _updateLayerFuture = null;
         });
       } else {

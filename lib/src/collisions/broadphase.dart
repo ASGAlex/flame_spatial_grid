@@ -70,11 +70,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
           list.add(operation.hitbox);
         } else {
-          if (cell.state != CellState.suspended) {
-            var list = passiveCollisionsByCell[cell];
-            list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-            list.add(operation.hitbox);
-          }
+          var list = passiveCollisionsByCell[cell];
+          list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
+          list.add(operation.hitbox);
         }
       } else {
         final cell = operation.cell;
@@ -181,7 +179,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       for (final cell in cellsToCheck) {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
-          print(items.length);
           _compareItemWithPotentials(
             asShapeItem,
             items,

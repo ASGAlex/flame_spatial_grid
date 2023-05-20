@@ -36,6 +36,7 @@ class CollisionOptimizer {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
+        child.boundingBox.optimized = false;
       }
     }
 
@@ -100,6 +101,7 @@ class CollisionOptimizer {
         }
         for (final hb in hitboxes) {
           hb.collisionType = CollisionType.inactive;
+          hb.optimized = true;
         }
       }
     }
@@ -107,13 +109,13 @@ class CollisionOptimizer {
     _alreadyProcessed.clear();
   }
 
-  LinkedHashSet<ShapeHitbox> _findOverlappingRects(
-    ShapeHitbox hitbox, [
-    HashSet<ShapeHitbox>? exception,
+  LinkedHashSet<BoundingHitbox> _findOverlappingRects(
+    BoundingHitbox hitbox, [
+    HashSet<BoundingHitbox>? exception,
   ]) {
-    exception ??= HashSet<ShapeHitbox>();
+    exception ??= HashSet<BoundingHitbox>();
     // ignore: prefer_collection_literals
-    final hitboxes = LinkedHashSet<ShapeHitbox>();
+    final hitboxes = LinkedHashSet<BoundingHitbox>();
     hitboxes.add(hitbox);
     exception.add(hitbox);
     for (final otherChild in parentLayer.children) {
@@ -219,12 +221,15 @@ class OptimizedCollisionList {
       }
       rect = rect.expandToInclude(hitbox.toRectSpecial());
     }
+    final collisionType = parentLayer.currentCell!.state == CellState.inactive
+        ? CollisionType.inactive
+        : CollisionType.passive;
     _boundingBox = GroupHitbox(
       tag: parentLayer.name,
       parentWithGridSupport: parentLayer,
       position: rect.topLeft.toVector2(),
       size: rect.size.toVector2(),
-    )..collisionType = CollisionType.passive;
+    )..collisionType = collisionType;
     parentLayer.add(_boundingBox);
   }
 

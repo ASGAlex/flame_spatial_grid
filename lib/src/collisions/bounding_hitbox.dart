@@ -62,6 +62,9 @@ class BoundingHitbox extends RectangleHitbox {
 
   bool isDistanceCallbackEnabled = false;
 
+  @internal
+  bool optimized = false;
+
   final groupCollisionsTags = <String>[];
 
   double Function()? parentSpeedGetter;

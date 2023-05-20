@@ -203,6 +203,9 @@ class Cell {
         if (hitbox is! ShapeHitbox) {
           continue;
         }
+        if (hitbox is BoundingHitbox && hitbox.optimized) {
+          continue;
+        }
         if (component.toggleCollisionOnSuspendChange) {
           hitbox.collisionType = hitbox.defaultCollisionType;
         }
@@ -215,6 +218,9 @@ class Cell {
       final allChildren = component.descendants();
       for (final hitbox in allChildren) {
         if (hitbox is! ShapeHitbox) {
+          continue;
+        }
+        if (hitbox is BoundingHitbox && hitbox.optimized) {
           continue;
         }
         if (component.toggleCollisionOnSuspendChange) {

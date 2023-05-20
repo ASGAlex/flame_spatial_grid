@@ -691,10 +691,10 @@ class Npc extends Player {
     ];
     manuallyControlled = false;
     paint.colorFilter = ColorFilter.matrix(matrix);
-    // _createColoredSprite();
     boundingBox.groupCollisionsTags
       ..add('Brick')
       ..add('Water');
+    boundingBox.parentSpeedGetter = () => _lastDtSpeed;
   }
 
   final speed = 20;
@@ -702,6 +702,8 @@ class Npc extends Player {
   double dtElapsed = 0;
   final dtMax = 1000;
   bool isAIEnabled = false;
+
+  double _lastDtSpeed = 0;
 
   @override
   void update(double dt) {
@@ -717,7 +719,7 @@ class Npc extends Player {
       _createNewVector();
     }
 
-    final dtSpeed = speed * dt;
+    final dtSpeed = _lastDtSpeed = speed * dt;
     final newStep = vector * dtSpeed;
     if (!vector.isZero()) {
       position.add(newStep);
@@ -735,11 +737,11 @@ class Npc extends Player {
       final yValue = rand.nextDouble();
       vector.setValues(xValue * xSign, yValue * ySign);
       if (vector.x.abs() < 0.05 && vector.y.abs() < 0.05) {
-        boundingBox.collisionCheckFrequency = 2;
-      } else if (vector.x.abs() < 0.2 && vector.y.abs() < 0.2) {
-        boundingBox.collisionCheckFrequency = 1;
-      } else {
         boundingBox.collisionCheckFrequency = 0.8;
+      } else if (vector.x.abs() < 0.2 && vector.y.abs() < 0.2) {
+        boundingBox.collisionCheckFrequency = 0.5;
+      } else {
+        boundingBox.collisionCheckFrequency = 0.2;
       }
     }
   }
