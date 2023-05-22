@@ -181,10 +181,6 @@ mixin HasSpatialGridFramework on FlameGame
     if (maps != null) {
       this.maps = maps;
     }
-    if (trackedComponent is SpatialGridCameraWrapper) {
-      add(trackedComponent.cameraComponent);
-      add(trackedComponent);
-    }
 
     if (initialPosition == null && initialPositionChecker != null) {
       if (worldLoader != null) {
@@ -216,14 +212,16 @@ mixin HasSpatialGridFramework on FlameGame
       lazyLoad: lazyLoad,
       game: this,
     );
-    if (trackWindowSize) {
-      setRadiusByWindowDimensions();
-    }
 
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,
       onComponentTypeCheck: onComponentTypeCheck,
     );
+
+    if (trackedComponent is SpatialGridCameraWrapper) {
+      add(trackedComponent.cameraComponent);
+      add(trackedComponent);
+    }
 
     spatialGrid.updateCellsStateByRadius();
 

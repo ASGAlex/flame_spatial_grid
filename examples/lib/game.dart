@@ -66,7 +66,6 @@ all collisions are disabled.
   Future<void> onLoad() async {
     super.onLoad();
 
-    add(world);
     player = world.player;
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
@@ -127,6 +126,8 @@ all collisions are disabled.
       ),
     );
     // await demoMapLoader.init(this);
+
+    add(world);
     layersManager.layersRootComponent.add(player);
     add(FpsTextComponent());
   }
@@ -210,7 +211,7 @@ all collisions are disabled.
       }
 
       if (key == LogicalKeyboardKey.keyM) {
-        // isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
+        isSpatialGridDebugEnabled = !isSpatialGridDebugEnabled;
       }
       if (key == LogicalKeyboardKey.keyL) {
         trailsEnabled = !trailsEnabled;
@@ -665,7 +666,7 @@ class PlayerStep extends PositionComponent with HasPaint {
   }
 }
 
-class Npc extends Player {
+class Npc extends Player with DebuggerPause {
   Npc({required super.position, required super.size, required super.priority}) {
     final matrix = [
       -0.5,

@@ -12,6 +12,8 @@ typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
   ShapeHitbox potential,
 );
 
+mixin DebuggerPause {}
+
 /// Performs Quad Tree broadphase check.
 ///
 /// See [HasQuadTreeCollisionDetection.initializeCollisionDetection] for a
@@ -24,8 +26,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }) {
     clear();
     this.minimumDistanceCheck = minimumDistanceCheck ?? _minimumDistanceCheck;
-    _fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
-    _fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
+    fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
+    fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
   }
 
   final SpatialGrid spatialGrid;
@@ -56,8 +58,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @internal
   final scheduledOperations = <ScheduledHitboxOperation>[];
 
-  double _fastDistanceCheckMinX = -1;
-  double _fastDistanceCheckMinY = -1;
+  @internal
+  double fastDistanceCheckMinX = -1;
+
+  @internal
+  double fastDistanceCheckMinY = -1;
 
   @override
   void update() {
@@ -265,10 +270,24 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     ShapeHitbox activeItem,
     ShapeHitbox potential,
   ) {
+    if (activeItem.parent is DebuggerPause) {
+      //print('123');
+    }
     final activeItemCenter = activeItem.aabbCenter;
     final potentialCenter = potential.aabbCenter;
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
+
+    var activeFastDistanceCheckAvailable = true;
+    var potentialFastDistanceCheckAvailable = true;
+    if (activeItem is BoundingHitbox) {
+      activeFastDistanceCheckAvailable =
+          activeItem.isFastDistanceCheckAvailable;
+    }
+    if (potential is BoundingHitbox) {
+      potentialFastDistanceCheckAvailable =
+          potential.isFastDistanceCheckAvailable;
+    }
 
     if (activeItem is BoundingHitbox &&
         potential is BoundingHitbox &&
@@ -306,9 +325,46 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           }
         }
       }
-      final (canCollideFast, distanceX, distanceY) =
-          _fastDistanceCheck(activeItemCenter, potentialCenter);
-      if (canCollideFast) {
+
+      if (activeFastDistanceCheckAvailable &&
+          potentialFastDistanceCheckAvailable) {
+        final (canCollideFast, distanceX, distanceY) =
+            _fastDistanceCheck(activeItemCenter, potentialCenter);
+        if (canCollideFast) {
+          if (activeItem is BoundingHitbox) {
+            minDistanceX = activeItem.minCollisionDistanceX;
+            minDistanceY = activeItem.minCollisionDistanceY;
+          } else {
+            minDistanceX = activeItem.size.x / 2;
+            minDistanceY = activeItem.size.y / 2;
+          }
+
+          if (potential is BoundingHitbox) {
+            minDistanceX += potential.minCollisionDistanceX;
+            minDistanceY += potential.minCollisionDistanceY;
+          } else {
+            minDistanceX += potential.size.x / 2;
+            minDistanceY += potential.size.y / 2;
+          }
+          if (distanceX < minDistanceX && distanceY < minDistanceY) {
+            return true;
+          }
+          return false;
+        } else {
+          if (activeItem is BoundingHitbox) {
+            final parentSpeed = activeItem.parentSpeedGetter?.call();
+            if (parentSpeed != null) {
+              final skipTimes =
+                  min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
+              activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
+            }
+          }
+          return false;
+        }
+      } else {
+        final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
+        final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+
         if (activeItem is BoundingHitbox) {
           minDistanceX = activeItem.minCollisionDistanceX;
           minDistanceY = activeItem.minCollisionDistanceY;
@@ -328,16 +384,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           return true;
         }
         return false;
-      } else {
-        if (activeItem is BoundingHitbox) {
-          final parentSpeed = activeItem.parentSpeedGetter?.call();
-          if (parentSpeed != null) {
-            final skipTimes =
-                min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
-            activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
-          }
-        }
-        return false;
       }
     }
   }
@@ -349,8 +395,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
     final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
 
-    if (distanceX < _fastDistanceCheckMinX &&
-        distanceY < _fastDistanceCheckMinY) {
+    if (distanceX < fastDistanceCheckMinX &&
+        distanceY < fastDistanceCheckMinY) {
       return (true, distanceX, distanceY);
     }
     return (false, 0, 0);

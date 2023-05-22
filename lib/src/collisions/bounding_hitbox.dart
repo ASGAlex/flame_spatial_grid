@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:collection';
 
 import 'package:flame/collisions.dart';
+import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
@@ -22,7 +22,8 @@ import 'package:meta/meta.dart';
 ///
 /// [SpatialGridRectangleHitbox] and [SpatialGridShapeHitbox] extensions
 /// provides same functionality for pure Flame hitboxes
-class BoundingHitbox extends RectangleHitbox {
+class BoundingHitbox extends RectangleHitbox
+    with HasGameRef<HasSpatialGridFramework> {
   BoundingHitbox({
     super.position,
     super.size,
@@ -57,8 +58,14 @@ class BoundingHitbox extends RectangleHitbox {
   @internal
   double collisionCheckCounter = 0;
 
+  @internal
   double minCollisionDistanceX = 0.0;
+
+  @internal
   double minCollisionDistanceY = 0.0;
+
+  @internal
+  bool isFastDistanceCheckAvailable = false;
 
   bool isDistanceCallbackEnabled = false;
 
@@ -78,9 +85,16 @@ class BoundingHitbox extends RectangleHitbox {
     _aabbCenter.setFrom(value!);
   }
 
-  void _updateMinDistance() {
+  void _precalculateCollisionVariables() {
     minCollisionDistanceX = size.x / 2;
     minCollisionDistanceY = size.y / 2;
+    final broadphase = game.collisionDetection.broadphase;
+    if (size.x >= broadphase.fastDistanceCheckMinX ||
+        size.y >= broadphase.fastDistanceCheckMinY) {
+      isFastDistanceCheckAvailable = false;
+    } else {
+      isFastDistanceCheckAvailable = true;
+    }
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
@@ -148,10 +162,10 @@ class BoundingHitbox extends RectangleHitbox {
   }
 
   @override
-  FutureOr<void> onLoad() {
-    _updateMinDistance();
-    size.addListener(_updateMinDistance);
-    return super.onLoad();
+  void onMount() {
+    _precalculateCollisionVariables();
+    size.addListener(_precalculateCollisionVariables);
+    super.onMount();
   }
 
   @override
@@ -165,14 +179,14 @@ class BoundingHitbox extends RectangleHitbox {
     }
     _broadphaseCheckCache.clear();
 
-    size.removeListener(_updateMinDistance);
+    size.removeListener(_precalculateCollisionVariables);
     super.onRemove();
     _parentWithGridSupport = null;
   }
 
   @override
   void onParentResize(Vector2 maxSize) {
-    resizeToIncludeChildren();
+    // resizeToIncludeChildren();  //TODO: static layers bbox expands... why?
     super.onParentResize(maxSize);
   }
 
@@ -192,8 +206,10 @@ class BoundingHitbox extends RectangleHitbox {
   }
 
   void _expandBoundingBox(ShapeHitbox component) {
-    final currentRect =
-        shouldFillParent ? Rect.fromLTWH(0, 0, size.x, size.y) : toRect();
+    final currentRect = shouldFillParent
+        ? Rect.fromLTWH(
+            0, 0, parentWithGridSupport!.size.x, parentWithGridSupport!.size.y)
+        : toRect();
     final addRect = component.toRect();
     final newRect = currentRect.expandToInclude(addRect);
     position.setFrom(newRect.topLeft.toVector2());
