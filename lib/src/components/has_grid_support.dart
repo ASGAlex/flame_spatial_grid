@@ -147,26 +147,22 @@ mixin HasGridSupport on PositionComponent {
     return null;
   }
 
-  @override
-  @mustCallSuper
-  FutureOr<void>? add(Component component) {
-    if (component != boundingBox && component is ShapeHitbox) {
-      final currentRect = boundingBox.shouldFillParent
-          ? Rect.fromLTWH(0, 0, size.x, size.y)
-          : boundingBox.toRect();
-      final addRect = component.toRect();
-      final newRect = currentRect.expandToInclude(addRect);
-      boundingBox.position.setFrom(newRect.topLeft.toVector2());
-      boundingBox.size.setFrom(newRect.size.toVector2());
-    }
-    return super.add(component);
-  }
-
   void onCalculateDistance(
     Component other,
     double distanceX,
     double distanceY,
   ) {}
+
+  @override
+  void onChildrenChanged(Component child, ChildrenChangeType type) {
+    if (type == ChildrenChangeType.added) {
+      if (child != boundingBox && child is ShapeHitbox) {
+        boundingBox.resizeToIncludeChildren(child);
+      }
+    } else {
+      boundingBox.resizeToIncludeChildren();
+    }
+  }
 
   @override
   @mustCallSuper

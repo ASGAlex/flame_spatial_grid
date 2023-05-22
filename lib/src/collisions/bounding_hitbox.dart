@@ -171,6 +171,36 @@ class BoundingHitbox extends RectangleHitbox {
   }
 
   @override
+  void onParentResize(Vector2 maxSize) {
+    resizeToIncludeChildren();
+    super.onParentResize(maxSize);
+  }
+
+  @internal
+  void resizeToIncludeChildren([ShapeHitbox? component]) {
+    if (component != null) {
+      _expandBoundingBox(component);
+    } else {
+      size.setFrom((parent! as HasGridSupport).size);
+      for (final child in parent!.children) {
+        if (component == this || child is! ShapeHitbox) {
+          continue;
+        }
+        _expandBoundingBox(child);
+      }
+    }
+  }
+
+  void _expandBoundingBox(ShapeHitbox component) {
+    final currentRect =
+        shouldFillParent ? Rect.fromLTWH(0, 0, size.x, size.y) : toRect();
+    final addRect = component.toRect();
+    final newRect = currentRect.expandToInclude(addRect);
+    position.setFrom(newRect.topLeft.toVector2());
+    size.setFrom(newRect.size.toVector2());
+  }
+
+  @override
   void renderDebugMode(Canvas canvas) {
     // canvas.drawRect(
     //   Rect.fromLTWH(position.x, position.y, size.x, size.y),
