@@ -8,7 +8,7 @@ import 'package:flame_spatial_grid/src/components/layers/image_composition.dart'
 class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
 
-  SpriteAnimationGlobalComponent? animationComponent;
+  SpriteAnimationComponent? animationComponent;
 
   @override
   void render(Canvas canvas) {
@@ -32,8 +32,9 @@ class CellStaticAnimationLayer extends CellLayer {
       return null;
     }
 
-    final animation = animatedChildren.first.animation?.clone();
-    if (animation == null) {
+    final animation = animatedChildren.first.animation;
+    final ticker = animation?.ticker();
+    if (animation == null || ticker == null) {
       return null;
     }
 
@@ -42,8 +43,8 @@ class CellStaticAnimationLayer extends CellLayer {
 
     final newSprites = <Sprite>[];
 
-    while (animation.currentIndex < animation.frames.length) {
-      final sprite = animation.getSprite();
+    while (ticker.currentIndex < animation.frames.length) {
+      final sprite = ticker.getSprite();
       final composition = ImageCompositionExt();
       for (final component in animatedChildren) {
         final correctedPosition = component.position + (correctionTopLeft * -1);
@@ -51,9 +52,9 @@ class CellStaticAnimationLayer extends CellLayer {
       }
       final composedImage = composition.compose();
       newSprites.add(Sprite(composedImage));
-      animation.currentIndex++;
+      ticker.currentIndex++;
     }
-    final spriteAnimation = SpriteAnimation.variableSpriteList(
+    var spriteAnimation = SpriteAnimation.variableSpriteList(
       newSprites,
       stepTimes: animation.getVariableStepTimes(),
     );
@@ -62,6 +63,7 @@ class CellStaticAnimationLayer extends CellLayer {
       position: correctionTopLeft,
       size: newSprites.first.image.size,
       animationType: name,
+      tickersProvider: game.tickersManager,
     );
   }
 

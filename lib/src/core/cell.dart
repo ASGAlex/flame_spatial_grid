@@ -2,8 +2,8 @@
 
 import 'dart:collection';
 
+import 'package:flame/camera.dart';
 import 'package:flame/collisions.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';

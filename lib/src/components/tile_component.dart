@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flame/components.dart';
+import 'package:flame/sprite.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class TileComponent extends SpriteComponent
@@ -36,4 +37,8 @@ class TileComponent extends SpriteComponent
 
   @override
   set animation(SpriteAnimation? animation) {}
+
+  @override
+  SpriteAnimationTicker? get animationTicker =>
+      tileCache.spriteAnimation?.ticker();
 }

@@ -4,7 +4,7 @@ import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flame/experimental.dart';
+import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -483,7 +483,7 @@ class DemoMapLoader extends TiledMapLoader {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
 
-    final stepSize = waterAnimation?.getSprite().srcSize.x;
+    final stepSize = waterAnimation?.ticker().getSprite().srcSize.x;
     if (stepSize == null) {
       return;
     }

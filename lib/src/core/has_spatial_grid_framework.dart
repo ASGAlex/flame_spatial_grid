@@ -2,7 +2,6 @@
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
@@ -36,6 +35,8 @@ mixin HasSpatialGridFramework on FlameGame
   /// Use this class to manage [CellLayer]s instead of creating them manually.
   /// It manages recourses automatically, according to cell's state.
   late final LayersManager layersManager;
+
+  final tickersManager = TickersManager();
 
   final tilesetManager = TilesetManager();
 
@@ -361,7 +362,6 @@ mixin HasSpatialGridFramework on FlameGame
     isSpatialGridDebugEnabled = false;
     _spatialGridDebug = null;
     spatialGrid.dispose();
-    SpriteAnimationGlobalController.dispose();
     super.onRemove();
   }
 
@@ -545,7 +545,7 @@ mixin HasSpatialGridFramework on FlameGame
         }
         _buildNewCells();
 
-        SpriteAnimationGlobalController.instance().update(dt);
+        tickersManager.update(dt);
         super.update(dt);
         collisionDetection.dt = dt;
         collisionDetection.run();
