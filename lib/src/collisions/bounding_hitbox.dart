@@ -192,6 +192,9 @@ class BoundingHitbox extends RectangleHitbox
 
   @internal
   void resizeToIncludeChildren([ShapeHitbox? component]) {
+    if (parent == null) {
+      return;
+    }
     if (component != null) {
       _expandBoundingBox(component);
     } else {
