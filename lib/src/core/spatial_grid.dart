@@ -436,7 +436,9 @@ class SpatialGrid {
   /// hash sets, because only one cell could be in some position.
   Rect getCellRectAtPosition(Vector2 position) {
     if (cells.isEmpty) {
-      return _createRectWithLimitedPrecision(position);
+      return _createRectWithLimitedPrecision(
+        Vector2(position.x.floorToDouble(), position.y.floorToDouble()),
+      );
     }
 
     final nearest = findNearestCellToPosition(position);

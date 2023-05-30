@@ -40,7 +40,6 @@ class CellStaticLayer extends CellLayer {
     final renderingChildren =
         children.whereType<HasGridSupport>().toList(growable: false);
     if (renderingChildren.isEmpty) {
-      removeFromParent();
       return null;
     }
 

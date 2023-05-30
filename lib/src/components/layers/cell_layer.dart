@@ -97,14 +97,8 @@ abstract class CellLayer extends PositionComponent
   @override
   FutureOr<void>? add(Component component) async {
     if (isRenewable) {
-      if (children.isEmpty) {
-        primaryCollisionType = component.runtimeType;
-      }
       super.add(component);
     } else {
-      if (nonRenewableComponents.isEmpty) {
-        primaryCollisionType = component.runtimeType;
-      }
       onChildrenChanged(component, ChildrenChangeType.added);
     }
   }
@@ -125,6 +119,9 @@ abstract class CellLayer extends PositionComponent
         updateCorrections(child);
 
         if (isRenewable) {
+          if (children.isEmpty) {
+            primaryCollisionType = child.runtimeType;
+          }
           if (child is HasGridSupport) {
             child.transform.addListener(onChildrenUpdate);
             _listenerChildrenUpdate[child] = onChildrenUpdate;
@@ -135,6 +132,9 @@ abstract class CellLayer extends PositionComponent
           final future = child.loaded;
           _pendingComponents.add(future);
         } else {
+          if (nonRenewableComponents.isEmpty) {
+            primaryCollisionType = child.runtimeType;
+          }
           nonRenewableComponents.add(child);
           if (child is HasGridSupport) {
             child.currentCell = null;
