@@ -546,9 +546,9 @@ mixin HasSpatialGridFramework on FlameGame
         _buildNewCells();
 
         tickersManager.update(dt);
-        super.update(dt);
         collisionDetection.dt = dt;
         collisionDetection.run();
+        super.update(dt);
       }
     } else {
       final stopwatch = Stopwatch()..start();
