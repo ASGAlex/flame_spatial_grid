@@ -376,7 +376,7 @@ class Cell {
 }
 
 extension RoundPrecision on Rect {
-  Rect toRounded([int precision = 3]) {
+  Rect toRounded([int precision = 1]) {
     var value = 1;
     for (var i = 0; i < precision; i++) {
       value = value * 10;
