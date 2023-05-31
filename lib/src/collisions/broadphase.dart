@@ -353,7 +353,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         } else {
           if (activeItem is BoundingHitbox) {
             final parentSpeed = activeItem.parentSpeedGetter?.call();
-            if (parentSpeed != null) {
+            if (parentSpeed != null && parentSpeed > 0) {
               final skipTimes =
                   min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
               activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
