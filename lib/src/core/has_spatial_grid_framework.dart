@@ -217,6 +217,7 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,
       onComponentTypeCheck: onComponentTypeCheck,
+      onComponentPureTypeCheck: onComponentPureTypeCheck,
     );
 
     if (trackedComponent is SpatialGridCameraWrapper) {
@@ -392,6 +393,35 @@ mixin HasSpatialGridFramework on FlameGame
         one is! GroupHitbox &&
         another is! GroupHitbox) {
       return onComponentTypeCheck(one.hitboxParent, another.hitboxParent);
+    }
+    return true;
+  }
+
+  bool onComponentPureTypeCheck(
+      PositionComponent one, PositionComponent another) {
+    var checkParent = false;
+    if (one is BoundingHitbox) {
+      if (!one.onComponentPureTypeCheck(another)) {
+        return false;
+      }
+    } else {
+      checkParent = true;
+    }
+
+    if (another is BoundingHitbox) {
+      if (!another.onComponentPureTypeCheck(one)) {
+        return false;
+      }
+    } else {
+      checkParent = true;
+    }
+
+    if (checkParent &&
+        one is ShapeHitbox &&
+        another is ShapeHitbox &&
+        one is! GroupHitbox &&
+        another is! GroupHitbox) {
+      return onComponentPureTypeCheck(one.hitboxParent, another.hitboxParent);
     }
     return true;
   }

@@ -842,11 +842,11 @@ class Bullet extends PositionComponent
   }
 
   @override
-  bool onComponentTypeCheck(PositionComponent other) {
+  bool onComponentPureTypeCheck(PositionComponent other) {
     if ((other is Player && other is! Npc) || other is Bullet) {
       return false;
     }
-    return super.onComponentTypeCheck(other);
+    return true;
   }
 
   @override

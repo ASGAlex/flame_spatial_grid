@@ -11,12 +11,14 @@ class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
   SpatialGridCollisionDetection({
     required ExternalBroadphaseCheck onComponentTypeCheck,
+    required ExternalBroadphaseCheck onComponentPureTypeCheck,
     ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
     required this.spatialGrid,
   }) : super(
           broadphase: SpatialGridBroadphase<ShapeHitbox>(
             spatialGrid: spatialGrid,
             broadphaseCheck: onComponentTypeCheck,
+            broadphaseCheckByType: onComponentPureTypeCheck,
             minimumDistanceCheck: minimumDistanceCheck,
           ),
         );

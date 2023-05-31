@@ -313,4 +313,14 @@ mixin HasGridSupport on PositionComponent {
       }
     }
   }
+
+  bool onComponentPureTypeCheck(PositionComponent other) {
+    final myParent = parent;
+    final otherParent = other.parent;
+    if (myParent is HasGridSupport && otherParent is PositionComponent) {
+      return myParent.onComponentPureTypeCheck(otherParent);
+    }
+
+    return true;
+  }
 }

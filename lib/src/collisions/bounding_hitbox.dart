@@ -41,8 +41,6 @@ class BoundingHitbox extends RectangleHitbox
   @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
 
-  bool broadphaseCheckOnlyByType = true;
-
   /// [aabb] calculates center at each call. This method provides
   /// caching.
   Vector2 get aabbCenter {
@@ -217,6 +215,19 @@ class BoundingHitbox extends RectangleHitbox
     final newRect = currentRect.expandToInclude(addRect);
     position.setFrom(newRect.topLeft.toVector2());
     size.setFrom(newRect.size.toVector2());
+  }
+
+  bool onComponentPureTypeCheck(PositionComponent other) {
+    final otherHitboxParent = (other as ShapeHitbox).hitboxParent;
+
+    final thisCanCollideWithOther = (hitboxParent is! HasGridSupport) ||
+        (hitboxParent as HasGridSupport)
+            .onComponentPureTypeCheck(otherHitboxParent);
+
+    final otherCanCollideWithThis = (otherHitboxParent is! HasGridSupport) ||
+        otherHitboxParent.onComponentPureTypeCheck(hitboxParent);
+
+    return thisCanCollideWithOther && otherCanCollideWithThis;
   }
 
   @override

@@ -22,6 +22,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   SpatialGridBroadphase({
     required this.spatialGrid,
     required this.broadphaseCheck,
+    required this.broadphaseCheckByType,
     ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
   }) {
     clear();
@@ -49,6 +50,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   double dt = 0;
 
   ExternalBroadphaseCheck broadphaseCheck;
+  ExternalBroadphaseCheck broadphaseCheckByType;
   late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
 
   @internal
@@ -227,11 +229,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       }
       var canToCollide = true;
       if (asShapeItem is BoundingHitbox) {
-        if (asShapeItem.broadphaseCheckOnlyByType) {
-          final type = _getPotentialRuntimeType(potential);
-          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
-              _runExternalBroadphaseCheckByType(asShapeItem, potential);
-        } else {
+        final type = _getPotentialRuntimeType(potential);
+        canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
+            _runExternalBroadphaseCheckByType(asShapeItem, potential);
+
+        if (canToCollide) {
           canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
               _runExternalBroadphaseCheck(asShapeItem, potential);
         }
@@ -423,7 +425,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     if (active is GroupHitbox || potential is GroupHitbox) {
       return true;
     }
-    final canToCollide = broadphaseCheck(active, potential);
+    final canToCollide = broadphaseCheckByType(active, potential);
     active.storeBroadphaseCheckCacheByType(
       _getPotentialRuntimeType(potential),
       canToCollide,
