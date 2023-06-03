@@ -107,12 +107,12 @@ class BoundingHitbox extends RectangleHitbox
   }
 
   void storeBroadphaseCheckCacheByType(Type itemType, bool canCollide) {
-    final itemTypeCache =
-        broadphaseCheckByTypeCache[itemType] ?? <Type, bool>{};
+    var itemTypeCache = broadphaseCheckByTypeCache[itemType];
+    itemTypeCache ??= broadphaseCheckByTypeCache[itemType] = <Type, bool>{};
     itemTypeCache[runtimeType] = canCollide;
 
-    final myTypeCache =
-        broadphaseCheckByTypeCache[runtimeType] ?? <Type, bool>{};
+    var myTypeCache = broadphaseCheckByTypeCache[runtimeType];
+    myTypeCache ??= broadphaseCheckByTypeCache[runtimeType] = <Type, bool>{};
     myTypeCache[itemType] = canCollide;
   }
 
