@@ -370,59 +370,22 @@ mixin HasSpatialGridFramework on FlameGame
   /// Because Framework implements it's own collision detection broadphase,
   /// with relatively same functionality as [QuadTreeBroadphase] has, but
   /// [GroupHitbox] are very special type and should me skipped.
-  bool onComponentTypeCheck(PositionComponent one, PositionComponent another) {
-    var checkParent = false;
-    if (one is GenericCollisionCallbacks) {
-      if (!(one as GenericCollisionCallbacks).onComponentTypeCheck(another)) {
-        return false;
-      }
-    } else {
-      checkParent = true;
-    }
-
-    if (another is GenericCollisionCallbacks) {
-      if (!(another as GenericCollisionCallbacks).onComponentTypeCheck(one)) {
-        return false;
-      }
-    } else {
-      checkParent = true;
-    }
-
-    if (checkParent &&
-        one is ShapeHitbox &&
-        another is ShapeHitbox &&
-        one is! GroupHitbox &&
-        another is! GroupHitbox) {
-      return onComponentTypeCheck(one.hitboxParent, another.hitboxParent);
-    }
-    return true;
+  bool onComponentTypeCheck(ShapeHitbox first, ShapeHitbox second) {
+    return first.onComponentTypeCheck(second) &&
+        second.onComponentTypeCheck(first);
   }
 
-  bool onComponentPureTypeCheck(
-      PositionComponent one, PositionComponent another) {
-    var checkParent = false;
-    if (one is BoundingHitbox) {
-      if (!one.onComponentPureTypeCheck(another)) {
+  bool onComponentPureTypeCheck(ShapeHitbox first, ShapeHitbox second) {
+    if (first is BoundingHitbox) {
+      if (!first.onComponentPureTypeCheck(second)) {
         return false;
       }
-    } else {
-      checkParent = true;
     }
 
-    if (another is BoundingHitbox) {
-      if (!another.onComponentPureTypeCheck(one)) {
+    if (second is BoundingHitbox) {
+      if (!second.onComponentPureTypeCheck(first)) {
         return false;
       }
-    } else {
-      checkParent = true;
-    }
-
-    if (checkParent &&
-        one is ShapeHitbox &&
-        another is ShapeHitbox &&
-        one is! GroupHitbox &&
-        another is! GroupHitbox) {
-      return onComponentPureTypeCheck(one.hitboxParent, another.hitboxParent);
     }
     return true;
   }
