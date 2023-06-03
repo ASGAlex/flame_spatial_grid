@@ -135,7 +135,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      _compareItemWithPotentials(componentHitbox, hitboxes, result);
+      _compareItemWithPotentials(componentHitbox, hitboxes, result, null, true);
     }
 
     return result;
@@ -212,6 +212,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     Set<ShapeHitbox> potentials,
     HashSet<CollisionProspect<T>> result, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
+    bool excludeBroadphaseCheck = false,
   ]) {
     final activeParent = asShapeItem.parent;
     for (final potential in potentials) {
@@ -227,22 +228,24 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           checked.add(asShapeItem);
         }
       }
-      var canToCollide = true;
-      if (asShapeItem is BoundingHitbox) {
-        final type = _getPotentialRuntimeType(potential);
-        canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
-            _runExternalBroadphaseCheckByType(asShapeItem, potential);
+      if (!excludeBroadphaseCheck) {
+        var canToCollide = true;
+        if (asShapeItem is BoundingHitbox) {
+          final type = _getPotentialRuntimeType(potential);
+          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
+              _runExternalBroadphaseCheckByType(asShapeItem, potential);
 
-        if (canToCollide) {
+          if (canToCollide) {
+            canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
+                _runExternalBroadphaseCheck(asShapeItem, potential);
+          }
+        } else {
           canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
               _runExternalBroadphaseCheck(asShapeItem, potential);
         }
-      } else {
-        canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
-            _runExternalBroadphaseCheck(asShapeItem, potential);
-      }
-      if (!canToCollide) {
-        continue;
+        if (!canToCollide) {
+          continue;
+        }
       }
 
       final distanceCloseEnough = minimumDistanceCheck.call(
