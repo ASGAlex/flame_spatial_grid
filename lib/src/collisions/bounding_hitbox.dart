@@ -36,7 +36,9 @@ class BoundingHitbox extends RectangleHitbox
   final Vector2 _aabbCenter = Vector2.zero();
 
   final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
-  final _broadphaseCheckByTypeCache = HashMap<Type, bool>();
+
+  @internal
+  static final broadphaseCheckByTypeCache = HashMap<Type, Map<Type, bool>>();
 
   @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
@@ -105,14 +107,21 @@ class BoundingHitbox extends RectangleHitbox
   }
 
   void storeBroadphaseCheckCacheByType(Type itemType, bool canCollide) {
-    _broadphaseCheckByTypeCache[itemType] = canCollide;
+    final itemTypeCache =
+        broadphaseCheckByTypeCache[itemType] ?? <Type, bool>{};
+    itemTypeCache[runtimeType] = canCollide;
+
+    final myTypeCache =
+        broadphaseCheckByTypeCache[runtimeType] ?? <Type, bool>{};
+    myTypeCache[itemType] = canCollide;
   }
 
   bool? getBroadphaseCheckCache(ShapeHitbox item) =>
       _broadphaseCheckCache[item];
 
   bool? getBroadphaseCheckCacheByType(Type itemType) =>
-      _broadphaseCheckByTypeCache[itemType];
+      broadphaseCheckByTypeCache[itemType]?[runtimeType] ??
+      broadphaseCheckByTypeCache[runtimeType]?[itemType];
 
   void removeBroadphaseCheckItem(ShapeHitbox item) {
     _broadphaseCheckCache.remove(item);

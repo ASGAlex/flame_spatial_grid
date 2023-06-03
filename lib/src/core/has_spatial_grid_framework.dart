@@ -253,6 +253,7 @@ mixin HasSpatialGridFramework on FlameGame
 
   void _clearStaticVariables() {
     LoadingProgressManager.lastProgressMinimum = 0;
+    BoundingHitbox.broadphaseCheckByTypeCache.clear();
     HasGridSupport.cachedCenters.clear();
     HasGridSupport.componentHitboxes.clear();
     HasGridSupport.defaultCollisionType.clear();
