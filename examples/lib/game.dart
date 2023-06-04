@@ -342,6 +342,16 @@ all collisions are disabled.
       );
     }
   }
+
+  @override
+  bool pureTypeCheck(Type activeItemType, Type potentialItemType) {
+    if (activeItemType == Bullet) {
+      if (potentialItemType == Bullet || potentialItemType == Player) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
@@ -839,25 +849,6 @@ class Bullet extends PositionComponent
       final d = displacement * dtElapsedWhileSuspended;
       position = Vector2(position.x + d.x, position.y + d.y);
     }
-  }
-
-  @override
-  bool onComponentPureTypeCheck(PositionComponent other) {
-    if (other is Npc) {
-      return true;
-    }
-    if (other is Bullet) {
-      return false;
-    }
-    return true;
-  }
-
-  @override
-  bool onComponentTypeCheck(PositionComponent other) {
-    if (other is Player && other is! Npc) {
-      return false;
-    }
-    return true;
   }
 
   @override

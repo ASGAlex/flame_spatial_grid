@@ -38,9 +38,6 @@ class BoundingHitbox extends RectangleHitbox
   final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
 
   @internal
-  static final broadphaseCheckByTypeCache = HashMap<Type, Map<Type, bool>>();
-
-  @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
 
   /// [aabb] calculates center at each call. This method provides
@@ -106,22 +103,8 @@ class BoundingHitbox extends RectangleHitbox
     }
   }
 
-  void storeBroadphaseCheckCacheByType(Type itemType, bool canCollide) {
-    var itemTypeCache = broadphaseCheckByTypeCache[itemType];
-    itemTypeCache ??= broadphaseCheckByTypeCache[itemType] = <Type, bool>{};
-    itemTypeCache[runtimeType] = canCollide;
-
-    var myTypeCache = broadphaseCheckByTypeCache[runtimeType];
-    myTypeCache ??= broadphaseCheckByTypeCache[runtimeType] = <Type, bool>{};
-    myTypeCache[itemType] = canCollide;
-  }
-
   bool? getBroadphaseCheckCache(ShapeHitbox item) =>
       _broadphaseCheckCache[item];
-
-  bool? getBroadphaseCheckCacheByType(Type itemType) =>
-      broadphaseCheckByTypeCache[itemType]?[runtimeType] ??
-      broadphaseCheckByTypeCache[runtimeType]?[itemType];
 
   void removeBroadphaseCheckItem(ShapeHitbox item) {
     _broadphaseCheckCache.remove(item);
@@ -226,18 +209,13 @@ class BoundingHitbox extends RectangleHitbox
     size.setFrom(newRect.size.toVector2());
   }
 
-  bool onComponentPureTypeCheck(PositionComponent other) {
-    final otherHitboxParent = (other as ShapeHitbox).hitboxParent;
-
-    final thisCanCollideWithOther = (hitboxParent is! HasGridSupport) ||
-        (hitboxParent as HasGridSupport)
-            .onComponentPureTypeCheck(otherHitboxParent);
-
-    final otherCanCollideWithThis = (otherHitboxParent is! HasGridSupport) ||
-        otherHitboxParent.onComponentPureTypeCheck(hitboxParent);
-
-    return thisCanCollideWithOther && otherCanCollideWithThis;
-  }
+  /// Perform type check between:
+  /// 1. Active hitbox and passive hitbox
+  /// 2. Active hitbox and passive [hitboxParent]
+  /// 2. OR between active hitbox and [CellLayer.primaryCollisionType] (to
+  ///    improve performance by skipping check of every individual component
+  ///    inside the [CellLayer])
+  bool pureTypeCheck(PositionComponent other) => true;
 
   @override
   void renderDebugMode(Canvas canvas) {

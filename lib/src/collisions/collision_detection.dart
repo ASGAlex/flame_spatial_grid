@@ -10,16 +10,14 @@ import 'package:meta/meta.dart';
 class SpatialGridCollisionDetection
     extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
   SpatialGridCollisionDetection({
-    required ExternalBroadphaseCheck onComponentTypeCheck,
-    required ExternalBroadphaseCheck onComponentPureTypeCheck,
-    ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
+    required ExternalBroadphaseCheck onComponentExtendedTypeCheck,
+    required PureTypeCheck pureTypeCheck,
     required this.spatialGrid,
   }) : super(
           broadphase: SpatialGridBroadphase<ShapeHitbox>(
             spatialGrid: spatialGrid,
-            broadphaseCheck: onComponentTypeCheck,
-            broadphaseCheckByType: onComponentPureTypeCheck,
-            minimumDistanceCheck: minimumDistanceCheck,
+            extendedTypeCheck: onComponentExtendedTypeCheck,
+            globalPureTypeCheck: pureTypeCheck,
           ),
         );
 

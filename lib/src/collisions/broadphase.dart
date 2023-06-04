@@ -2,7 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 
 import 'package:flame/collisions.dart';
-import 'package:flame/extensions.dart';
+import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
@@ -10,6 +10,16 @@ import 'package:meta/meta.dart';
 typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
   ShapeHitbox activeItem,
   ShapeHitbox potential,
+);
+
+typedef PureTypeCheck = bool Function(
+  Type activeItemType,
+  Type potentialItemType,
+);
+
+typedef ComponentExternalTypeCheck = bool Function(
+  PositionComponent first,
+  PositionComponent second,
 );
 
 mixin DebuggerPause {}
@@ -21,12 +31,10 @@ mixin DebuggerPause {}
 class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   SpatialGridBroadphase({
     required this.spatialGrid,
-    required this.broadphaseCheck,
-    required this.broadphaseCheckByType,
-    ExternalMinDistanceCheckSpatialGrid? minimumDistanceCheck,
+    required this.extendedTypeCheck,
+    this.globalPureTypeCheck,
   }) {
     clear();
-    this.minimumDistanceCheck = minimumDistanceCheck ?? _minimumDistanceCheck;
     fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
     fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
   }
@@ -49,9 +57,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   @internal
   double dt = 0;
 
-  ExternalBroadphaseCheck broadphaseCheck;
-  ExternalBroadphaseCheck broadphaseCheckByType;
-  late ExternalMinDistanceCheckSpatialGrid minimumDistanceCheck;
+  ExternalBroadphaseCheck extendedTypeCheck;
+
+  PureTypeCheck? globalPureTypeCheck;
+
+  final _checkByTypeCache = HashMap<Type, Map<Type, bool>>();
 
   @internal
   static final broadphaseCheckCache =
@@ -208,67 +218,185 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   void _compareItemWithPotentials(
-    ShapeHitbox asShapeItem,
+    ShapeHitbox activeItem,
     Set<ShapeHitbox> potentials,
     HashSet<CollisionProspect<T>> result, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
     bool excludeBroadphaseCheck = false,
   ]) {
-    final activeParent = asShapeItem.parent;
+    final activeParent = activeItem.hitboxParent;
     for (final potential in potentials) {
-      if (activeParent != null && potential.parent == activeParent) {
+      final potentialParent = potential.hitboxParent;
+      if (potentialParent == activeParent) {
         continue;
       }
       if (activeChecked != null) {
-        if (activeChecked[asShapeItem]?.contains(potential) ?? false) {
+        if (activeChecked[activeItem]?.contains(potential) ?? false) {
           continue;
         } else {
           var checked = activeChecked[potential];
           checked ??= activeChecked[potential] = HashSet<ShapeHitbox>();
-          checked.add(asShapeItem);
+          checked.add(activeItem);
         }
       }
       if (!excludeBroadphaseCheck) {
         var canToCollide = true;
-        if (asShapeItem is BoundingHitbox) {
-          final type = _getPotentialRuntimeType(potential);
-          canToCollide = asShapeItem.getBroadphaseCheckCacheByType(type) ??
-              _runExternalBroadphaseCheckByType(asShapeItem, potential);
 
+        if (activeItem is BoundingHitbox) {
+          /// 1. Checking types of hitboxes only (also checking type cache);
+          ///    Also checking GroupHitbox elements type (component!);
+          var potentialType = potential.runtimeType;
+          if (potentialParent is CellLayer) {
+            potentialType =
+                potentialParent.primaryCollisionType ?? potentialType;
+          }
+          final cache =
+              _checkByTypeCache[activeItem.runtimeType]?[potentialType];
+          if (cache == null) {
+            canToCollide = _pureTypeCheckHitbox(activeItem, potential);
+            _saveCheckByPureTypeCache(
+              activeItem.runtimeType,
+              potentialType,
+              canToCollide,
+            );
+          } else {
+            canToCollide = cache;
+          }
+
+          /// 2.Checking types of active hitbox and potential component (+cache)
+          ///    Exclude GroupHitbox checking because this is done at prev step
+          potentialType = potentialParent.runtimeType;
+          if (canToCollide && potentialParent is! CellLayer) {
+            final cache =
+                _checkByTypeCache[activeItem.runtimeType]?[potentialType];
+
+            if (cache == null) {
+              canToCollide = _pureTypeCheckHitbox(activeItem, potential);
+              _saveCheckByPureTypeCache(
+                activeItem.runtimeType,
+                potentialType,
+                canToCollide,
+              );
+            } else {
+              canToCollide = cache;
+            }
+          }
+
+          /// 3. Checking types of components itself.
           if (canToCollide) {
-            canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
-                _runExternalBroadphaseCheck(asShapeItem, potential);
+            final activeItemParentType = activeParent.runtimeType;
+            final cache =
+                _checkByTypeCache[activeItemParentType]?[potentialType];
+
+            if (cache == null) {
+              canToCollide =
+                  _pureTypeCheckComponent(activeParent, potentialParent);
+              _saveCheckByPureTypeCache(
+                activeItemParentType,
+                potentialType,
+                canToCollide,
+              );
+            } else {
+              canToCollide = cache;
+            }
+          }
+
+          /// 4. Run extended type check for components - as for ordinary hitbox
+          if (canToCollide) {
+            canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
+                _runExternalBroadphaseCheck(activeItem, potential);
           }
         } else {
-          canToCollide = asShapeItem.getBroadphaseCheckCache(potential) ??
-              _runExternalBroadphaseCheck(asShapeItem, potential);
+          /// This is default extended type check for hitbox. It invokes into
+          /// hitbox, then propagating to hitboxParent, then propagating to
+          /// parents recursively until end of components tree. This cycle stops
+          /// at overridden function without call of "super"
+          canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
+              _runExternalBroadphaseCheck(activeItem, potential);
         }
         if (!canToCollide) {
           continue;
         }
       }
 
-      final distanceCloseEnough = minimumDistanceCheck.call(
-        asShapeItem,
+      final distanceCloseEnough = _minimumDistanceCheck(
+        activeItem,
         potential,
       );
       if (distanceCloseEnough == false) {
         continue;
       }
 
-      result.add(CollisionProspect(asShapeItem as T, potential as T));
+      result.add(CollisionProspect(activeItem as T, potential as T));
     }
   }
 
-  Type _getPotentialRuntimeType(ShapeHitbox potential) {
-    final potentialParent = potential.hitboxParent;
-    var type = potentialParent.runtimeType;
-    if (potentialParent is CellLayer) {
-      if (potentialParent.primaryCollisionType != null) {
-        type = potentialParent.primaryCollisionType!;
-      }
+  bool _globalTypeCheck(Type activeType, Type potentialType) {
+    if (globalPureTypeCheck == null) {
+      return true;
     }
-    return type;
+
+    return globalPureTypeCheck!.call(
+          activeType,
+          potentialType,
+        ) &&
+        globalPureTypeCheck!.call(
+          potentialType,
+          activeType,
+        );
+  }
+
+  bool _pureTypeCheckHitbox(
+    BoundingHitbox active,
+    ShapeHitbox potential,
+  ) {
+    final canToCollide =
+        _globalTypeCheck(active.runtimeType, potential.runtimeType);
+
+    if (canToCollide) {
+      final activeCanCollide = active.pureTypeCheck(potential);
+      var passiveCanCollide = true;
+      if (potential is BoundingHitbox) {
+        passiveCanCollide = potential.pureTypeCheck(active);
+      }
+      return activeCanCollide && passiveCanCollide;
+    }
+    return canToCollide;
+  }
+
+  bool _pureTypeCheckComponent(
+    PositionComponent active,
+    PositionComponent potential,
+  ) {
+    final canToCollide =
+        _globalTypeCheck(active.runtimeType, potential.runtimeType);
+
+    if (canToCollide) {
+      var activeCanCollide = true;
+      if (active is HasGridSupport) {
+        activeCanCollide = active.pureTypeCheck(potential);
+      }
+      var passiveCanCollide = true;
+      if (potential is HasGridSupport) {
+        passiveCanCollide = potential.pureTypeCheck(active);
+      }
+      return activeCanCollide && passiveCanCollide;
+    }
+    return canToCollide;
+  }
+
+  void _saveCheckByPureTypeCache(
+    Type activeType,
+    Type passiveType,
+    bool canToCollide,
+  ) {
+    var itemTypeCache = _checkByTypeCache[activeType];
+    itemTypeCache ??= _checkByTypeCache[activeType] = <Type, bool>{};
+    itemTypeCache[passiveType] = canToCollide;
+
+    var passiveTypeCache = _checkByTypeCache[passiveType];
+    passiveTypeCache ??= _checkByTypeCache[passiveType] = <Type, bool>{};
+    passiveTypeCache[activeType] = canToCollide;
   }
 
   bool _minimumDistanceCheck(
@@ -411,7 +539,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     if (active is GroupHitbox || potential is GroupHitbox) {
       return true;
     }
-    final canToCollide = broadphaseCheck(active, potential);
+    final canToCollide = extendedTypeCheck(active, potential);
     if (active is BoundingHitbox) {
       active.storeBroadphaseCheckCache(potential, canToCollide);
     } else {
@@ -421,25 +549,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return canToCollide;
   }
 
-  bool _runExternalBroadphaseCheckByType(
-    BoundingHitbox active,
-    ShapeHitbox potential,
-  ) {
-    if (active is GroupHitbox || potential is GroupHitbox) {
-      return true;
-    }
-    final canToCollide = broadphaseCheckByType(active, potential);
-    active.storeBroadphaseCheckCacheByType(
-      _getPotentialRuntimeType(potential),
-      canToCollide,
-    );
-
-    return canToCollide;
-  }
-
   void clear() {
     activeCollisions.clear();
     broadphaseCheckCache.clear();
+    _checkByTypeCache.clear();
   }
 
   @override

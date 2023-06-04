@@ -216,8 +216,8 @@ mixin HasSpatialGridFramework on FlameGame
 
     _collisionDetection = SpatialGridCollisionDetection(
       spatialGrid: spatialGrid,
-      onComponentTypeCheck: onComponentTypeCheck,
-      onComponentPureTypeCheck: onComponentPureTypeCheck,
+      onComponentExtendedTypeCheck: onComponentTypeCheck,
+      pureTypeCheck: pureTypeCheck,
     );
 
     if (trackedComponent is SpatialGridCameraWrapper) {
@@ -253,7 +253,6 @@ mixin HasSpatialGridFramework on FlameGame
 
   void _clearStaticVariables() {
     LoadingProgressManager.lastProgressMinimum = 0;
-    BoundingHitbox.broadphaseCheckByTypeCache.clear();
     HasGridSupport.cachedCenters.clear();
     HasGridSupport.componentHitboxes.clear();
     HasGridSupport.defaultCollisionType.clear();
@@ -367,27 +366,14 @@ mixin HasSpatialGridFramework on FlameGame
     super.onRemove();
   }
 
+  bool pureTypeCheck(Type activeItemType, Type potentialItemType) => true;
+
   /// Because Framework implements it's own collision detection broadphase,
   /// with relatively same functionality as [QuadTreeBroadphase] has, but
   /// [GroupHitbox] are very special type and should me skipped.
   bool onComponentTypeCheck(ShapeHitbox first, ShapeHitbox second) {
     return first.onComponentTypeCheck(second) &&
         second.onComponentTypeCheck(first);
-  }
-
-  bool onComponentPureTypeCheck(ShapeHitbox first, ShapeHitbox second) {
-    if (first is BoundingHitbox) {
-      if (!first.onComponentPureTypeCheck(second)) {
-        return false;
-      }
-    }
-
-    if (second is BoundingHitbox) {
-      if (!second.onComponentPureTypeCheck(first)) {
-        return false;
-      }
-    }
-    return true;
   }
 
   Future<void> _buildNewCells([
