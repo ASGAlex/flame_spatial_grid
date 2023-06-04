@@ -215,7 +215,7 @@ class BoundingHitbox extends RectangleHitbox
   /// 2. OR between active hitbox and [CellLayer.primaryCollisionType] (to
   ///    improve performance by skipping check of every individual component
   ///    inside the [CellLayer])
-  bool pureTypeCheck(PositionComponent other) => true;
+  bool pureTypeCheck(Type other) => true;
 
   @override
   void renderDebugMode(Canvas canvas) {

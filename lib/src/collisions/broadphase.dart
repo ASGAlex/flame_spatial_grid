@@ -253,7 +253,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           final cache =
               _checkByTypeCache[activeItem.runtimeType]?[potentialType];
           if (cache == null) {
-            canToCollide = _pureTypeCheckHitbox(activeItem, potential);
+            canToCollide =
+                _pureTypeCheckHitbox(activeItem, potential, potentialType);
             _saveCheckByPureTypeCache(
               activeItem.runtimeType,
               potentialType,
@@ -271,7 +272,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
                 _checkByTypeCache[activeItem.runtimeType]?[potentialType];
 
             if (cache == null) {
-              canToCollide = _pureTypeCheckHitbox(activeItem, potential);
+              canToCollide =
+                  _pureTypeCheckHitbox(activeItem, potential, potentialType);
               _saveCheckByPureTypeCache(
                 activeItem.runtimeType,
                 potentialType,
@@ -349,15 +351,15 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   bool _pureTypeCheckHitbox(
     BoundingHitbox active,
     ShapeHitbox potential,
+    Type potentialType,
   ) {
-    final canToCollide =
-        _globalTypeCheck(active.runtimeType, potential.runtimeType);
+    final canToCollide = _globalTypeCheck(active.runtimeType, potentialType);
 
     if (canToCollide) {
-      final activeCanCollide = active.pureTypeCheck(potential);
+      final activeCanCollide = active.pureTypeCheck(potentialType);
       var passiveCanCollide = true;
       if (potential is BoundingHitbox) {
-        passiveCanCollide = potential.pureTypeCheck(active);
+        passiveCanCollide = potential.pureTypeCheck(active.runtimeType);
       }
       return activeCanCollide && passiveCanCollide;
     }
