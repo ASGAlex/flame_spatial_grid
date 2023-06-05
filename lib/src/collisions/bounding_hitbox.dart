@@ -6,6 +6,9 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+typedef BoundingHitboxFactory = BoundingHitbox Function(
+    HasGridSupport parentWithGridSupport);
+
 /// A special hitbox type which saves additional information:
 /// - [parentWithGridSupport] - parent component which should be with
 ///   [HasGridSupport] mixin
@@ -27,6 +30,7 @@ class BoundingHitbox extends RectangleHitbox
   BoundingHitbox({
     super.position,
     super.size,
+    super.collisionType,
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;

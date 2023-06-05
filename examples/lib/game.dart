@@ -292,7 +292,7 @@ all collisions are disabled.
     Component rootComponent,
     bool isFullyOutside,
   ) async {
-    // return;
+    return;
     if (!isFullyOutside) {
       return;
     }

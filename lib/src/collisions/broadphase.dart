@@ -240,82 +240,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
       if (!excludeBroadphaseCheck) {
-        var canToCollide = true;
+        final canToCollide = _canPairToCollide(
+            activeItem, activeParent, potential, potentialParent);
 
-        if (activeItem is BoundingHitbox) {
-          /// 1. Checking types of hitboxes only (also checking type cache);
-          ///    Also checking GroupHitbox elements type (component!);
-          var potentialType = potential.runtimeType;
-          if (potentialParent is CellLayer) {
-            potentialType =
-                potentialParent.primaryCollisionType ?? potentialType;
-          }
-          final cache =
-              _checkByTypeCache[activeItem.runtimeType]?[potentialType];
-          if (cache == null) {
-            canToCollide =
-                _pureTypeCheckHitbox(activeItem, potential, potentialType);
-            _saveCheckByPureTypeCache(
-              activeItem.runtimeType,
-              potentialType,
-              canToCollide,
-            );
-          } else {
-            canToCollide = cache;
-          }
-
-          /// 2.Checking types of active hitbox and potential component (+cache)
-          ///    Exclude GroupHitbox checking because this is done at prev step
-          potentialType = potentialParent.runtimeType;
-          if (canToCollide && potentialParent is! CellLayer) {
-            final cache =
-                _checkByTypeCache[activeItem.runtimeType]?[potentialType];
-
-            if (cache == null) {
-              canToCollide =
-                  _pureTypeCheckHitbox(activeItem, potential, potentialType);
-              _saveCheckByPureTypeCache(
-                activeItem.runtimeType,
-                potentialType,
-                canToCollide,
-              );
-            } else {
-              canToCollide = cache;
-            }
-          }
-
-          /// 3. Checking types of components itself.
-          if (canToCollide) {
-            final activeItemParentType = activeParent.runtimeType;
-            final cache =
-                _checkByTypeCache[activeItemParentType]?[potentialType];
-
-            if (cache == null) {
-              canToCollide =
-                  _pureTypeCheckComponent(activeParent, potentialParent);
-              _saveCheckByPureTypeCache(
-                activeItemParentType,
-                potentialType,
-                canToCollide,
-              );
-            } else {
-              canToCollide = cache;
-            }
-          }
-
-          /// 4. Run extended type check for components - as for ordinary hitbox
-          if (canToCollide) {
-            canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
-                _runExternalBroadphaseCheck(activeItem, potential);
-          }
-        } else {
-          /// This is default extended type check for hitbox. It invokes into
-          /// hitbox, then propagating to hitboxParent, then propagating to
-          /// parents recursively until end of components tree. This cycle stops
-          /// at overridden function without call of "super"
-          canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
-              _runExternalBroadphaseCheck(activeItem, potential);
-        }
         if (!canToCollide) {
           continue;
         }
@@ -331,6 +258,91 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
       result.add(CollisionProspect(activeItem as T, potential as T));
     }
+  }
+
+  bool _canPairToCollide(ShapeHitbox activeItem, PositionComponent activeParent,
+      ShapeHitbox potentialItem, PositionComponent potentialParent) {
+    var canToCollide = true;
+
+    if (activeItem is BoundingHitbox) {
+      /// 1. Checking types of hitboxes only (also checking type cache);
+      ///    Also checking GroupHitbox elements type (component!);
+      var potentialType = potentialItem.runtimeType;
+      if (potentialParent is CellLayer) {
+        potentialType = potentialParent.primaryCollisionType ?? potentialType;
+      }
+      final cache =
+          _getPureTypeCheckCache(activeItem.runtimeType, potentialType);
+      if (cache == null) {
+        canToCollide =
+            _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
+        _saveCheckByPureTypeCache(
+          activeItem.runtimeType,
+          potentialType,
+          canToCollide,
+        );
+      } else {
+        canToCollide = cache;
+      }
+
+      /// 2.Checking types of active hitbox and potential component (+cache)
+      ///    Exclude GroupHitbox checking because this is done at prev step
+      potentialType = potentialParent.runtimeType;
+      if (canToCollide && potentialParent is! CellLayer) {
+        final cache =
+            _getPureTypeCheckCache(activeItem.runtimeType, potentialType);
+
+        if (cache == null) {
+          canToCollide =
+              _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
+          _saveCheckByPureTypeCache(
+            activeItem.runtimeType,
+            potentialType,
+            canToCollide,
+          );
+        } else {
+          canToCollide = cache;
+        }
+
+        /// FIXME!
+        /// Не полная проверка, если active и potential меняются местами, то у
+        /// potential не срабатывает сверка свего типа с родительским типом active.
+        /// В итоге объекты сталкиваются, а не должны.
+      }
+
+      /// 3. Checking types of components itself.
+      if (canToCollide) {
+        final activeItemParentType = activeParent.runtimeType;
+        final cache =
+            _getPureTypeCheckCache(activeItemParentType, potentialType);
+
+        if (cache == null) {
+          canToCollide = _pureTypeCheckComponent(activeParent, potentialParent);
+          _saveCheckByPureTypeCache(
+            activeItemParentType,
+            potentialType,
+            canToCollide,
+          );
+        } else {
+          canToCollide = cache;
+        }
+      }
+
+      /// 4. Run extended type check for components - as for ordinary hitbox
+      if (canToCollide) {
+        canToCollide = activeItem.getBroadphaseCheckCache(potentialItem) ??
+            _runExternalBroadphaseCheck(activeItem, potentialItem);
+      }
+    } else {
+      /// This is default extended type check for hitbox. It invokes into
+      /// hitbox, then propagating to hitboxParent, then propagating to
+      /// parents recursively until end of components tree. This cycle stops
+      /// at overridden function without call of "super"
+      canToCollide = activeItem.getBroadphaseCheckCache(potentialItem) ??
+          _runExternalBroadphaseCheck(activeItem, potentialItem);
+    }
+
+    return canToCollide;
   }
 
   bool _globalTypeCheck(Type activeType, Type potentialType) {
@@ -357,11 +369,11 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
     if (canToCollide) {
       final activeCanCollide = active.pureTypeCheck(potentialType);
-      var passiveCanCollide = true;
+      var potentialCanCollide = true;
       if (potential is BoundingHitbox) {
-        passiveCanCollide = potential.pureTypeCheck(active.runtimeType);
+        potentialCanCollide = potential.pureTypeCheck(active.runtimeType);
       }
-      return activeCanCollide && passiveCanCollide;
+      return activeCanCollide && potentialCanCollide;
     }
     return canToCollide;
   }
@@ -378,27 +390,31 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       if (active is HasGridSupport) {
         activeCanCollide = active.pureTypeCheck(potential);
       }
-      var passiveCanCollide = true;
+      var potentialCanCollide = true;
       if (potential is HasGridSupport) {
-        passiveCanCollide = potential.pureTypeCheck(active);
+        potentialCanCollide = potential.pureTypeCheck(active);
       }
-      return activeCanCollide && passiveCanCollide;
+      return activeCanCollide && potentialCanCollide;
     }
     return canToCollide;
   }
 
+  bool? _getPureTypeCheckCache(Type activeType, Type potentialType) =>
+      _checkByTypeCache[activeType]?[potentialType] ??
+      _checkByTypeCache[potentialType]?[activeType];
+
   void _saveCheckByPureTypeCache(
     Type activeType,
-    Type passiveType,
+    Type potentialType,
     bool canToCollide,
   ) {
     var itemTypeCache = _checkByTypeCache[activeType];
     itemTypeCache ??= _checkByTypeCache[activeType] = <Type, bool>{};
-    itemTypeCache[passiveType] = canToCollide;
+    itemTypeCache[potentialType] = canToCollide;
 
-    var passiveTypeCache = _checkByTypeCache[passiveType];
-    passiveTypeCache ??= _checkByTypeCache[passiveType] = <Type, bool>{};
-    passiveTypeCache[activeType] = canToCollide;
+    var potentialTypeCache = _checkByTypeCache[potentialType];
+    potentialTypeCache ??= _checkByTypeCache[potentialType] = <Type, bool>{};
+    potentialTypeCache[activeType] = canToCollide;
   }
 
   bool _minimumDistanceCheck(
