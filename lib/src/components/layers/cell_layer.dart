@@ -27,7 +27,7 @@ abstract class CellLayer extends PositionComponent
   bool optimizeCollisions = false;
   bool optimizeGraphics = true;
 
-  Type? primaryCollisionType;
+  Type? primaryHitboxCollisionType;
 
   final bool isRenewable;
 
@@ -96,7 +96,13 @@ abstract class CellLayer extends PositionComponent
 
   @override
   FutureOr<void>? add(Component component) async {
-    primaryCollisionType ??= component.runtimeType;
+    if (primaryHitboxCollisionType == null) {
+      if (component is HasGridSupport) {
+        primaryHitboxCollisionType = component.boundingBox.runtimeType;
+      } else {
+        primaryHitboxCollisionType = component.runtimeType;
+      }
+    }
     if (isRenewable) {
       super.add(component);
     } else {

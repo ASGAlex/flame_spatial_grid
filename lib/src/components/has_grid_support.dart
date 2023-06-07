@@ -121,18 +121,16 @@ mixin HasGridSupport on PositionComponent {
   /// Bounding box for component and it's additional hitboxes. By default it is
   /// disabled from collision detection system, but you can change it's
   /// collisionType and defaultCollisionType values.
-  BoundingHitbox get boundingBox =>
-      _boundingHitbox ??= boundingHitboxFactory(this);
+  BoundingHitbox get boundingBox => _boundingHitbox ??= boundingHitboxFactory();
 
   BoundingHitbox? _boundingHitbox;
 
-  BoundingHitboxFactory boundingHitboxFactory =
-      (parentWithGridSupport) => BoundingHitbox(
-            position: Vector2.zero(),
-            size: Vector2.zero(),
-            collisionType: CollisionType.inactive,
-            parentWithGridSupport: parentWithGridSupport,
-          );
+  BoundingHitboxFactory get boundingHitboxFactory => () => BoundingHitbox(
+        position: Vector2.zero(),
+        size: Vector2.zero(),
+        collisionType: CollisionType.inactive,
+        parentWithGridSupport: this,
+      );
 
   @internal
   double dtElapsedWhileSuspended = 0;

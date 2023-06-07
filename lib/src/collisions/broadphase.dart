@@ -269,7 +269,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
       ///    Also checking GroupHitbox elements type (component!);
       var potentialType = potentialItem.runtimeType;
       if (potentialParent is CellLayer) {
-        potentialType = potentialParent.primaryCollisionType ?? potentialType;
+        potentialType =
+            potentialParent.primaryHitboxCollisionType ?? potentialType;
       }
       final cache =
           _getPureTypeCheckCache(activeItem.runtimeType, potentialType);
@@ -285,33 +286,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         canToCollide = cache;
       }
 
-      /// 2.Checking types of active hitbox and potential component (+cache)
-      ///    Exclude GroupHitbox checking because this is done at prev step
-      potentialType = potentialParent.runtimeType;
-      if (canToCollide && potentialParent is! CellLayer) {
-        final cache =
-            _getPureTypeCheckCache(activeItem.runtimeType, potentialType);
-
-        if (cache == null) {
-          canToCollide =
-              _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
-          _saveCheckByPureTypeCache(
-            activeItem.runtimeType,
-            potentialType,
-            canToCollide,
-          );
-        } else {
-          canToCollide = cache;
-        }
-
-        /// FIXME!
-        /// Не полная проверка, если active и potential меняются местами, то у
-        /// potential не срабатывает сверка свего типа с родительским типом active.
-        /// В итоге объекты сталкиваются, а не должны.
-      }
-
-      /// 3. Checking types of components itself.
+      /// 2. Checking types of components itself.
       if (canToCollide) {
+        potentialType = potentialParent.runtimeType;
         final activeItemParentType = activeParent.runtimeType;
         final cache =
             _getPureTypeCheckCache(activeItemParentType, potentialType);
@@ -328,7 +305,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         }
       }
 
-      /// 4. Run extended type check for components - as for ordinary hitbox
+      /// 3. Run extended type check for components - as for ordinary hitbox
       if (canToCollide) {
         canToCollide = activeItem.getBroadphaseCheckCache(potentialItem) ??
             _runExternalBroadphaseCheck(activeItem, potentialItem);

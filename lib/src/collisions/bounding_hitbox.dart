@@ -6,8 +6,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
-typedef BoundingHitboxFactory = BoundingHitbox Function(
-    HasGridSupport parentWithGridSupport);
+typedef BoundingHitboxFactory = BoundingHitbox Function();
 
 /// A special hitbox type which saves additional information:
 /// - [parentWithGridSupport] - parent component which should be with
@@ -216,7 +215,7 @@ class BoundingHitbox extends RectangleHitbox
   /// Perform type check between:
   /// 1. Active hitbox and passive hitbox
   /// 2. Active hitbox and passive [hitboxParent]
-  /// 2. OR between active hitbox and [CellLayer.primaryCollisionType] (to
+  /// 2. OR between active hitbox and [CellLayer.primaryHitboxCollisionType] (to
   ///    improve performance by skipping check of every individual component
   ///    inside the [CellLayer])
   bool pureTypeCheck(Type other) => true;
