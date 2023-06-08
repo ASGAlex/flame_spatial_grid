@@ -77,9 +77,11 @@ class CellStaticAnimationLayer extends CellLayer {
   void onRemove() {
     final frames = animationComponent?.animation?.frames;
     if (frames != null) {
-      for (final element in frames) {
-        element.sprite.image.dispose();
-      }
+      try {
+        for (final element in frames) {
+          element.sprite.image.dispose();
+        }
+      } catch (_) {}
     }
     animationComponent?.onRemove();
     animationComponent = null;
