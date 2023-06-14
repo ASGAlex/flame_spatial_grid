@@ -24,13 +24,15 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
 
   @override
   void render(Canvas canvas) {
-    (animationTicker! as SpriteAnimationTickerGlobal)
-        .getSpriteOfAnimation(animationLocal)
-        .render(
-          canvas,
-          size: size,
-          overridePaint: paint,
-        );
+    try {
+      (animationTicker! as SpriteAnimationTickerGlobal)
+          .getSpriteOfAnimation(animationLocal)
+          .render(
+            canvas,
+            size: size,
+            overridePaint: paint,
+          );
+    } catch (_) {}
   }
 }
 
