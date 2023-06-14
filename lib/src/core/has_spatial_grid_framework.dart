@@ -536,10 +536,9 @@ mixin HasSpatialGridFramework on FlameGame
       }
       final toBeRemoved = _catchCellsForRemoval();
 
-      final totalCellsToProcess =
-          spatialGrid.cellsScheduledToBuild.length + (_cellsToBeRemoved.length);
-
-      if (totalCellsToProcess > processCellsLimitToPauseEngine && !paused) {
+      if (spatialGrid.cellsScheduledToBuild.length >
+              processCellsLimitToPauseEngine &&
+          !paused) {
         showLoadingComponent();
         pauseEngine();
         if (toBeRemoved.isNotEmpty) {
