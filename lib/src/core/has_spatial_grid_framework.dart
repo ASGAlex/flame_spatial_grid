@@ -144,9 +144,10 @@ mixin HasSpatialGridFramework on FlameGame
     Size? preloadRadius,
     Duration suspendedCellLifetime = Duration.zero,
     Duration suspendCellPrecision = const Duration(minutes: 1),
-    int processCellsLimitToPauseEngine = 250,
+    int maxCells = 0,
+    int processCellsLimitToPauseEngine = 5,
     double buildCellsPerUpdate = 1,
-    double cleanupCellsPerUpdate = 1,
+    double cleanupCellsPerUpdate = 2,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -172,6 +173,7 @@ mixin HasSpatialGridFramework on FlameGame
     this.rootComponent.add(layersManager.layersRootComponent);
     _cellBuilderNoMap = cellBuilderNoMap;
     _onAfterCellBuild = onAfterCellBuild;
+    this.maxCells = maxCells;
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.suspendCellPrecision = suspendCellPrecision;
     this.cleanupCellsPerUpdate = cleanupCellsPerUpdate;
@@ -279,6 +281,8 @@ mixin HasSpatialGridFramework on FlameGame
     setRadiusByWindowDimensions();
     spatialGrid.updateCellsStateByRadius();
   }
+
+  int maxCells = 0;
 
   set suspendedCellLifetime(Duration value) {
     _suspendedCellLifetime = value.inMicroseconds / 1000000;
@@ -441,6 +445,32 @@ mixin HasSpatialGridFramework on FlameGame
   List<Cell> _catchCellsForRemoval([bool forceCleanup = false]) {
     final cellsToRemove = <Cell>[];
 
+    if (maxCells > 0 && spatialGrid.cells.length >= maxCells) {
+      final cellsToCatch = spatialGrid.cells.length - maxCells;
+      final unloadLessPriority = <Cell>[];
+      for (final cell in spatialGrid.cells.values) {
+        if (cellsToRemove.length >= cellsToCatch) {
+          break;
+        }
+
+        if (cell.state != CellState.suspended) {
+          continue;
+        }
+
+        if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
+          cellsToRemove.add(cell);
+        } else {
+          unloadLessPriority.add(cell);
+        }
+      }
+
+      if (cellsToRemove.length < cellsToCatch) {
+        cellsToRemove.addAll(
+          unloadLessPriority.take(cellsToCatch - cellsToRemove.length),
+        );
+      }
+      return cellsToRemove;
+    }
     if (forceCleanup || cleanupCellsPerUpdate < 0) {
       cellsToRemove.addAll(
         spatialGrid.cells.values
@@ -616,6 +646,8 @@ mixin HasSpatialGridFramework on FlameGame
     }
 
     if (_prepareCollisionsStage == 1) {
+      final toBeRemoved = _catchCellsForRemoval();
+      removeUnusedCells(unusedCells: toBeRemoved);
       collisionDetection.broadphase.update();
       processLifecycleEvents();
       progressManager.setProgress(40);
