@@ -67,7 +67,7 @@ class SpatialGrid {
   }
 
   void dispose() {
-    for (final cell in cells.values) {
+    for (final cell in cells.values.toList(growable: false)) {
       cell.remove();
     }
     cells.clear();
