@@ -1,8 +1,10 @@
 import 'dart:collection';
 
+import 'package:flame/flame.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/tiled/tileset_parser.dart';
 import 'package:flame_tiled/flame_tiled.dart';
+import 'package:flame_tiled/src/tile_atlas.dart';
 import 'package:meta/meta.dart';
 
 class TilesetManager {
@@ -53,6 +55,8 @@ class TilesetManager {
   }
 
   static void dispose() {
+    Flame.images.clearCache();
+    TiledAtlas.atlasMap.clear();
     for (final map in _preloadedTileSet.values) {
       for (final cache in map.values) {
         cache.dispose();
