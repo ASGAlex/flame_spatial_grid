@@ -17,4 +17,19 @@ class TileCache {
   final Sprite? sprite;
   final SpriteAnimation? spriteAnimation;
   final CustomProperties properties;
+
+  void dispose() {
+    try {
+      sprite?.image.dispose();
+    } catch (_) {}
+
+    final frames = spriteAnimation?.frames;
+    if (frames != null) {
+      for (final frame in frames) {
+        try {
+          frame.sprite.image.dispose();
+        } catch (_) {}
+      }
+    }
+  }
 }

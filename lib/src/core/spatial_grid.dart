@@ -71,6 +71,7 @@ class SpatialGrid {
       cell.remove();
     }
     cells.clear();
+    _currentCell = null;
   }
 
   /// The game on which the grid is built

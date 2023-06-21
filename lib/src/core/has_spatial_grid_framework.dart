@@ -258,7 +258,8 @@ mixin HasSpatialGridFramework on FlameGame
     HasGridSupport.cachedCenters.clear();
     HasGridSupport.componentHitboxes.clear();
     HasGridSupport.defaultCollisionType.clear();
-    TilesetManager.clear();
+    TilesetManager.dispose();
+    TiledMapLoader.loadedMaps.clear();
   }
 
   void onInitializationDone() {}
@@ -366,7 +367,14 @@ mixin HasSpatialGridFramework on FlameGame
   void onRemove() {
     isSpatialGridDebugEnabled = false;
     _spatialGridDebug = null;
-    spatialGrid.dispose();
+    maps.clear();
+    layersManager.layers.clear();
+    descendants(reversed: true).forEach((element) {
+      element.removeFromParent();
+    });
+    processLifecycleEvents();
+    collisionDetection.dispose();
+    _clearStaticVariables();
     super.onRemove();
   }
 

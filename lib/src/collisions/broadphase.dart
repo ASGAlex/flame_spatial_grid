@@ -34,7 +34,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     required this.extendedTypeCheck,
     this.globalPureTypeCheck,
   }) {
-    clear();
+    dispose();
     fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
     fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
   }
@@ -56,6 +56,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   @internal
   double dt = 0;
+
+  final hasCollisionsLastTime = HashSet<ShapeHitbox>();
 
   ExternalBroadphaseCheck extendedTypeCheck;
 
@@ -150,8 +152,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
     return result;
   }
-
-  final hasCollisionsLastTime = HashSet<ShapeHitbox>();
 
   @override
   HashSet<CollisionProspect<T>> query() {
@@ -544,12 +544,6 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     return canToCollide;
   }
 
-  void clear() {
-    activeCollisions.clear();
-    broadphaseCheckCache.clear();
-    _checkByTypeCache.clear();
-  }
-
   @override
   void remove(T item) {
     final checkCache = broadphaseCheckCache[item];
@@ -628,6 +622,17 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   @override
   List<T> get items => throw UnimplementedError();
+
+  void dispose() {
+    scheduledOperations.clear();
+    activeCollisions.clear();
+    broadphaseCheckCache.clear();
+    _checkByTypeCache.clear();
+    hasCollisionsLastTime.clear();
+    passiveCollisionsByCell.clear();
+    activeCollisionsByCell.clear();
+    optimizedCollisionsByGroupBox.clear();
+  }
 }
 
 @internal

@@ -9,10 +9,6 @@ class TilesetManager {
   static final _preloadedTileSet =
       HashMap<String, HashMap<String, TileCache>>();
 
-  static void clear() {
-    _preloadedTileSet.clear();
-  }
-
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
   TileCache? getTile(String tileSetName, String tileType) =>
@@ -54,5 +50,15 @@ class TilesetManager {
       futures.add(_populateCache(tileSet));
     }
     return Future.wait<void>(futures);
+  }
+
+  static void dispose() {
+    for (final map in _preloadedTileSet.values) {
+      for (final cache in map.values) {
+        cache.dispose();
+      }
+      map.clear();
+    }
+    _preloadedTileSet.clear();
   }
 }

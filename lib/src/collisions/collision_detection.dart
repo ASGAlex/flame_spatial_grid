@@ -98,7 +98,7 @@ class SpatialGridCollisionDetection
 
   @override
   void removeAll(Iterable<ShapeHitbox> items) {
-    broadphase.clear();
+    broadphase.dispose();
     items.forEach(remove);
   }
 
@@ -204,5 +204,11 @@ class SpatialGridCollisionDetection
       broadphase.hasCollisionsLastTime.remove(hitboxA);
     }
     super.handleCollisionEnd(hitboxA, hitboxB);
+  }
+
+  void dispose() {
+    spatialGrid.dispose();
+    _scheduledUpdateAfterTransform.clear();
+    broadphase.dispose();
   }
 }
