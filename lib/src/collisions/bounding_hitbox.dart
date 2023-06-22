@@ -29,7 +29,7 @@ class BoundingHitbox extends RectangleHitbox
   BoundingHitbox({
     super.position,
     super.size,
-    super.collisionType,
+    super.collisionType = CollisionType.inactive,
     HasGridSupport? parentWithGridSupport,
   }) {
     _parentWithGridSupport = parentWithGridSupport;
