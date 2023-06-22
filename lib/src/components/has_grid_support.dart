@@ -149,7 +149,7 @@ mixin HasGridSupport on PositionComponent {
   FutureOr<void>? onLoad() {
     boundingBox.size.setFrom(size);
     add(boundingBox);
-    return null;
+    return super.onLoad();
   }
 
   void onCalculateDistance(

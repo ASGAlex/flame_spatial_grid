@@ -43,7 +43,7 @@ class SpatialGridDebugComponent extends PositionComponent
     paintBorder.strokeWidth = 1;
     setPaint('border', paintBorder);
 
-    return null;
+    return super.onLoad();
   }
 
   @override
