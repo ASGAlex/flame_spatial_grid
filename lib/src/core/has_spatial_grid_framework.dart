@@ -159,8 +159,6 @@ mixin HasSpatialGridFramework on FlameGame
     bool lazyLoad = true,
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
-    _clearStaticVariables();
-
     showLoadingComponent();
     final progressManager = LoadingProgressManager<String>(
       'spatial grid',
