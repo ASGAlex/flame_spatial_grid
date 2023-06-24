@@ -45,9 +45,14 @@ class WorldLoader {
       return result;
     }
     for (final map in data.maps) {
-      final loader = mapLoader[map.fileName.replaceAll('.tmx', '')];
+      var loader = mapLoader[map.fileName.replaceAll('.tmx', '')];
       if (loader == null) {
-        continue;
+        final genericMapLoader = mapLoader['all'];
+        if (genericMapLoader != null) {
+          loader = genericMapLoader;
+        } else {
+          continue;
+        }
       }
       loader.initialPosition = Vector2(map.x.toDouble(), map.y.toDouble());
       loader.fileName = map.fileName;
