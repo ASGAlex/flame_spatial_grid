@@ -82,7 +82,8 @@ abstract class TiledMapLoader {
 
   /// The link to the current game. Is necessary for accessing [SpatialGrid]
   /// class and working with layers.
-  late final HasSpatialGridFramework game;
+  HasSpatialGridFramework get game => _game!;
+  HasSpatialGridFramework? _game;
 
   TiledComponent? tiledComponent;
 
@@ -171,7 +172,7 @@ abstract class TiledMapLoader {
   /// the map in [HasSpatialGridFramework.initializeSpatialGrid] function,
   /// it will be called automatically.
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
-    this.game = game;
+    _game ??= game;
 
     final renderableTiledMap = (await loadTiledComponent()).tileMap;
 
