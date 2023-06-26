@@ -898,14 +898,24 @@ class Brick extends SpriteComponent
 }
 
 class Water extends SpriteAnimationComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
-  Water({required super.position, required super.animation, this.context}) {
+    with
+        CollisionCallbacks,
+        HasGridSupport,
+        GameCollideable,
+        UpdateOnDemand,
+        RestorableStateMixin {
+  Water({
+    required super.position,
+    required super.animation,
+    this.context,
+  }) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
     initCollision();
   }
 
+  @override
   final TileBuilderContext? context;
 
   @override

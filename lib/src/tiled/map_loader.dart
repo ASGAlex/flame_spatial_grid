@@ -211,7 +211,7 @@ abstract class TiledMapLoader {
               absolutePosition: position,
               size: size,
               cellRect: rect,
-              spatialGrid: game.spatialGrid,
+              mapLoader: this,
               layerInfo: layerInfo,
             );
             processor(context);
@@ -400,7 +400,7 @@ abstract class TiledMapLoader {
               absolutePosition: absolutePosition,
               size: size,
               cellRect: rect,
-              spatialGrid: game.spatialGrid,
+              mapLoader: this,
               layerInfo: layerInfo,
             );
             var list = HashSet<TileBuilderContext>();
@@ -433,7 +433,7 @@ abstract class TiledMapLoader {
             absolutePosition: position,
             size: size,
             cellRect: rect,
-            spatialGrid: game.spatialGrid,
+            mapLoader: this,
             layerInfo: layerInfo,
           );
           var list = HashSet<TileBuilderContext>();

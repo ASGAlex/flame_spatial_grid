@@ -1,5 +1,4 @@
 // ignore_for_file: comment_references
-
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -285,6 +284,27 @@ mixin HasSpatialGridFramework on FlameGame
 
   set suspendedCellLifetime(Duration value) {
     _suspendedCellLifetime = value.inMicroseconds / 1000000;
+  }
+
+  Cell? findCellForComponent(HasGridSupport component) {
+    final componentCenter = Vector2.zero();
+    if (component.boundingBox.isMounted) {
+      componentCenter.setFrom(component.boundingBox.aabbCenter);
+    } else {
+      componentCenter.setFrom(
+        component.anchor.toOtherAnchorPosition(
+          component.position,
+          Anchor.center,
+          component.size,
+        ),
+      );
+    }
+    var cell = component.currentCell;
+    cell ??= component.currentCell =
+        spatialGrid.findExistingCellByPosition(componentCenter);
+    cell ??= component.currentCell =
+        spatialGrid.createNewCellAtPosition(componentCenter);
+    return cell;
   }
 
   /// How long a cell in [CellState.suspended]

@@ -78,14 +78,11 @@ class LayersManager {
   }) {
     Cell? cell;
     if (currentCell == null && component is HasGridSupport) {
-      cell = component.currentCell;
-      cell ??= component.currentCell =
-          game.spatialGrid.findExistingCellByPosition(component.position);
-      cell ??= component.currentCell =
-          game.spatialGrid.createNewCellAtPosition(component.position);
+      cell = game.findCellForComponent(component);
     } else if (currentCell != null) {
       cell = currentCell;
-    } else {
+    }
+    if (cell == null) {
       throw 'The "component" should be "HasGridSupport" subtype or '
           '"currentCell" parameter should be passed.';
     }

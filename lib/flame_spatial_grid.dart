@@ -15,6 +15,7 @@ export 'src/components/layers/cell_static_layer.dart';
 export 'src/components/layers/cell_trail_layer.dart';
 export 'src/components/layers/has_trail_support.dart';
 export 'src/components/layers/layers_manager.dart';
+export 'src/components/restorable_state_mixin.dart';
 export 'src/components/tile_component.dart';
 export 'src/components/utility/debug_component.dart';
 export 'src/components/utility/on_demand_actions.dart';

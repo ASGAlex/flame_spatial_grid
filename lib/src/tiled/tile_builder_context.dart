@@ -20,11 +20,12 @@ class TileBuilderContext {
     required this.absolutePosition,
     required this.size,
     required this.cellRect,
-    required this.spatialGrid,
+    required this.mapLoader,
     required this.layerInfo,
   });
 
-  final SpatialGrid spatialGrid;
+  TiledMapLoader mapLoader;
+
   Rect cellRect;
 
   ///Tile's position in the global game's coordinates space
@@ -42,7 +43,7 @@ class TileBuilderContext {
   final LayerInfo layerInfo;
 
   /// The cell in which the tile should be placed
-  Cell? get cell => spatialGrid.cells[cellRect];
+  Cell? get cell => mapLoader.game.spatialGrid.cells[cellRect];
 
   ///  If the tile should be removed in the next map load operation. Useful in
   ///  cause you implementing a destructible game environment and want to
