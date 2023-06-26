@@ -1,13 +1,16 @@
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
+typedef MapLoaderFactory = TiledMapLoader Function();
+
 class WorldLoader {
   WorldLoader({required this.fileName, required this.mapLoader});
 
   final String fileName;
   WorldData? worldData;
-  final Map<String, TiledMapLoader> mapLoader;
+  final Map<String, MapLoaderFactory> mapLoader;
   late final HasSpatialGridFramework game;
+  final List<TiledMapLoader> _maps = [];
 
   Future loadWorldData() async {
     worldData ??= await WorldData.fromFile('assets/tiles/$fileName');
@@ -39,26 +42,29 @@ class WorldLoader {
   }
 
   List<TiledMapLoader> get maps {
-    final result = <TiledMapLoader>[];
+    if (_maps.isNotEmpty) {
+      return _maps;
+    }
     final data = worldData;
     if (data == null) {
-      return result;
+      return _maps;
     }
     for (final map in data.maps) {
-      var loader = mapLoader[map.fileName.replaceAll('.tmx', '')];
-      if (loader == null) {
+      var factory = mapLoader[map.fileName.replaceAll('.tmx', '')];
+      if (factory == null) {
         final genericMapLoader = mapLoader['all'];
         if (genericMapLoader != null) {
-          loader = genericMapLoader;
+          factory = genericMapLoader;
         } else {
           continue;
         }
       }
+      final loader = factory.call();
       loader.initialPosition = Vector2(map.x.toDouble(), map.y.toDouble());
       loader.fileName = map.fileName;
-      result.add(loader);
+      _maps.add(loader);
     }
 
-    return result;
+    return _maps;
   }
 }

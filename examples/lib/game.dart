@@ -122,7 +122,10 @@ all collisions are disabled.
       ],
       worldLoader: WorldLoader(
         fileName: 'example.world',
-        mapLoader: {'example': DemoMapLoader(), 'another_map': DemoMapLoader()},
+        mapLoader: {
+          'example': DemoMapLoader.new,
+          'another_map': DemoMapLoader.new
+        },
       ),
     );
     // await demoMapLoader.init(this);
