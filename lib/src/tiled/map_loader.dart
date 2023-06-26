@@ -7,7 +7,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
 
-typedef TileBuilderFunction = Future<void> Function(CellBuilderContext context);
+typedef TileBuilderFunction = Future<void> Function(TileBuilderContext context);
 
 typedef InitialPositionChecker = Vector2? Function(
   ObjectGroup layer,
@@ -106,7 +106,7 @@ abstract class TiledMapLoader {
   /// Map dimensions, calculated during initialization
   Rect mapRect = Rect.zero;
 
-  final _contextByCellRect = HashMap<Rect, HashSet<CellBuilderContext>>();
+  final _contextByCellRect = HashMap<Rect, HashSet<TileBuilderContext>>();
 
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
@@ -206,7 +206,7 @@ abstract class TiledMapLoader {
                   game.spatialGrid.createNewCellAtPosition(position + size / 2);
               rect = cell.rect;
             }
-            final context = CellBuilderContext(
+            final context = TileBuilderContext(
               tiledObject: object,
               absolutePosition: position,
               size: size,
@@ -232,7 +232,7 @@ abstract class TiledMapLoader {
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
     final contextList = _contextByCellRect[cell.rect];
-    final contextsToRemove = <CellBuilderContext>[];
+    final contextsToRemove = <TileBuilderContext>[];
     if (contextList == null || contextList.isEmpty) {
       return;
     }
@@ -259,7 +259,7 @@ abstract class TiledMapLoader {
 
   /// This tile builder merges all tiles into single image. Useful for
   /// rendering tiled maps background layers.
-  Future<void> genericTileBuilder(CellBuilderContext context) async {
+  Future<void> genericTileBuilder(TileBuilderContext context) async {
     final provider = context.tileDataProvider;
     if (provider == null) {
       return;
@@ -395,7 +395,7 @@ abstract class TiledMapLoader {
                   .createNewCellAtPosition(absolutePosition + size / 2);
               rect = cell.rect;
             }
-            final context = CellBuilderContext(
+            final context = TileBuilderContext(
               tileDataProvider: tileDataProvider,
               absolutePosition: absolutePosition,
               size: size,
@@ -403,7 +403,7 @@ abstract class TiledMapLoader {
               spatialGrid: game.spatialGrid,
               layerInfo: layerInfo,
             );
-            var list = HashSet<CellBuilderContext>();
+            var list = HashSet<TileBuilderContext>();
             list = _contextByCellRect[rect] ??= list;
             list.add(context);
           }
@@ -428,7 +428,7 @@ abstract class TiledMapLoader {
             rect = cell.rect;
           }
 
-          final context = CellBuilderContext(
+          final context = TileBuilderContext(
             tiledObject: object,
             absolutePosition: position,
             size: size,
@@ -436,7 +436,7 @@ abstract class TiledMapLoader {
             spatialGrid: game.spatialGrid,
             layerInfo: layerInfo,
           );
-          var list = HashSet<CellBuilderContext>();
+          var list = HashSet<TileBuilderContext>();
           list = _contextByCellRect[rect] ??= list;
           list.add(context);
         }

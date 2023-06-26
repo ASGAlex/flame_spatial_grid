@@ -458,7 +458,7 @@ class DemoMapLoader extends TiledMapLoader {
         'TestObject': onBuildTestObject
       };
 
-  Future<void> onBuildBrick(CellBuilderContext context) async {
+  Future<void> onBuildBrick(TileBuilderContext context) async {
     final spriteBrick = getPreloadedTileData('tileset', 'Brick')?.sprite;
     final brick = Brick(
       position: context.absolutePosition,
@@ -476,7 +476,7 @@ class DemoMapLoader extends TiledMapLoader {
     );
   }
 
-  Future<void> onBuildWater(CellBuilderContext context) async {
+  Future<void> onBuildWater(TileBuilderContext context) async {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
     final water = Water(
@@ -492,7 +492,7 @@ class DemoMapLoader extends TiledMapLoader {
     );
   }
 
-  Future<void> onBuildTestObject(CellBuilderContext context) async {
+  Future<void> onBuildTestObject(TileBuilderContext context) async {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
 
@@ -520,7 +520,7 @@ class DemoMapLoader extends TiledMapLoader {
     }
   }
 
-  Future<void> onBackgroundBuilder(CellBuilderContext context) async {
+  Future<void> onBackgroundBuilder(TileBuilderContext context) async {
     var priority = -1;
     if (context.layerInfo.name == 'bricks') {
       priority = 100;
@@ -882,7 +882,7 @@ class Brick extends SpriteComponent
     initCollision();
   }
 
-  final CellBuilderContext? context;
+  final TileBuilderContext? context;
 
   @override
   void onCollisionStart(
@@ -906,7 +906,7 @@ class Water extends SpriteAnimationComponent
     initCollision();
   }
 
-  final CellBuilderContext? context;
+  final TileBuilderContext? context;
 
   @override
   void onCollisionStart(

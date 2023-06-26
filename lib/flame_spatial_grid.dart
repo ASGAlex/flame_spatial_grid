@@ -23,6 +23,7 @@ export 'src/core/has_spatial_grid_framework.dart';
 export 'src/core/spatial_grid.dart';
 export 'src/tiled/map_loader.dart';
 export 'src/tiled/sprite_loader.dart';
+export 'src/tiled/tile_builder_context.dart';
 export 'src/tiled/tile_cache.dart';
 export 'src/tiled/tile_data_provider.dart';
 export 'src/tiled/tileset_manager.dart';
