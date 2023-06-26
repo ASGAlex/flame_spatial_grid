@@ -257,7 +257,7 @@ mixin HasSpatialGridFramework on FlameGame
     HasGridSupport.componentHitboxes.clear();
     HasGridSupport.defaultCollisionType.clear();
     TilesetManager.dispose();
-    TiledMapLoader.loadedMaps.clear();
+    TiledMapLoader.disposeAll();
   }
 
   void onInitializationDone() {}

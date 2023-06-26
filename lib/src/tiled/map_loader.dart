@@ -450,4 +450,12 @@ abstract class TiledMapLoader {
       }
     }
   }
+
+  static void disposeAll() {
+    for (final map in loadedMaps) {
+      map._contextByCellRect.clear();
+      map._game = null;
+    }
+    loadedMaps.clear();
+  }
 }
