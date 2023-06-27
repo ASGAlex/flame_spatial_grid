@@ -69,6 +69,7 @@ all collisions are disabled.
     player = world.player;
     cameraComponent = CameraComponent(world: world);
     cameraComponent.viewfinder.zoom = 5;
+    cameraComponent.priority = 999;
     cameraComponent.follow(player, maxSpeed: 200, snap: true);
 
     // check that manual loading works correctly (not necessary line)
