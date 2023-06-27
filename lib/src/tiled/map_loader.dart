@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:collection';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -89,6 +88,9 @@ abstract class TiledMapLoader {
 
   Component get rootComponent => game.rootComponent;
 
+  late final TileBuilderContextProvider<TiledMapLoader>
+      tileBuilderContextProvider;
+
   /// By default flame_tiled loads just tilesets that are really used in the
   /// map. But with using tile builders it becomes to be useful to have secured
   /// access to all map's tilesets to reuse them in components creation.
@@ -105,8 +107,6 @@ abstract class TiledMapLoader {
 
   /// Map dimensions, calculated during initialization
   Rect mapRect = Rect.zero;
-
-  final _contextByCellRect = HashMap<Rect, HashSet<TileBuilderContext>>();
 
   /// Use this function in tile builder to access tile's [Sprite]
   /// or [SpriteAnimation].
@@ -173,6 +173,8 @@ abstract class TiledMapLoader {
   /// it will be called automatically.
   Future<TiledComponent> init(HasSpatialGridFramework game) async {
     _game ??= game;
+    tileBuilderContextProvider =
+        TileBuilderContextProvider<TiledMapLoader>(parent: this);
 
     final renderableTiledMap = (await loadTiledComponent()).tileMap;
 
@@ -211,7 +213,7 @@ abstract class TiledMapLoader {
               absolutePosition: position,
               size: size,
               cellRect: rect,
-              mapLoader: this,
+              contextProvider: tileBuilderContextProvider,
               layerInfo: layerInfo,
             );
             processor(context);
@@ -231,16 +233,16 @@ abstract class TiledMapLoader {
   /// what to do!
   @mustCallSuper
   Future<void> cellBuilder(Cell cell, Component rootComponent) async {
-    final contextList = _contextByCellRect[cell.rect];
-    final contextsToRemove = <TileBuilderContext>[];
+    final contextList = tileBuilderContextProvider.getContextListForCell(cell);
     if (contextList == null || contextList.isEmpty) {
       return;
     }
 
     for (final context in contextList) {
-      if (context.remove) {
-        contextsToRemove.add(context);
+      if (context.removed) {
+        continue;
       } else {
+        cell.tileBuilderContextProvider = tileBuilderContextProvider;
         final builderType =
             context.tileDataProvider?.tile.type ?? context.tiledObject?.type;
         final processor = tileBuilders?[builderType];
@@ -253,8 +255,6 @@ abstract class TiledMapLoader {
 
       await cellPostBuilder?.call(context);
     }
-
-    contextsToRemove.forEach(contextList.remove);
   }
 
   /// This tile builder merges all tiles into single image. Useful for
@@ -395,17 +395,16 @@ abstract class TiledMapLoader {
                   .createNewCellAtPosition(absolutePosition + size / 2);
               rect = cell.rect;
             }
-            final context = TileBuilderContext(
-              tileDataProvider: tileDataProvider,
-              absolutePosition: absolutePosition,
-              size: size,
-              cellRect: rect,
-              mapLoader: this,
-              layerInfo: layerInfo,
+            tileBuilderContextProvider.addContext(
+              TileBuilderContext(
+                tileDataProvider: tileDataProvider,
+                absolutePosition: absolutePosition,
+                size: size,
+                cellRect: rect,
+                contextProvider: tileBuilderContextProvider,
+                layerInfo: layerInfo,
+              ),
             );
-            var list = HashSet<TileBuilderContext>();
-            list = _contextByCellRect[rect] ??= list;
-            list.add(context);
           }
           xOffset++;
           if (xOffset == layer.width) {
@@ -428,17 +427,16 @@ abstract class TiledMapLoader {
             rect = cell.rect;
           }
 
-          final context = TileBuilderContext(
-            tiledObject: object,
-            absolutePosition: position,
-            size: size,
-            cellRect: rect,
-            mapLoader: this,
-            layerInfo: layerInfo,
+          tileBuilderContextProvider.addContext(
+            TileBuilderContext(
+              tiledObject: object,
+              absolutePosition: position,
+              size: size,
+              cellRect: rect,
+              contextProvider: tileBuilderContextProvider,
+              layerInfo: layerInfo,
+            ),
           );
-          var list = HashSet<TileBuilderContext>();
-          list = _contextByCellRect[rect] ??= list;
-          list.add(context);
         }
       }
     }
@@ -453,7 +451,7 @@ abstract class TiledMapLoader {
 
   static void disposeAll() {
     for (final map in loadedMaps) {
-      map._contextByCellRect.clear();
+      map.tileBuilderContextProvider.clearContextStorage();
       map._game = null;
     }
     loadedMaps.clear();

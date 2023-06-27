@@ -152,6 +152,8 @@ mixin HasGridSupport on PositionComponent {
     return super.onLoad();
   }
 
+  void onSpatialGridInitialized() {}
+
   void onCalculateDistance(
     Component other,
     double distanceX,

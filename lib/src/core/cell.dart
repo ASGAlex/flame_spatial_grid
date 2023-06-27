@@ -84,6 +84,8 @@ class Cell {
 
   var _state = CellState.suspended;
 
+  TileBuilderContextProvider? tileBuilderContextProvider;
+
   /// Collection of component currently places inside this cell.
   /// Should not be modified manually!
   final components = HashSet<HasGridSupport>();

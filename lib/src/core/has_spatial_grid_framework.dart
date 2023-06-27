@@ -1,4 +1,6 @@
 // ignore_for_file: comment_references
+import 'dart:collection';
+
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -38,6 +40,9 @@ mixin HasSpatialGridFramework on FlameGame
   final tickersManager = TickersManager();
 
   final tilesetManager = TilesetManager();
+
+  late final TileBuilderContextProvider<HasSpatialGridFramework>
+      tileBuilderContextProvider;
 
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
   /// to viewport size and zoom level.
@@ -178,6 +183,8 @@ mixin HasSpatialGridFramework on FlameGame
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
     this.processCellsLimitToPauseEngine = processCellsLimitToPauseEngine;
+    tileBuilderContextProvider =
+        TileBuilderContextProvider<HasSpatialGridFramework>(parent: this);
     if (maps != null) {
       this.maps = maps;
     }
@@ -335,6 +342,7 @@ mixin HasSpatialGridFramework on FlameGame
 
     final cache = <Rect, int>{};
     var isFullyOutside = false;
+    final processedCellsNoMap = HashSet<Cell>();
     for (final map in TiledMapLoader.loadedMaps) {
       var pointsOutside = cache[cell.rect];
       if (pointsOutside == null) {
@@ -346,12 +354,19 @@ mixin HasSpatialGridFramework on FlameGame
         await map.cellBuilder(cell, rootComponent);
       } else if (pointsOutside == 4) {
         isFullyOutside = true;
-        await _cellBuilderNoMap?.call(cell, rootComponent, true);
+        if (!processedCellsNoMap.contains(cell)) {
+          await _cellBuilderNoMap?.call(cell, rootComponent, true);
+          processedCellsNoMap.add(cell);
+        }
       } else {
-        await _cellBuilderNoMap?.call(cell, rootComponent, false);
+        if (!processedCellsNoMap.contains(cell)) {
+          await _cellBuilderNoMap?.call(cell, rootComponent, false);
+          processedCellsNoMap.add(cell);
+        }
         await map.cellBuilder(cell, rootComponent);
       }
     }
+    processedCellsNoMap.clear();
 
     return isFullyOutside;
   }

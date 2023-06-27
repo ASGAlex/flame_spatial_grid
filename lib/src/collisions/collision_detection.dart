@@ -50,6 +50,7 @@ class SpatialGridCollisionDetection
       withGridSupportComponent.updateTransform();
 
       broadphase.updateHitboxIndexes(item);
+      withGridSupportComponent.onSpatialGridInitialized();
     }
   }
 

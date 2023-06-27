@@ -295,54 +295,100 @@ all collisions are disabled.
     Component rootComponent,
     bool isFullyOutside,
   ) async {
-    return;
+    // return;
     if (!isFullyOutside) {
       return;
     }
-    final spriteBrick = tilesetManager.getTile('tileset', 'Brick')?.sprite;
-    final waterAnimation =
-        tilesetManager.getTile('tileset', 'Water')?.spriteAnimation;
 
-    for (var i = 0; i < 200; i++) {
-      final random = Random();
-      final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2()
-        ..add(Vector2(diffX, diffY));
-      final brick = Brick(position: position, sprite: spriteBrick);
-      brick.currentCell = cell;
-
-      final layer = layersManager.addComponent(
-        component: brick,
-        layerType: MapLayerType.static,
-        layerName: 'Brick',
-        absolutePosition: false,
-        priority: 2,
-      );
-      (layer as CellStaticLayer).renderAsImage = true;
+    final brickTile = tilesetManager.getTile('tileset', 'Brick');
+    final waterTile = tilesetManager.getTile('tileset', 'Water');
+    if (brickTile == null || waterTile == null) {
+      return;
     }
+    final spriteBrick = brickTile.sprite;
+    final waterAnimation = waterTile.spriteAnimation;
 
-    for (var i = 0; i < 200; i++) {
-      final random = Random();
-      final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
-          (random.nextBool() ? -1 : 1);
-      final position = (cell.rect.size / 2).toVector2()
-        ..add(Vector2(diffX, diffY));
-      final water = Water(
-        position: position,
-        animation: waterAnimation,
-      );
-      water.currentCell = cell;
-      layersManager.addComponent(
-        component: water,
-        layerType: MapLayerType.animated,
-        layerName: 'Water',
-        absolutePosition: false,
-      );
+    final contextList = tileBuilderContextProvider.getContextListForCell(cell);
+    if (contextList != null) {
+      for (final context in contextList) {
+        switch (context.tileDataProvider?.tile.type) {
+          case 'Water':
+            final water = Water(
+              position: context.absolutePosition,
+              animation: waterAnimation,
+              ctx: context,
+            );
+            water.currentCell = context.cell;
+            layersManager.addComponent(
+              component: water,
+              layerType: MapLayerType.animated,
+              layerName: 'Water',
+            );
+            break;
+          case 'Brick':
+            final brick = Brick(
+              position: context.absolutePosition,
+              sprite: spriteBrick,
+              ctx: context,
+            );
+            brick.currentCell = context.cell;
+            brick.priority = 2;
+            layersManager.addComponent(
+              component: brick,
+              layerType: MapLayerType.static,
+              layerName: 'Brick',
+              optimizeGraphics: false,
+              priority: 2,
+            );
+            break;
+          default:
+            break;
+        }
+      }
+    } else {
+      for (var i = 0; i < 50; i++) {
+        final random = Random();
+        final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final diffY = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final position = (cell.rect.size / 2).toVector2()
+          ..add(Vector2(diffX, diffY));
+        final brick = Brick(position: position, sprite: spriteBrick);
+        brick.currentCell = cell;
+        brick.tileCache = brickTile;
+
+        final layer = layersManager.addComponent(
+          component: brick,
+          layerType: MapLayerType.static,
+          layerName: 'Brick',
+          absolutePosition: false,
+          priority: 2,
+        );
+        (layer as CellStaticLayer).renderAsImage = true;
+      }
+
+      for (var i = 0; i < 50; i++) {
+        final random = Random();
+        final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final diffY = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
+            (random.nextBool() ? -1 : 1);
+        final position = (cell.rect.size / 2).toVector2()
+          ..add(Vector2(diffX, diffY));
+        final water = Water(
+          position: position,
+          animation: waterAnimation,
+        );
+        water.currentCell = cell;
+        water.tileCache = waterTile;
+        layersManager.addComponent(
+          component: water,
+          layerType: MapLayerType.animated,
+          layerName: 'Water',
+          absolutePosition: false,
+        );
+      }
     }
   }
 
@@ -401,6 +447,10 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
 
   @override
   void onTapDown(TapDownEvent event) {
+    if (game.teleportMode) {
+      player.position.setFrom(event.localPosition);
+    }
+    return;
     final tapPosition = event.localPosition;
     final cellsUnderCursor = <Cell>[];
     gameRef.spatialGrid.cells.forEach((rect, cell) {
@@ -428,10 +478,6 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
       //     .optimizedCollisionsByGroupBox[component.currentCell];
       // print(optimized?.length);
       // print(component.runtimeType);
-    }
-
-    if (game.teleportMode) {
-      player.position = event.localPosition;
     }
   }
 }
@@ -463,7 +509,7 @@ class DemoMapLoader extends TiledMapLoader {
     final brick = Brick(
       position: context.absolutePosition,
       sprite: spriteBrick,
-      context: context,
+      ctx: context,
     );
     brick.currentCell = context.cell;
     brick.priority = 2;
@@ -482,7 +528,7 @@ class DemoMapLoader extends TiledMapLoader {
     final water = Water(
       position: context.absolutePosition,
       animation: waterAnimation,
-      context: context,
+      ctx: context,
     );
     water.currentCell = context.cell;
     game.layersManager.addComponent(
@@ -509,7 +555,7 @@ class DemoMapLoader extends TiledMapLoader {
         final water = Water(
           position: Vector2(x, y),
           animation: waterAnimation,
-          context: context,
+          ctx: context,
         );
         game.layersManager.addComponent(
           component: water,
@@ -874,15 +920,25 @@ class Bullet extends PositionComponent
 //#region Environment
 
 class Brick extends SpriteComponent
-    with CollisionCallbacks, HasGridSupport, GameCollideable, UpdateOnDemand {
-  Brick({required super.position, required super.sprite, this.context}) {
+    with
+        CollisionCallbacks,
+        HasGridSupport,
+        GameCollideable,
+        UpdateOnDemand,
+        RestorableStateMixin<void> {
+  Brick({
+    required super.position,
+    required super.sprite,
+    TileBuilderContext? ctx,
+  }) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
     initCollision();
+    if (ctx != null) {
+      context = ctx;
+    }
   }
-
-  final TileBuilderContext? context;
 
   @override
   void onCollisionStart(
@@ -890,11 +946,14 @@ class Brick extends SpriteComponent
     PositionComponent other,
   ) {
     if (other is Bullet) {
-      context?.remove = true;
+      context?.remove();
       removeFromParent();
     }
     super.onCollisionStart(intersectionPoints, other);
   }
+
+  @override
+  void get userData => null;
 }
 
 class Water extends SpriteAnimationComponent
@@ -903,20 +962,21 @@ class Water extends SpriteAnimationComponent
         HasGridSupport,
         GameCollideable,
         UpdateOnDemand,
-        RestorableStateMixin {
+        RestorableStateMixin<void> {
   Water({
     required super.position,
     required super.animation,
-    this.context,
+    TileBuilderContext? ctx,
   }) {
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
     initCollision();
-  }
 
-  @override
-  final TileBuilderContext? context;
+    if (ctx != null) {
+      context = ctx;
+    }
+  }
 
   @override
   void onCollisionStart(
@@ -924,11 +984,14 @@ class Water extends SpriteAnimationComponent
     PositionComponent other,
   ) {
     if (other is Bullet && other.killWater) {
-      context?.remove = true;
+      context?.remove();
       removeFromParent();
       super.onCollisionStart(intersectionPoints, other);
     }
   }
+
+  @override
+  void get userData => null;
 }
 
 mixin GameCollideable on HasGridSupport {

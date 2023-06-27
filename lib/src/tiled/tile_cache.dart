@@ -12,11 +12,15 @@ class TileCache {
     this.sprite,
     this.spriteAnimation,
     required this.properties,
+    required this.tile,
+    required this.tileset,
   });
 
   final Sprite? sprite;
   final SpriteAnimation? spriteAnimation;
   final CustomProperties properties;
+  final Tile tile;
+  final Tileset tileset;
 
   void dispose() {
     try {

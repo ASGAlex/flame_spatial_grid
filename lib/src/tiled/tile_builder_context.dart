@@ -13,18 +13,20 @@ import 'package:flame_tiled/flame_tiled.dart';
 /// Use these properties to build custom components for map's tiles or objects.
 ///
 ///
-class TileBuilderContext {
+class TileBuilderContext<T> {
   TileBuilderContext({
     this.tileDataProvider,
     this.tiledObject,
+    this.userData,
     required this.absolutePosition,
     required this.size,
     required this.cellRect,
-    required this.mapLoader,
+    required this.contextProvider,
     required this.layerInfo,
   });
 
-  TiledMapLoader mapLoader;
+  TileBuilderContextProvider contextProvider;
+  T? userData;
 
   Rect cellRect;
 
@@ -43,12 +45,29 @@ class TileBuilderContext {
   final LayerInfo layerInfo;
 
   /// The cell in which the tile should be placed
-  Cell? get cell => mapLoader.game.spatialGrid.cells[cellRect];
+  Cell? get cell {
+    final providerOwner = contextProvider.parent;
+    if (providerOwner is TiledMapLoader) {
+      return providerOwner.game.spatialGrid.cells[cellRect];
+    } else if (providerOwner is HasSpatialGridFramework) {
+      return providerOwner.spatialGrid.cells[cellRect];
+    }
+    return null;
+  }
 
   ///  If the tile should be removed in the next map load operation. Useful in
   ///  cause you implementing a destructible game environment and want to
   ///  preserve you  changes between cells unload and restoration
-  bool remove = false;
+  bool get removed => _removed;
+  bool _removed = false;
+
+  void remove() {
+    if (cell != null) {
+      final contextList = contextProvider.getContextListForCell(cell!);
+      contextList?.remove(this);
+      _removed = true;
+    }
+  }
 }
 
 class LayerInfo {

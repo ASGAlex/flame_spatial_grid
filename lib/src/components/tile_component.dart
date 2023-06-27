@@ -12,6 +12,8 @@ class TileComponent extends SpriteComponent
       sprite: await provider.getSprite(),
       spriteAnimation: await provider.getSpriteAnimation(),
       properties: provider.tile.properties,
+      tile: provider.tile,
+      tileset: provider.tileset,
     );
     return TileComponent(cache);
   }

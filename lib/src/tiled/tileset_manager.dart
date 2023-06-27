@@ -40,6 +40,8 @@ class TilesetManager {
         sprite: await tile.getSprite(tileSet),
         spriteAnimation: await tile.getSpriteAnimation(tileSet),
         properties: tile.properties,
+        tileset: tileSet,
+        tile: tile,
       );
     }
     _preloadedTileSet[tilesetName] = tilesetCache;
