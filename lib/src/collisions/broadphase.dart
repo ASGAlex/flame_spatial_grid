@@ -222,7 +222,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     Set<ShapeHitbox> potentials,
     HashSet<CollisionProspect<T>> result, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
-    bool excludeBroadphaseCheck = false,
+    bool excludePureTypeCheck = false,
   ]) {
     final activeParent = activeItem.hitboxParent;
     for (final potential in potentials) {
@@ -239,9 +239,19 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           checked.add(activeItem);
         }
       }
-      if (!excludeBroadphaseCheck) {
+      if (excludePureTypeCheck) {
+        final canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
+            _runExternalBroadphaseCheck(activeItem, potential);
+        if (!canToCollide) {
+          continue;
+        }
+      } else {
         final canToCollide = _canPairToCollide(
-            activeItem, activeParent, potential, potentialParent);
+          activeItem,
+          activeParent,
+          potential,
+          potentialParent,
+        );
 
         if (!canToCollide) {
           continue;
@@ -288,7 +298,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
       /// 2. Checking types of components itself.
       if (canToCollide) {
-        potentialType = potentialParent.runtimeType;
+        if (potentialParent is! CellLayer) {
+          potentialType = potentialParent.runtimeType;
+        }
         final activeItemParentType = activeParent.runtimeType;
         final cache =
             _getPureTypeCheckCache(activeItemParentType, potentialType);
