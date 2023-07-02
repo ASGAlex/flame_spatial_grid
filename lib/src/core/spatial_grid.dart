@@ -446,6 +446,9 @@ class SpatialGrid {
     if (nearest == null) {
       throw 'There are no cells probably? Position: $position';
     }
+    if (nearest.rect.containsPoint(position) == true) {
+      return nearest.rect;
+    }
 
     final startPoint = nearest.center;
     final diff = position - startPoint;

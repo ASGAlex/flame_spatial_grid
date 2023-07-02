@@ -375,6 +375,7 @@ abstract class TiledMapLoader {
               tileMap.map.tileWidth.toDouble(),
               tileMap.map.tileWidth.toDouble(),
             );
+            final tileCenter = absolutePosition + size / 2;
 
             TileCache? cache;
             if (preloadTileSets) {
@@ -389,10 +390,9 @@ abstract class TiledMapLoader {
 
             Rect rect;
             if (lazyLoad) {
-              rect = game.spatialGrid.getCellRectAtPosition(absolutePosition);
+              rect = game.spatialGrid.getCellRectAtPosition(tileCenter);
             } else {
-              final cell = game.spatialGrid
-                  .createNewCellAtPosition(absolutePosition + size / 2);
+              final cell = game.spatialGrid.createNewCellAtPosition(tileCenter);
               rect = cell.rect;
             }
             tileBuilderContextProvider.addContext(
@@ -418,12 +418,12 @@ abstract class TiledMapLoader {
         for (final object in layer.objects) {
           final position = Vector2(object.x, object.y) + initialPosition;
           final size = Vector2(object.width, object.height);
+          final objectCenter = position + size / 2;
           Rect rect;
           if (lazyLoad) {
-            rect = game.spatialGrid.getCellRectAtPosition(position);
+            rect = game.spatialGrid.getCellRectAtPosition(objectCenter);
           } else {
-            final cell =
-                game.spatialGrid.createNewCellAtPosition(position + size / 2);
+            final cell = game.spatialGrid.createNewCellAtPosition(objectCenter);
             rect = cell.rect;
           }
 

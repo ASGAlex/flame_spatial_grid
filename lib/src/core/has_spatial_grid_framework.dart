@@ -378,7 +378,8 @@ mixin HasSpatialGridFramework on FlameGame
 
     _isSpatialGridDebugEnabled = debug;
     if (_isSpatialGridDebugEnabled) {
-      _spatialGridDebug ??= SpatialGridDebugComponent(spatialGrid);
+      _spatialGridDebug ??= SpatialGridDebugComponent(spatialGrid)
+        ..priority = 9999999;
       rootComponent.add(_spatialGridDebug!);
     } else {
       _spatialGridDebug?.removeFromParent();

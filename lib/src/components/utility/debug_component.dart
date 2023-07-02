@@ -16,7 +16,7 @@ class SpatialGridDebugComponent extends PositionComponent
 
   @override
   FutureOr<void> onLoad() {
-    const opacity = 0.8;
+    const opacity = 0.5;
     final paintFill = Paint();
     paintFill.style = PaintingStyle.fill;
     paintFill.color = Colors.lightGreen.withOpacity(opacity);
