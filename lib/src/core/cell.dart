@@ -14,17 +14,39 @@ enum _CellCreationContext { left, top, right, bottom }
 enum CellState {
   /// Active cells - cells you usually see at the screen. Everything works
   /// here as in ordinary Flame game.
-  active,
+  active(2),
 
   /// This cells are usually out of the screen, so no components are displayed,
   /// [Component.renderTree] is completely omitted for components inside such
   /// cells. See [HasGridSupport] for details.
-  inactive,
+  inactive(1),
 
   /// This kind of cells are very far from player. Usually, player did there
   /// at past but then left these cells. Fot such cells [Component.updateTree]
   /// is omitted to preserve CPU resources. See [HasGridSupport] for details.
-  suspended
+  suspended(0);
+
+  const CellState(this.weight);
+
+  final int weight;
+
+  bool operator >(CellState other) => weight > other.weight;
+
+  bool operator >=(CellState other) {
+    if (other == this) {
+      return true;
+    }
+    return weight > other.weight;
+  }
+
+  bool operator <=(CellState other) {
+    if (other == this) {
+      return true;
+    }
+    return weight < other.weight;
+  }
+
+  bool operator <(CellState other) => weight < other.weight;
 }
 
 /// Cell is the rect (quad) of game space, connected with it's neighbors at
@@ -54,6 +76,10 @@ class Cell {
       state = spatialGrid.getCellState(this);
     }
   }
+
+  /// Locks cell in specified state, preventing unloading when not used.
+  /// Feature is disabled, when null.
+  CellState? lockInState;
 
   bool _isCellBuildFinished = false;
 
@@ -165,6 +191,11 @@ class Cell {
   CellState tmpState = CellState.active;
 
   set state(CellState value) {
+    if (lockInState != null) {
+      if (lockInState! >= value) {
+        return;
+      }
+    }
     final oldValue = _state;
     if (oldValue == value) {
       return;

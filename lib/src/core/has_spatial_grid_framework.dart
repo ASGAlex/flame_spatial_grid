@@ -495,7 +495,7 @@ mixin HasSpatialGridFramework on FlameGame
           break;
         }
 
-        if (cell.state != CellState.suspended) {
+        if (cell.state != CellState.suspended || cell.lockInState != null) {
           continue;
         }
 
@@ -523,7 +523,7 @@ mixin HasSpatialGridFramework on FlameGame
         if (cellsToRemove.length >= cleanupCellsPerUpdate) {
           break;
         }
-        if (cell.state != CellState.suspended) {
+        if (cell.state != CellState.suspended || cell.lockInState != null) {
           continue;
         }
         if (cell.beingSuspendedTimeMicroseconds > _suspendedCellLifetime) {
