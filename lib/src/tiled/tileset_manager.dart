@@ -58,7 +58,7 @@ class TilesetManager {
 
   static void dispose() {
     Flame.images.clearCache();
-    TiledAtlas.atlasMap.clear();
+    TiledAtlas.clearCache();
     for (final map in _preloadedTileSet.values) {
       for (final cache in map.values) {
         cache.dispose();

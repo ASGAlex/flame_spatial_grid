@@ -560,8 +560,6 @@ mixin HasSpatialGridFramework on FlameGame
     } catch (e) {}
   }
 
-  final _cellsToBeRemoved = <Cell>[];
-
   /// Handles creating new cells and removing outdated.
   /// Also runs [SpriteAnimationGlobalController] to allow
   /// [CellStaticAnimationLayer] to work.

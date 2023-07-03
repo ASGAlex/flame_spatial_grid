@@ -50,7 +50,7 @@ class AnimationGlobal extends SpriteAnimation {
   final TickersManager tickersProvider;
 
   @override
-  SpriteAnimationTicker ticker() {
+  SpriteAnimationTicker createTicker() {
     return tickersProvider.getTicker(animationType, this);
   }
 }

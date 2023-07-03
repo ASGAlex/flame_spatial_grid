@@ -4,13 +4,18 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 typedef MapLoaderFactory = TiledMapLoader Function();
 
 class WorldLoader {
-  WorldLoader({required this.fileName, required this.mapLoader});
+  WorldLoader({
+    required this.fileName,
+    required this.mapLoader,
+    this.loadWholeMap = true,
+  });
 
   final String fileName;
   WorldData? worldData;
   final Map<String, MapLoaderFactory> mapLoader;
   late final HasSpatialGridFramework game;
   final List<TiledMapLoader> _maps = [];
+  final bool loadWholeMap;
 
   Future loadWorldData() async {
     worldData ??= await WorldData.fromFile('assets/tiles/$fileName');

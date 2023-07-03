@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/components/layers/image_composition.dart';
 
 class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
@@ -33,7 +32,7 @@ class CellStaticAnimationLayer extends CellLayer {
     }
 
     final animation = animatedChildren.first.animation;
-    final ticker = animation?.ticker();
+    final ticker = animation?.createTicker();
     if (animation == null || ticker == null) {
       return null;
     }
@@ -45,16 +44,16 @@ class CellStaticAnimationLayer extends CellLayer {
 
     while (ticker.currentIndex < animation.frames.length) {
       final sprite = ticker.getSprite();
-      final composition = ImageCompositionExt();
+      final composition = ImageComposition();
       for (final component in animatedChildren) {
         final correctedPosition = component.position + (correctionTopLeft * -1);
         composition.add(sprite.image, correctedPosition, source: sprite.src);
       }
-      final composedImage = composition.compose();
+      final composedImage = composition.composeSync();
       newSprites.add(Sprite(composedImage));
       ticker.currentIndex++;
     }
-    var spriteAnimation = SpriteAnimation.variableSpriteList(
+    final spriteAnimation = SpriteAnimation.variableSpriteList(
       newSprites,
       stepTimes: animation.getVariableStepTimes(),
     );
