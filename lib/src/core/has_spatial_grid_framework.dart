@@ -406,7 +406,9 @@ mixin HasSpatialGridFramework on FlameGame
     descendants(reversed: true).forEach((element) {
       element.removeFromParent();
     });
-    processLifecycleEvents();
+    if(!kDebugMode) {
+      processLifecycleEvents();
+    }
     collisionDetection.dispose();
     _clearStaticVariables();
     super.onRemove();
