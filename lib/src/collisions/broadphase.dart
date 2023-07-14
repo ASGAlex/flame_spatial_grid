@@ -35,8 +35,8 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     this.globalPureTypeCheck,
   }) {
     dispose();
-    fastDistanceCheckMinX = spatialGrid.blockSize.width / 3;
-    fastDistanceCheckMinY = spatialGrid.blockSize.height / 3;
+    fastDistanceCheckMinX = spatialGrid.cellSize.width / 3;
+    fastDistanceCheckMinY = spatialGrid.cellSize.height / 3;
   }
 
   final SpatialGrid spatialGrid;

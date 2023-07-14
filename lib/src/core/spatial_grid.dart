@@ -33,13 +33,13 @@ class SpatialGrid {
   /// See [HasSpatialGridFramework.initializeSpatialGrid] function for full
   /// description of arguments.
   SpatialGrid({
-    required this.blockSize,
+    required this.cellSize,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
-    required this.game,
+    this.game,
     bool lazyLoad = true,
     Size? activeRadius,
-    required Size? unloadRadius,
+    Size? unloadRadius,
     Size? preloadRadius,
   }) {
     this.activeRadius = activeRadius ?? const Size(2, 2);
@@ -75,7 +75,7 @@ class SpatialGrid {
   }
 
   /// The game on which the grid is built
-  final HasSpatialGridFramework game;
+  final HasSpatialGridFramework? game;
 
   /// Cells storage, readonly please!
   /// Use [findExistingCellByPosition] if you know position in global
@@ -105,7 +105,7 @@ class SpatialGrid {
   @internal
   final cellsScheduledToBuild = Queue<Cell>();
 
-  final Size blockSize;
+  final Size cellSize;
 
   HasGridSupport? _trackedComponent;
 
@@ -213,7 +213,7 @@ class SpatialGrid {
       return Vector2.zero();
     }
     final diff = (current.center - cell.center)..absolute();
-    return Vector2(diff.x / blockSize.width, diff.y / blockSize.height);
+    return Vector2(diff.x / cellSize.width, diff.y / cellSize.height);
   }
 
   Set<Cell> _findCellsInRadius(Size radius, {bool create = false}) {
@@ -457,20 +457,20 @@ class SpatialGrid {
     var moveByX = diff.x.abs();
     var moveByY = diff.y.abs();
 
-    while (moveByX >= blockSize.width / 2) {
-      moveByX -= blockSize.width;
+    while (moveByX >= cellSize.width / 2) {
+      moveByX -= cellSize.width;
       if (xSign > 0) {
-        startPoint.x += blockSize.width;
+        startPoint.x += cellSize.width;
       } else {
-        startPoint.x -= blockSize.width;
+        startPoint.x -= cellSize.width;
       }
     }
-    while (moveByY >= blockSize.height / 2) {
-      moveByY -= blockSize.height;
+    while (moveByY >= cellSize.height / 2) {
+      moveByY -= cellSize.height;
       if (ySign > 0) {
-        startPoint.y += blockSize.height;
+        startPoint.y += cellSize.height;
       } else {
-        startPoint.y -= blockSize.height;
+        startPoint.y -= cellSize.height;
       }
     }
 
@@ -480,8 +480,8 @@ class SpatialGrid {
   Rect _createRectWithLimitedPrecision(Vector2 center) {
     final rect = Rect.fromCenter(
       center: center.toOffset(),
-      width: blockSize.width,
-      height: blockSize.height,
+      width: cellSize.width,
+      height: cellSize.height,
     );
 
     return rect.toRounded();
@@ -504,5 +504,23 @@ class SpatialGrid {
     cell.bottom;
 
     return cell;
+  }
+
+  List<Cell> findCellsInRect(Rect rect) {
+    var rowCell = findExistingCellByPosition(rect.topLeft.toVector2()) ??
+        createNewCellAtPosition(rect.topLeft.toVector2());
+    var cell = rowCell.right;
+    final cellsInRect = <Cell>[];
+
+    while (rowCell.rect.top <= rect.bottom) {
+      cellsInRect.add(rowCell);
+      while (cell.rect.left <= rect.right) {
+        cellsInRect.add(cell);
+        cell = cell.right;
+      }
+      rowCell = rowCell.bottom;
+      cell = rowCell.right;
+    }
+    return cellsInRect;
   }
 }

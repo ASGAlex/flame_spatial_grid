@@ -99,7 +99,7 @@ mixin HasGridSupport on PositionComponent {
       if (hitbox is! ShapeHitbox) {
         continue;
       }
-      spatialGrid?.game.collisionDetection.broadphase
+      spatialGrid?.game?.collisionDetection.broadphase
           .updateHitboxIndexes(hitbox, previousCell);
     }
   }

@@ -8,7 +8,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
-enum _CellCreationContext { left, top, right, bottom }
+enum Direction { left, top, right, bottom }
 
 /// The state controls cell's lifecycle and how many resources it consumes
 enum CellState {
@@ -65,10 +65,10 @@ class Cell {
     center = rect.center.toVector2();
     spatialGrid.cells[rect] = this;
 
-    rawLeft = _checkCell(_CellCreationContext.left);
-    rawRight = _checkCell(_CellCreationContext.right);
-    rawTop = _checkCell(_CellCreationContext.top);
-    rawBottom = _checkCell(_CellCreationContext.bottom);
+    rawLeft = _checkCell(Direction.left);
+    rawRight = _checkCell(Direction.right);
+    rawTop = _checkCell(Direction.top);
+    rawBottom = _checkCell(Direction.bottom);
 
     if (suspended) {
       state = CellState.suspended;
@@ -87,7 +87,7 @@ class Cell {
 
   set isCellBuildFinished(bool value) {
     _isCellBuildFinished = value;
-    final layers = spatialGrid.game.layersManager.layers[this];
+    final layers = spatialGrid.game!.layersManager.layers[this];
     if (layers != null && layers.isNotEmpty && value == true) {
       for (final layer in layers.values) {
         layer.isUpdateNeeded = true;
@@ -154,32 +154,31 @@ class Cell {
   /// See [updateComponentsState] too.
   double beingSuspendedTimeMicroseconds = 0;
 
-  final _cachedRects = <_CellCreationContext, Rect>{};
+  final _cachedRects = <Direction, Rect>{};
 
   /// Existing left cell if not scheduled for removal, otherwise null
-  Cell? get leftChecked => rawLeft ??= _checkCell(_CellCreationContext.left);
+  Cell? get leftChecked => rawLeft ??= _checkCell(Direction.left);
 
   /// Existing right cell if not scheduled for removal, otherwise null
-  Cell? get rightChecked => rawRight ??= _checkCell(_CellCreationContext.right);
+  Cell? get rightChecked => rawRight ??= _checkCell(Direction.right);
 
   /// Existing top cell if not scheduled for removal, otherwise null
-  Cell? get topChecked => rawTop ??= _checkCell(_CellCreationContext.top);
+  Cell? get topChecked => rawTop ??= _checkCell(Direction.top);
 
   /// Existing bottom cell if not scheduled for removal, otherwise null
-  Cell? get bottomChecked =>
-      rawBottom ??= _checkCell(_CellCreationContext.bottom);
+  Cell? get bottomChecked => rawBottom ??= _checkCell(Direction.bottom);
 
   /// Existing or new left cell
-  Cell get left => rawLeft ??= _createCell(_CellCreationContext.left);
+  Cell get left => rawLeft ??= _createCell(Direction.left);
 
   /// Existing or new right cell
-  Cell get right => rawRight ??= _createCell(_CellCreationContext.right);
+  Cell get right => rawRight ??= _createCell(Direction.right);
 
   /// Existing or new top cell
-  Cell get top => rawTop ??= _createCell(_CellCreationContext.top);
+  Cell get top => rawTop ??= _createCell(Direction.top);
 
   /// Existing or new bottom cell
-  Cell get bottom => rawBottom ??= _createCell(_CellCreationContext.bottom);
+  Cell get bottom => rawBottom ??= _createCell(Direction.bottom);
 
   /// Most important cell's parameter, controls cell's lifecycle and lifecycle
   /// of components inside the cell.
@@ -308,7 +307,7 @@ class Cell {
 
     spatialGrid.cells.remove(rect);
 
-    final game = spatialGrid.game;
+    final game = spatialGrid.game!;
     final cellLayers = game.layersManager.layers[this];
     if (cellLayers != null) {
       for (final layer in cellLayers.values) {
@@ -329,11 +328,11 @@ class Cell {
     _cachedRects.clear();
   }
 
-  Cell _createCell(_CellCreationContext direction) =>
+  Cell _createCell(Direction direction) =>
       _checkCell(direction) ??
       Cell(spatialGrid: spatialGrid, rect: _createRectForDirection(direction));
 
-  Cell? _checkCell(_CellCreationContext direction) {
+  Cell? _checkCell(Direction direction) {
     final cell = spatialGrid.cells[_createRectForDirection(direction)];
     if (cell?._remove == true) {
       spatialGrid.cells.remove(cell?.rect);
@@ -342,22 +341,22 @@ class Cell {
     return cell;
   }
 
-  Rect _createRectForDirection(_CellCreationContext creationContext) {
+  Rect _createRectForDirection(Direction creationContext) {
     var newRect = _cachedRects[creationContext];
     if (newRect == null) {
-      final width = spatialGrid.blockSize.width;
-      final height = spatialGrid.blockSize.height;
+      final width = spatialGrid.cellSize.width;
+      final height = spatialGrid.cellSize.height;
       switch (creationContext) {
-        case _CellCreationContext.left:
+        case Direction.left:
           newRect = Rect.fromLTWH(rect.left - width, rect.top, width, height);
           break;
-        case _CellCreationContext.top:
+        case Direction.top:
           newRect = Rect.fromLTWH(rect.left, rect.top - height, width, height);
           break;
-        case _CellCreationContext.right:
+        case Direction.right:
           newRect = Rect.fromLTWH(rect.right, rect.top, width, height);
           break;
-        case _CellCreationContext.bottom:
+        case Direction.bottom:
           newRect = Rect.fromLTWH(rect.left, rect.bottom, width, height);
           break;
       }

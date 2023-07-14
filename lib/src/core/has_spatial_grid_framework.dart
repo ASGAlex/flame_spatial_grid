@@ -69,6 +69,7 @@ mixin HasSpatialGridFramework on FlameGame
   int processCellsLimitToPauseEngine = 250;
 
   var _initializationStepStage = InitializationStepStage.none;
+  final _lockedCells = <Cell>[];
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
@@ -80,7 +81,7 @@ mixin HasSpatialGridFramework on FlameGame
   ///   the game's space
   /// - [rootComponent] - a component at root of components tree. At this
   ///   component Framework will add all new components by default.
-  /// - [blockSize] - size of grid's cells. Take care about this parameter!
+  /// - [cellSize] - size of grid's cells. Take care about this parameter!
   ///   Cells should be:
   ///   1. Bigger then every possible game component. This requirement is
   ///      strict.
@@ -142,7 +143,7 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> initializeSpatialGrid({
     bool? debug,
     Component? rootComponent,
-    required double blockSize,
+    required double cellSize,
     Size? activeRadius,
     Size? unloadRadius,
     Size? preloadRadius,
@@ -191,10 +192,18 @@ mixin HasSpatialGridFramework on FlameGame
 
     if (initialPosition == null && initialPositionChecker != null) {
       if (worldLoader != null) {
-        final position =
+        final (position, initialMap) =
             await worldLoader.searchInitialPosition(initialPositionChecker);
         if (position != null) {
-          initialPosition = position;
+          if (worldLoader.loadWholeMap && initialMap != null) {
+            initialPosition = Vector2(
+              initialMap.initialPosition.x + cellSize / 2,
+              initialMap.initialPosition.y + cellSize / 2,
+            );
+            worldLoader.currentMap = initialMap;
+          } else {
+            initialPosition = position;
+          }
         }
       }
       if (initialPosition == null) {
@@ -210,7 +219,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
 
     spatialGrid = SpatialGrid(
-      blockSize: Size.square(blockSize),
+      cellSize: Size.square(cellSize),
       trackedComponent: trackedComponent,
       initialPosition: initialPosition,
       activeRadius: activeRadius,
@@ -231,8 +240,6 @@ mixin HasSpatialGridFramework on FlameGame
       add(trackedComponent);
     }
 
-    spatialGrid.updateCellsStateByRadius();
-
     isSpatialGridDebugEnabled = debug ?? false;
 
     progressManager.setProgress(10, 'Loading worlds and maps');
@@ -244,9 +251,16 @@ mixin HasSpatialGridFramework on FlameGame
     }
     if (worldLoader != null) {
       await worldLoader.init(this);
+      if (worldLoader.loadWholeMap) {
+        trackedComponent?.position
+            .addListener(onTrackedComponentPositionUpdate);
+        onTrackedComponentPositionUpdate();
+        _loadWholeMap();
+      }
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
 
+    spatialGrid.updateCellsStateByRadius();
     if (lazyLoad) {
       final currentCell = spatialGrid.currentCell;
       if (currentCell != null) {
@@ -255,6 +269,10 @@ mixin HasSpatialGridFramework on FlameGame
         throw 'Lazy load initialization error!';
       }
     }
+  }
+
+  void onTrackedComponentPositionUpdate() {
+    worldLoader?.updateCurrentMap(spatialGrid.trackedComponent!.position);
   }
 
   void _clearStaticVariables() {
@@ -334,7 +352,7 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
-  Future<bool> _cellBuilderMulti(Cell cell, Component rootComponent) async {
+  Future<bool> _cellBuilderAllMaps(Cell cell, Component rootComponent) async {
     if (TiledMapLoader.loadedMaps.isEmpty) {
       await _cellBuilderNoMap?.call(cell, rootComponent, true);
       return true;
@@ -406,7 +424,7 @@ mixin HasSpatialGridFramework on FlameGame
     descendants(reversed: true).forEach((element) {
       element.removeFromParent();
     });
-    if(!kDebugMode) {
+    if (!kDebugMode) {
       processLifecycleEvents();
     }
     collisionDetection.dispose();
@@ -458,7 +476,7 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   Future<void> _buildOneCell(Cell cell) async {
-    final isFullyOutside = await _cellBuilderMulti(cell, rootComponent);
+    final isFullyOutside = await _cellBuilderAllMaps(cell, rootComponent);
     await _onAfterCellBuild?.call(cell, rootComponent, isFullyOutside);
     cell.isCellBuildFinished = true;
     cell.updateComponentsState();
@@ -554,9 +572,9 @@ mixin HasSpatialGridFramework on FlameGame
 
       final visibleSize = camera.viewport.size / camera.viewfinder.zoom;
       final cellsXRadius =
-          (visibleSize.x / spatialGrid.blockSize.width / 2).ceil().toDouble();
+          (visibleSize.x / spatialGrid.cellSize.width / 2).ceil().toDouble();
       final cellsYRadius =
-          (visibleSize.y / spatialGrid.blockSize.height / 2).ceil().toDouble();
+          (visibleSize.y / spatialGrid.cellSize.height / 2).ceil().toDouble();
       spatialGrid.activeRadius = Size(cellsXRadius, cellsYRadius);
       // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
@@ -594,11 +612,13 @@ mixin HasSpatialGridFramework on FlameGame
         if (toBeRemoved.isNotEmpty) {
           removeUnusedCells(unusedCells: toBeRemoved);
         }
+        _loadWholeMap();
         _buildNewCells();
 
         tickersManager.update(dt);
         collisionDetection.dt = dt;
         collisionDetection.run();
+
         super.update(dt);
       }
     } else {
@@ -611,6 +631,35 @@ mixin HasSpatialGridFramework on FlameGame
         }
       }
       stopwatch.stop();
+    }
+  }
+
+  void _loadWholeMap() {
+    if (worldLoader != null &&
+        worldLoader!.loadWholeMap &&
+        worldLoader!.currentMapChanged) {
+      for (final cell in _lockedCells) {
+        cell.lockInState = null;
+      }
+      _lockedCells.clear();
+      final mapsToLoad = worldLoader!.findNeighbourMaps()
+        ..add(worldLoader!.currentMap!);
+      if (mapsToLoad.isNotEmpty && worldLoader!.currentMap != null) {
+        mapsToLoad.add(worldLoader!.currentMap!);
+      }
+
+      for (final map in mapsToLoad) {
+        final cells = spatialGrid.findCellsInRect(map.mapRect);
+        _lockedCells.addAll(cells);
+      }
+
+      for (final cell in _lockedCells) {
+        if (cell.state != CellState.active) {
+          cell.state = CellState.inactive;
+        }
+        cell.lockInState = CellState.suspended;
+      }
+      worldLoader!.currentMapChanged = false;
     }
   }
 

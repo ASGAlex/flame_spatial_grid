@@ -26,7 +26,7 @@ mixin RestorableStateMixin<T> on HasGridSupport {
         tileDataProvider: tileDataProvider,
         size: size,
         cellRect: cell.rect,
-        contextProvider: cell.spatialGrid.game.tileBuilderContextProvider,
+        contextProvider: cell.spatialGrid.game!.tileBuilderContextProvider,
         layerInfo: LayerInfo('game', 0),
       );
       sgGame.tileBuilderContextProvider.addContext(context!);

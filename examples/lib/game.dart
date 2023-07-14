@@ -99,7 +99,7 @@ all collisions are disabled.
       preloadRadius: preloadRadius,
       processCellsLimitToPauseEngine: processCellsLimitToPauseEngine,
       collisionOptimizerDefaultGroupLimit: 50,
-      blockSize: blockSize,
+      cellSize: blockSize,
       trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
       initialPositionChecker: (layer, object, mapOffset, worldName) {
         if (worldName == null) {
