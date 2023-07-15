@@ -164,9 +164,13 @@ class SpatialGridCollisionDetection
         if (intersectionPoints.isNotEmpty) {
           if (itemA is GroupHitbox || itemB is GroupHitbox) {
             var handleCollisions = false;
-            if (itemA is BoundingHitbox && itemB is GroupHitbox) {
+            if (itemA is BoundingHitbox &&
+                itemA.groupCollisionsTags.isNotEmpty &&
+                itemB is GroupHitbox) {
               handleCollisions = itemA.groupCollisionsTags.contains(itemB.tag);
-            } else if (itemB is BoundingHitbox && itemA is GroupHitbox) {
+            } else if (itemB is BoundingHitbox &&
+                itemB.groupCollisionsTags.isNotEmpty &&
+                itemA is GroupHitbox) {
               handleCollisions = itemB.groupCollisionsTags.contains(itemA.tag);
             }
 
