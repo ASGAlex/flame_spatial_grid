@@ -150,8 +150,8 @@ all collisions are disabled.
   bool isAIEnabled = true;
 
   final fadeOutConfig = FadeOutConfig(
-    fadeOutTimeout: const Duration(seconds: 1),
-    transparencyPerStep: 0.1,
+    fadeOutTimeout: const Duration(seconds: 5),
+    transparencyPerStep: 0.2,
   );
 
   bool overlayVisible = false;

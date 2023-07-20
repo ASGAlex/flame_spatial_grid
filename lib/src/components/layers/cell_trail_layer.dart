@@ -35,9 +35,6 @@ class CellTrailLayer extends CellStaticLayer {
       _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
 
   @override
-  bool get renderAsImage => false;
-
-  @override
   bool get isRenewable => false;
 
   @override
@@ -107,6 +104,12 @@ class CellTrailLayer extends CellStaticLayer {
       layerPicture!.dispose();
       layerPicture = recorder.endRecording();
       newImage.dispose();
+      if (renderAsImage) {
+        layerImage = layerPicture!.toImageSync(
+          imageSize.width.toInt() + correctionTopLeft.x.ceil(),
+          imageSize.height.toInt() + correctionTopLeft.y.ceil(),
+        );
+      }
       _operationsCount = 0;
     }
     _imageRenderInProgress = false;
