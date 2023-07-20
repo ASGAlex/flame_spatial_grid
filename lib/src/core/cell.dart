@@ -191,7 +191,7 @@ class Cell {
 
   set state(CellState value) {
     if (lockInState != null) {
-      if (lockInState! >= value) {
+      if (lockInState! > value) {
         return;
       }
     }
