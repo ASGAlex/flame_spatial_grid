@@ -259,10 +259,10 @@ abstract class TiledMapLoader {
 
   /// This tile builder merges all tiles into single image. Useful for
   /// rendering tiled maps background layers.
-  Future<void> genericTileBuilder(TileBuilderContext context) async {
+  Future<CellLayer?> genericTileBuilder(TileBuilderContext context) async {
     final provider = context.tileDataProvider;
     if (provider == null) {
-      return;
+      return null;
     }
     final component = await TileComponent.fromProvider(provider);
     component.currentCell = context.cell;
@@ -274,8 +274,9 @@ abstract class TiledMapLoader {
     } else {
       priority = context.layerInfo.priority;
     }
+    CellLayer? cellLayer;
     if (component.sprite != null) {
-      game.layersManager.addComponent(
+      cellLayer = game.layersManager.addComponent(
         component: component,
         layerName: 'static-${context.layerInfo.name}',
         layerType: MapLayerType.static,
@@ -283,7 +284,7 @@ abstract class TiledMapLoader {
         priority: priority,
       );
     } else if (component.animation != null) {
-      game.layersManager.addComponent(
+      cellLayer = game.layersManager.addComponent(
         component: component,
         layerName: 'animated-${context.layerInfo.name}',
         layerType: MapLayerType.animated,
@@ -291,6 +292,7 @@ abstract class TiledMapLoader {
         priority: priority,
       );
     }
+    return cellLayer;
   }
 
   /// Is useful when working with worlds with multiple maps and areas without
