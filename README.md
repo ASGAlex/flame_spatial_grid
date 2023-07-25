@@ -51,7 +51,7 @@ chunks from memory.
 
 See detailed "minimal start" tutorial at [Getting Started](doc/getting_started.md) section.
 
-See [game.dart](examples/lib/game.dart) for working code example
+See [game.dart](example/lib/game.dart) for working code example
 Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
 
 ## Future usage instructions

@@ -2,7 +2,7 @@
 
 This is a short instruction how to make everything work.
 If you looking for some more complex, please check working example here:
-[game.dart](/examples/lib/game.dart)
+[game.dart](/example/lib/game.dart)
 
 ## Creating the game class
 
@@ -303,4 +303,4 @@ But let's scale this example. You might have thousands of components and many sc
 An at such situation all demonstrated optimizations become make sense!
 
 If you are too tired to reproduce all tutorial step-by-step, you can find completed code
-at [minimal_game.dart](/examples/lib/minimal_game.dart) 
+at [minimal_game.dart](/example/lib/minimal_game.dart) 
