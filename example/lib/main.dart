@@ -1,8 +1,8 @@
 import 'dart:ui';
 
-import 'package:cluisterizer_test/game.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid_example/game.dart';
 import 'package:flutter/material.dart';
 
 void main() {

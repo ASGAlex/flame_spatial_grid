@@ -1,10 +1,10 @@
-# cluisterizer_test
+# Flame spatial grid example
 
-Clusterizer Test
+Core features demonstration
 
 ## Getting Started
 
-In this example the "Clusterizer" algorithm work.
+In this example the spatial partitioning algorithm work.
 Algorithm takes control over collision detection, components rendering and
 components lifecycle and frequency of updates. This allows to gain application
 performance by saving additional resources. Also a special 'Layer-components'
@@ -20,6 +20,8 @@ Press LShift button to toggle firing bullets which also destroys water.
 Press T button to toggle player to collide with other objects.
 
 Press at any screen point to teleport Player instantly to the click position.
+
+Press C to spawn more active components
 
 Press M button to show clusters debugging info. Green clusters are active
 clusters, where components are viewed as usual, update() and collision detection

@@ -3,4 +3,5 @@ example/windows
 example/macos
 example/web
 *.iml
+.idea/
 tags
