@@ -30,7 +30,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flame: ^1.8.1
-  flame_spatial_grid: 0.8.0
+  flame_spatial_grid: #0.8.0
+    path: ../
   flame_message_stream: 0.0.2
 
   flutter:

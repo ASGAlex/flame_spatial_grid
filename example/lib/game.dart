@@ -338,7 +338,7 @@ all collisions are disabled.
               component: brick,
               layerType: MapLayerType.static,
               layerName: 'Brick',
-              optimizeGraphics: false,
+              renderMode: LayerRenderMode.component,
               priority: 2,
             );
             break;
@@ -359,14 +359,14 @@ all collisions are disabled.
         brick.currentCell = cell;
         brick.tileCache = brickTile;
 
-        final layer = layersManager.addComponent(
+        layersManager.addComponent(
           component: brick,
           layerType: MapLayerType.static,
           layerName: 'Brick',
           absolutePosition: false,
+          renderMode: LayerRenderMode.image,
           priority: 2,
         );
-        (layer as CellStaticLayer).renderAsImage = true;
       }
 
       for (var i = 0; i < 50; i++) {
@@ -524,7 +524,7 @@ class DemoMapLoader extends TiledMapLoader {
       component: brick,
       layerType: MapLayerType.static,
       layerName: 'Brick',
-      optimizeGraphics: false,
+      renderMode: LayerRenderMode.component,
       priority: 2,
     );
   }

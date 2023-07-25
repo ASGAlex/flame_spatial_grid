@@ -3,7 +3,6 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
-import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 class CellStaticLayer extends CellLayer {
@@ -16,22 +15,66 @@ class CellStaticLayer extends CellLayer {
   Picture? layerPicture;
   Image? layerImage;
 
-  bool renderAsImage = false;
+  static const secondsBetweenImageUpdate = 5;
+  double _dtBetweenImageUpdate = 0;
+  bool _renderAsImage = false;
 
   @override
   void render(Canvas canvas) {
-    if (optimizeGraphics) {
-      if (renderAsImage && layerImage != null) {
-        canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
-      } else {
+    switch (renderMode) {
+      case LayerRenderMode.component:
+        for (final c in children) {
+          c.renderTree(canvas);
+        }
+        break;
+      case LayerRenderMode.picture:
         if (layerPicture != null) {
           canvas.drawPicture(layerPicture!);
         }
+        break;
+      case LayerRenderMode.image:
+        if (layerImage != null) {
+          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+        }
+        break;
+      case LayerRenderMode.auto:
+        if (_renderAsImage && layerImage != null) {
+          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+        } else if (layerPicture != null) {
+          canvas.drawPicture(layerPicture!);
+        }
+        break;
+    }
+  }
+
+  @override
+  Future<void> updateLayer([double dt = 0.001]) {
+    if (renderMode == LayerRenderMode.auto && !isUpdateNeeded) {
+      if (!_renderAsImage &&
+          _dtBetweenImageUpdate >= secondsBetweenImageUpdate) {
+        _renderPictureToImage();
+      } else {
+        _dtBetweenImageUpdate++;
       }
-    } else {
-      for (final c in children) {
-        c.renderTree(canvas);
-      }
+    }
+    return super.updateLayer(dt);
+  }
+
+  void _renderPictureToImage() {
+    if (layerPicture != null) {
+      _renderAsImage = true;
+      final recorder = PictureRecorder();
+      final canvas = Canvas(recorder);
+      correctionDecorator.applyChain(
+        (canvas) {
+          canvas.drawPicture(layerPicture!);
+        },
+        canvas,
+      );
+      layerImage = recorder.endRecording().toImageSync(
+            layerCalculatedSize.width.toInt(),
+            layerCalculatedSize.height.toInt(),
+          );
     }
   }
 
@@ -48,13 +91,13 @@ class CellStaticLayer extends CellLayer {
       return null;
     }
 
+    _dtBetweenImageUpdate = 0;
+    _renderAsImage = false;
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
-    if (renderAsImage) {
-      final decorator = Transform2DDecorator();
-      decorator.transform2d.position = correctionTopLeft * -1;
+    if (renderMode == LayerRenderMode.image) {
       for (final component in renderingChildren) {
-        decorator.applyChain(
+        correctionDecorator.applyChain(
           (canvas) {
             component.decorator.applyChain(component.render, canvas);
           },
@@ -68,7 +111,8 @@ class CellStaticLayer extends CellLayer {
         layerCalculatedSize.height.toInt(),
       );
       newPicture.dispose();
-    } else {
+    } else if (renderMode == LayerRenderMode.picture ||
+        renderMode == LayerRenderMode.auto) {
       for (final component in renderingChildren) {
         component.decorator.applyChain(component.render, canvas);
       }

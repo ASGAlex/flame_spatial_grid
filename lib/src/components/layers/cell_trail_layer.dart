@@ -104,7 +104,7 @@ class CellTrailLayer extends CellStaticLayer {
       layerPicture!.dispose();
       layerPicture = recorder.endRecording();
       newImage.dispose();
-      if (renderAsImage) {
+      if (renderMode == LayerRenderMode.image) {
         layerImage = layerPicture!.toImageSync(
           imageSize.width.toInt() + correctionTopLeft.x.ceil(),
           imageSize.height.toInt() + correctionTopLeft.y.ceil(),
@@ -188,7 +188,7 @@ class CellTrailLayer extends CellStaticLayer {
   void updateTree(double dt) {
     if (nonRenewableComponents.isNotEmpty) {
       isUpdateNeeded = true;
-      super.updateTree(dt);
+      updateLayer(dt);
       return;
     }
 
@@ -208,7 +208,7 @@ class CellTrailLayer extends CellStaticLayer {
       _fadeOutDt += dt;
       if (doFadeOut) {
         isUpdateNeeded = true;
-        super.updateTree(dt);
+        updateLayer(dt);
       }
     }
   }

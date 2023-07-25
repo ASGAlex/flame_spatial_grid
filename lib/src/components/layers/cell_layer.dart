@@ -5,9 +5,17 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
+import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
 import 'package:meta/meta.dart';
+
+enum LayerRenderMode {
+  component,
+  picture,
+  image,
+  auto,
+}
 
 abstract class CellLayer extends PositionComponent
     with
@@ -25,7 +33,9 @@ abstract class CellLayer extends PositionComponent
   }
 
   bool optimizeCollisions = false;
-  bool optimizeGraphics = true;
+  LayerRenderMode renderMode = LayerRenderMode.auto;
+
+  final correctionDecorator = Transform2DDecorator();
 
   Type? primaryHitboxCollisionType;
 
@@ -86,6 +96,7 @@ abstract class CellLayer extends PositionComponent
       if (bottomRightPosition.y > correctionBottomRight.y) {
         correctionBottomRight.y = bottomRightPosition.y;
       }
+      correctionDecorator.transform2d.position = correctionTopLeft * -1;
     }
   }
 
@@ -190,7 +201,7 @@ abstract class CellLayer extends PositionComponent
             collisionOptimizer.optimize();
             game.processLifecycleEvents();
           }
-          if (optimizeGraphics) {
+          if (renderMode != LayerRenderMode.component) {
             await compileToSingleLayer(children);
           }
           _pendingComponents.clear();

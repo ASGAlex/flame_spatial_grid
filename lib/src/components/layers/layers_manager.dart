@@ -72,7 +72,7 @@ class LayersManager {
     Cell? currentCell,
     bool absolutePosition = true,
     bool optimizeCollisions = true,
-    bool optimizeGraphics = true,
+    LayerRenderMode renderMode = LayerRenderMode.auto,
     bool isRenewable = true,
     int priority = 1,
   }) {
@@ -135,7 +135,7 @@ class LayersManager {
       addLayer(layer);
       layer.priority = priority;
       layer.optimizeCollisions = optimizeCollisions;
-      layer.optimizeGraphics = optimizeGraphics;
+      layer.renderMode = renderMode;
     }
 
     return layer;
