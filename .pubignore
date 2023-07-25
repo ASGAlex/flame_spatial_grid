@@ -1,0 +1,6 @@
+example/linux
+example/windows
+example/macos
+example/web
+*.iml
+tags

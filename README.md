@@ -8,6 +8,9 @@ The framework is fully compatible with Flame and does not contain any strict req
 game
 structure. Even existing games could be migrated to this framework if necessary.
 
+This is still in beta. API and whole architecture might be changed at any time, including breaking 
+changes. 
+
 ## Features
 
 There are a lot of utility functions and the list of its features is too long to describe at a fast
