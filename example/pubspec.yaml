@@ -33,13 +33,10 @@ dependencies:
   flame_spatial_grid: # ^1.0.2
     path: ../
 
-  flame_message_stream:
-    git: https://github.com/ASGAlex/flame_message_stream.git
+  flame_message_stream: 0.0.2
 
   flutter:
     sdk: flutter
-
-
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

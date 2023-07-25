@@ -11,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2 # Only works with v2
       - uses: subosito/flutter-action@v1
-      - run: cd examples; flutter config --enable-web
-      - run: cd examples; flutter build web --release --web-renderer=canvaskit --base-href /flame_spatial_grid/ --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false
+      - run: cd example; flutter config --enable-web
+      - run: cd example; flutter build web --release --web-renderer=canvaskit --base-href /flame_spatial_grid/ --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false
       - run: git config user.name github-actions
       - run: git config user.email github-actions@github.com
       - run: cd examples; git --work-tree build/web add --all
