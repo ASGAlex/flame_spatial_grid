@@ -1,3 +1,3 @@
-# 0.9.0
+# 0.8.0
 
-* First well-working version 
+* Publishing working version after almost year of development
