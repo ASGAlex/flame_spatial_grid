@@ -457,15 +457,21 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     gameRef.spatialGrid.cells.forEach((rect, cell) {
       if (cell.rect.containsPoint(tapPosition)) {
         cellsUnderCursor.add(cell);
-        print(cell.outOfBoundsCounter);
+        if (kDebugMode) {
+          print(cell.outOfBoundsCounter);
+        }
         // print('State:  + ${cell.state}');
-        print('Rect: $rect');
+        if (kDebugMode) {
+          print('Rect: $rect');
+        }
 
         // print('Components count: ${cell.components.length}');
       }
     });
 
-    print('========================================');
+    if (kDebugMode) {
+      print('========================================');
+    }
     final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {
       if (component is! HasGridSupport) {
@@ -543,7 +549,7 @@ class DemoMapLoader extends TiledMapLoader {
     final waterAnimation =
         getPreloadedTileData('tileset', 'Water')?.spriteAnimation;
 
-    final stepSize = waterAnimation?.ticker().getSprite().srcSize.x;
+    final stepSize = waterAnimation?.createTicker().getSprite().srcSize.x;
     if (stepSize == null) {
       return;
     }
@@ -830,6 +836,7 @@ class Npc extends Player with DebuggerPause {
   static Image? coloredSprite;
 
   @override
+  // ignore: must_call_super
   Future<void> render(Canvas canvas) async {
     _createColoredSprite();
     canvas.drawImage(coloredSprite!, Offset.zero, paint);

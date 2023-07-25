@@ -270,8 +270,12 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     }
   }
 
-  bool _canPairToCollide(ShapeHitbox activeItem, PositionComponent activeParent,
-      ShapeHitbox potentialItem, PositionComponent potentialParent) {
+  bool _canPairToCollide(
+    ShapeHitbox activeItem,
+    PositionComponent activeParent,
+    ShapeHitbox potentialItem,
+    PositionComponent potentialParent,
+  ) {
     var canToCollide = true;
 
     if (activeItem is BoundingHitbox) {

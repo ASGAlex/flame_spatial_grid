@@ -5,6 +5,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 /// Core mixin of spatial grid framework.
@@ -128,7 +129,6 @@ mixin HasGridSupport on PositionComponent {
   BoundingHitboxFactory get boundingHitboxFactory => () => BoundingHitbox(
         position: Vector2.zero(),
         size: Vector2.zero(),
-        collisionType: CollisionType.inactive,
         parentWithGridSupport: this,
       );
 
@@ -315,7 +315,9 @@ mixin HasGridSupport on PositionComponent {
     for (final cell in cellNeighbours) {
       cell.outOfBoundsCounter--;
       if (cell.outOfBoundsCounter < 0) {
-        print('outOfBoundsCounter should not be below zero!');
+        if (kDebugMode) {
+          print('outOfBoundsCounter should not be below zero!');
+        }
         cell.outOfBoundsCounter = 0;
       }
     }

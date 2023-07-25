@@ -23,6 +23,7 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
   final String animationType;
 
   @override
+  // ignore: must_call_super
   void render(Canvas canvas) {
     try {
       (animationTicker! as SpriteAnimationTickerGlobal)
@@ -32,6 +33,7 @@ class SpriteAnimationGlobalComponent extends SpriteAnimationComponent {
             size: size,
             overridePaint: paint,
           );
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {}
   }
 }

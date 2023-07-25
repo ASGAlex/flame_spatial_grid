@@ -204,7 +204,11 @@ class BoundingHitbox extends RectangleHitbox
   void _expandBoundingBox(ShapeHitbox component) {
     final currentRect = shouldFillParent
         ? Rect.fromLTWH(
-            0, 0, parentWithGridSupport!.size.x, parentWithGridSupport!.size.y)
+            0,
+            0,
+            parentWithGridSupport!.size.x,
+            parentWithGridSupport!.size.y,
+          )
         : toRect();
     final addRect = component.toRect();
     final newRect = currentRect.expandToInclude(addRect);

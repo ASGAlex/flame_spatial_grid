@@ -202,6 +202,7 @@ mixin HasSpatialGridFramework on FlameGame
             );
             worldLoader.currentMap = initialMap;
           } else {
+            // ignore: parameter_assignments
             initialPosition = position;
           }
         }
@@ -211,6 +212,7 @@ mixin HasSpatialGridFramework on FlameGame
           final position =
               await map.searchInitialPosition(initialPositionChecker);
           if (position != null) {
+            // ignore: parameter_assignments
             initialPosition = position;
             break;
           }
@@ -486,7 +488,9 @@ mixin HasSpatialGridFramework on FlameGame
   /// with [suspendedCellLifetime] is over.
   int removeUnusedCells({bool forceCleanup = false, List<Cell>? unusedCells}) {
     final cellsToRemove = unusedCells ?? _catchCellsForRemoval(forceCleanup);
-    print('removing unused cells: ${cellsToRemove.length}');
+    if (kDebugMode) {
+      print('removing unused cells: ${cellsToRemove.length}');
+    }
     for (final cell in cellsToRemove) {
       cell.remove();
     }
@@ -500,7 +504,9 @@ mixin HasSpatialGridFramework on FlameGame
     // }
     // print('total: ${BoundingHitbox.weakRef.length}; Not null: $i');
 
-    print('removing unused cells DONE');
+    if (kDebugMode) {
+      print('removing unused cells DONE');
+    }
     return cellsToRemove.length;
   }
 

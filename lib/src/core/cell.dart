@@ -292,6 +292,7 @@ class Cell {
         if (target is HasGridSupport && target.currentCell == this) {
           return;
         }
+        // ignore: avoid_catches_without_on_clauses
       } catch (_) {}
     }
 

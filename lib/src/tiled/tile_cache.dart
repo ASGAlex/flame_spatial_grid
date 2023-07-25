@@ -25,6 +25,7 @@ class TileCache {
   void dispose() {
     try {
       sprite?.image.dispose();
+      // ignore: avoid_catches_without_on_clauses
     } catch (_) {}
 
     final frames = spriteAnimation?.frames;
@@ -32,6 +33,7 @@ class TileCache {
       for (final frame in frames) {
         try {
           frame.sprite.image.dispose();
+          // ignore: avoid_catches_without_on_clauses
         } catch (_) {}
       }
     }

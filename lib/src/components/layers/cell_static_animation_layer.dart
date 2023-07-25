@@ -80,6 +80,7 @@ class CellStaticAnimationLayer extends CellLayer {
         for (final element in frames) {
           element.sprite.image.dispose();
         }
+        // ignore: avoid_catches_without_on_clauses
       } catch (_) {}
     }
     animationComponent?.onRemove();

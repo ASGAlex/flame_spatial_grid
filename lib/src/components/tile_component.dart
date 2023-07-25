@@ -42,5 +42,5 @@ class TileComponent extends SpriteComponent
 
   @override
   SpriteAnimationTicker? get animationTicker =>
-      tileCache.spriteAnimation?.ticker();
+      tileCache.spriteAnimation?.createTicker();
 }
