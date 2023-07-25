@@ -20,7 +20,7 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
   @override
 FutureOr<void> onLoad() async {
   await initializeSpatialGrid(
-    blockSize: 50,
+    cellSize: 50,
     debug: true,
     activeRadius: const Size(2, 2),
     unloadRadius: const Size(2, 2),
@@ -60,7 +60,7 @@ Let's add the component into our `onLoad`:
 FutureOr<void> onLoad() async {
   final player = Player(position: Vector2(160, 190));
   await initializeSpatialGrid(
-    blockSize: 50,
+    cellSize: 50,
     debug: true,
     activeRadius: const Size(2, 2),
     unloadRadius: const Size(2, 2),

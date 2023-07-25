@@ -29,7 +29,7 @@ Also you should to list you map in `initializeSpatialGrid` function:
 ```dart
 FutureOr<void> onLoad() async {
   await initializeSpatialGrid(
-    blockSize: 50,
+    cellSize: 50,
     activeRadius: const Size(2, 2),
     unloadRadius: const Size(2, 2),
     trackWindowSize: false,

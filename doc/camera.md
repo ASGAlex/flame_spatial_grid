@@ -8,10 +8,6 @@ pass this class into `initializeSpatialGrid` as the `trackedComponent` parameter
 spatial grid framework will react to the camera's movement, and expand or shrink the active area on
 zoom events automatically.
 
-The second thing you should do is to call the `gameInitializationDone` function
-after `initializeSpatialGrid` and after adding all necessary game components into the game's
-components tree. This function initially calculates the active area according to window size and
-default zoom level.
 
 Here is example of setup:
 
@@ -33,11 +29,6 @@ Future<void> onLoad() async {
     /// There is no need to add either cameraComponent or wrapper into game explicitly. 
     trackedComponent: SpatialGridCameraWrapper(cameraComponent),
   );
-
-  /// The rest of initialization here.
-  /// 
-  /// After everything is loaded and ready for the game, call this:
-  gameInitializationDone();
 }
 
 ```
