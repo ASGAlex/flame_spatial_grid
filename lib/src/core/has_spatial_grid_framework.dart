@@ -595,12 +595,13 @@ mixin HasSpatialGridFramework on FlameGame
   Future<void> update(double dt) async {
     if (_gameInitializationFinished) {
       _precisionDtCounter += dt;
+      final toBeRemoved = <Cell>[];
       if (_precisionDtCounter * 1000000 >=
           suspendCellPrecision.inMicroseconds) {
         _countSuspendedCellsTimers(_precisionDtCounter);
         _precisionDtCounter = 0;
+        toBeRemoved.addAll(_catchCellsForRemoval());
       }
-      final toBeRemoved = _catchCellsForRemoval();
 
       if (spatialGrid.cellsScheduledToBuild.length >
               processCellsLimitToPauseEngine &&
