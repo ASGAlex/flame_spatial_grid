@@ -151,6 +151,9 @@ abstract class CellLayer extends PositionComponent
           if (child is HasGridSupport) {
             child.currentCell = null;
           }
+          if (child is! GroupHitbox) {
+            scheduleLayerUpdate(child, ChildrenChangeType.added);
+          }
           if (!child.isLoaded) {
             final future = child.onLoad();
             if (future is Future) {
@@ -328,5 +331,13 @@ abstract class CellLayer extends PositionComponent
       child.isUpdateNeeded = true;
     }
     isUpdateNeeded = true;
+  }
+
+  @override
+  set isUpdateNeeded(bool update) {
+    if (update == true && parent is LayersRootComponent) {
+      (parent! as LayersRootComponent).isUpdateNeeded = true;
+    }
+    super.isUpdateNeeded = update;
   }
 }

@@ -173,7 +173,6 @@ mixin HasSpatialGridFramework on FlameGame
 
     layersManager = LayersManager(this);
     this.rootComponent = rootComponent ?? this;
-    this.rootComponent.add(layersManager.layersRootComponent);
     _cellBuilderNoMap = cellBuilderNoMap;
     _onAfterCellBuild = onAfterCellBuild;
     this.maxCells = maxCells;

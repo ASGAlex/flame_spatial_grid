@@ -5,6 +5,8 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+class LayersRootComponent extends Component with UpdateOnDemand {}
+
 /// The class provides easy-to-use API layer to access game layer's
 /// Every layer is added into [layersRootComponent] to optimize priority
 /// recalculation.
@@ -17,7 +19,7 @@ class LayersManager {
 
   HasSpatialGridFramework game;
 
-  final Component layersRootComponent = Component();
+  final layersRootComponent = <int, LayersRootComponent>{};
 
   /// Adding manually created [CellLayer] into [layersRootComponent].
   /// Usually there is no need to use this function, try [addComponent] instead.
@@ -30,7 +32,14 @@ class LayersManager {
       layers[cell] = HashMap<String, CellLayer>();
     }
     layers[cell]?[layer.name] = layer;
-    layersRootComponent.add(layer);
+
+    var storage = layersRootComponent[layer.priority];
+    if (storage == null) {
+      storage = layersRootComponent[layer.priority] = LayersRootComponent();
+      storage.priority = layer.priority;
+      game.rootComponent.add(storage);
+    }
+    storage.add(layer);
   }
 
   /// Removes layer from game tree.
@@ -74,7 +83,7 @@ class LayersManager {
     bool optimizeCollisions = true,
     LayerRenderMode renderMode = LayerRenderMode.auto,
     bool isRenewable = true,
-    int priority = 1,
+    int? priority,
   }) {
     Cell? cell;
     if (currentCell == null && component is HasGridSupport) {
@@ -132,8 +141,8 @@ class LayersManager {
     }
 
     if (isNew) {
+      layer.priority = priority ?? component.priority;
       addLayer(layer);
-      layer.priority = priority;
       layer.optimizeCollisions = optimizeCollisions;
       layer.renderMode = renderMode;
     }
@@ -149,5 +158,11 @@ class LayersManager {
       }
     }
     return Future.wait<void>(futures);
+  }
+
+  void rescanLayersForUpdate() {
+    for (final entry in layersRootComponent.entries) {
+      entry.value.isUpdateNeeded = true;
+    }
   }
 }

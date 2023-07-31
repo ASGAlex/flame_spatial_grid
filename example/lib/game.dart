@@ -132,7 +132,7 @@ all collisions are disabled.
     // await demoMapLoader.init(this);
 
     add(world);
-    layersManager.layersRootComponent.add(player);
+    world.add(player);
     add(FpsTextComponent());
   }
 
@@ -333,13 +333,11 @@ all collisions are disabled.
               ctx: context,
             );
             brick.currentCell = context.cell;
-            brick.priority = 2;
             layersManager.addComponent(
               component: brick,
               layerType: MapLayerType.static,
               layerName: 'Brick',
               renderMode: LayerRenderMode.component,
-              priority: 2,
             );
             break;
           default:
@@ -365,7 +363,6 @@ all collisions are disabled.
           layerName: 'Brick',
           absolutePosition: false,
           renderMode: LayerRenderMode.image,
-          priority: 2,
         );
       }
 
@@ -519,13 +516,11 @@ class DemoMapLoader extends TiledMapLoader {
       ctx: context,
     );
     brick.currentCell = context.cell;
-    brick.priority = 2;
     game.layersManager.addComponent(
       component: brick,
       layerType: MapLayerType.static,
       layerName: 'Brick',
-      renderMode: LayerRenderMode.component,
-      priority: 2,
+      renderMode: LayerRenderMode.auto,
     );
   }
 
@@ -942,6 +937,7 @@ class Brick extends SpriteComponent
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
+    priority = 2;
     initCollision();
     if (ctx != null) {
       context = ctx;
@@ -979,6 +975,7 @@ class Water extends SpriteAnimationComponent
     size = Vector2.all(tileSize);
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
+    priority = 0;
     initCollision();
 
     if (ctx != null) {
