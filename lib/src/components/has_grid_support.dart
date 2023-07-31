@@ -64,6 +64,8 @@ mixin HasGridSupport on PositionComponent {
   /// But you also can just to ignore this parameter.
   bool toggleCollisionOnSuspendChange = true;
 
+  bool noVisibleChildren = false;
+
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
       currentCell != null && currentCell?.state == CellState.suspended;
@@ -219,7 +221,11 @@ mixin HasGridSupport on PositionComponent {
   @override
   void renderTree(Canvas canvas) {
     if (currentCell?.state == CellState.active) {
-      super.renderTree(canvas);
+      if (noVisibleChildren) {
+        decorator.applyChain(render, canvas);
+      } else {
+        super.renderTree(canvas);
+      }
     } else if (debugMode) {
       decorator.applyChain(renderDebugMode, canvas);
     }
