@@ -80,8 +80,7 @@ class CellStaticLayer extends CellLayer {
 
   @override
   FutureOr compileToSingleLayer(Iterable<Component> children) {
-    final renderingChildren =
-        children.whereType<HasGridSupport>().toList(growable: false);
+    final renderingChildren = children.whereType<HasGridSupport>();
     if (renderingChildren.isEmpty) {
       return null;
     }

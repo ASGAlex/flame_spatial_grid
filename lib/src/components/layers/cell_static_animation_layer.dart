@@ -24,8 +24,7 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   FutureOr compileToSingleLayer(Iterable<Component> children) {
-    final animatedChildren =
-        children.whereType<SpriteAnimationComponent>().toList(growable: false);
+    final animatedChildren = children.whereType<SpriteAnimationComponent>();
     if (animatedChildren.isEmpty) {
       removeFromParent();
       return null;

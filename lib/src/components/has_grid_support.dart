@@ -98,10 +98,7 @@ mixin HasGridSupport on PositionComponent {
   }
 
   void _updateComponentHitboxes(Cell previousCell) {
-    for (final hitbox in children) {
-      if (hitbox is! ShapeHitbox) {
-        continue;
-      }
+    for (final hitbox in children.query<ShapeHitbox>()) {
       spatialGrid?.game?.collisionDetection.broadphase
           .updateHitboxIndexes(hitbox, previousCell);
     }
@@ -184,7 +181,7 @@ mixin HasGridSupport on PositionComponent {
       spatialGrid?.trackedComponent = null;
     }
 
-    if (children.whereType<BoundingHitbox>().isEmpty) {
+    if (children.query<BoundingHitbox>().isEmpty) {
       // otherwise it will be removed with hitbox removal.
       currentCell = null;
     }

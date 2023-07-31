@@ -579,7 +579,7 @@ mixin HasSpatialGridFramework on FlameGame
   @protected
   void setRadiusByWindowDimensions() {
     try {
-      final camera = children.whereType<CameraComponent>().single;
+      final camera = children.query<CameraComponent>().single;
 
       final visibleSize = camera.viewport.size / camera.viewfinder.zoom;
       final cellsXRadius =

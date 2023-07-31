@@ -264,10 +264,7 @@ class Cell {
 
   void _suspendComponents() {
     for (final component in components) {
-      for (final hitbox in component.children) {
-        if (hitbox is! ShapeHitbox) {
-          continue;
-        }
+      for (final hitbox in component.children.query<ShapeHitbox>()) {
         if (component.toggleCollisionOnSuspendChange) {
           hitbox.collisionType = CollisionType.inactive;
         }
@@ -286,7 +283,7 @@ class Cell {
     final trackedComponent = spatialGrid.trackedComponent;
     if (trackedComponent is SpatialGridCameraWrapper) {
       final follow = trackedComponent.cameraComponent.viewfinder.children
-          .whereType<FollowBehavior>();
+          .query<FollowBehavior>();
       try {
         final target = follow.first.target;
         if (target is HasGridSupport && target.currentCell == this) {

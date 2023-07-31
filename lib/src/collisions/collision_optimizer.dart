@@ -29,10 +29,7 @@ class CollisionOptimizer {
         game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
     final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
 
-    for (final child in parentLayer.children) {
-      if (child is! HasGridSupport) {
-        continue;
-      }
+    for (final child in parentLayer.children.query<HasGridSupport>()) {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
@@ -40,10 +37,7 @@ class CollisionOptimizer {
       }
     }
 
-    for (final child in parentLayer.children) {
-      if (child is! HasGridSupport) {
-        continue;
-      }
+    for (final child in parentLayer.children.query<HasGridSupport>()) {
       if (child.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }
@@ -118,10 +112,7 @@ class CollisionOptimizer {
     final hitboxes = LinkedHashSet<BoundingHitbox>();
     hitboxes.add(hitbox);
     exception.add(hitbox);
-    for (final otherChild in parentLayer.children) {
-      if (otherChild is! HasGridSupport) {
-        continue;
-      }
+    for (final otherChild in parentLayer.children.query<HasGridSupport>()) {
       if (otherChild.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }

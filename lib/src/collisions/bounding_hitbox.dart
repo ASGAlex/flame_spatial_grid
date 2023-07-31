@@ -192,8 +192,8 @@ class BoundingHitbox extends RectangleHitbox
       _expandBoundingBox(component);
     } else {
       size.setFrom((parent! as HasGridSupport).size);
-      for (final child in parent!.children) {
-        if (component == this || child is! ShapeHitbox) {
+      for (final child in parent!.children.query<ShapeHitbox>()) {
+        if (component == this) {
           continue;
         }
         _expandBoundingBox(child);
