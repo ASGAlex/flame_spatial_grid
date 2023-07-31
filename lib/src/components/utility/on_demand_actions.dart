@@ -43,3 +43,5 @@ mixin UpdateOnDemand on Component {
     }
   }
 }
+
+mixin ComponentWithUpdate on HasGridSupport {}

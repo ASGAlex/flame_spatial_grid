@@ -194,7 +194,7 @@ abstract class CellLayer extends PositionComponent
         return Future<void>.value();
       }
       if (isRenewable) {
-        super.updateTree(dt);
+        _updateTreePart(dt);
         _updateLayerFuture = waitForComponents().whenComplete(() async {
           if (isRemovedLayer) {
             return;
@@ -235,6 +235,12 @@ abstract class CellLayer extends PositionComponent
     }
 
     return _updateLayerFuture ?? Future<void>.value();
+  }
+
+  void _updateTreePart(double dt) {
+    children
+        .query<ComponentWithUpdate>()
+        .forEach((element) => element.updateTree(dt));
   }
 
   bool get isRemovedLayer =>
