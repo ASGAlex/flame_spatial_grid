@@ -71,6 +71,8 @@ mixin HasSpatialGridFramework on FlameGame
   var _initializationStepStage = InitializationStepStage.none;
   final _lockedCells = <Cell>[];
 
+  bool doOnGameResizeForAllComponents = false;
+
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
   /// resources were loaded before game loop start.
@@ -409,7 +411,11 @@ mixin HasSpatialGridFramework on FlameGame
 
   @override
   void onGameResize(Vector2 gameSize) {
-    super.onGameResize(gameSize);
+    if (doOnGameResizeForAllComponents || !_gameInitializationFinished) {
+      super.onGameResize(gameSize);
+    } else {
+      size.setFrom(gameSize);
+    }
     if (_gameInitializationFinished && trackWindowSize) {
       setRadiusByWindowDimensions();
       spatialGrid.updateCellsStateByRadius();
