@@ -233,6 +233,43 @@ class BoundingHitbox extends RectangleHitbox
     //     ..style = PaintingStyle.stroke,
     // );
   }
+
+  /// Where this [ShapeComponent] has intersection points with another shape
+  @override
+  Set<Vector2> intersections(Hitbox other) {
+    if (other is BoundingHitbox) {
+      final intersectionPoints = <Vector2>{};
+      final boundingRect = aabb.toRect();
+      final boundingRectOther = other.aabb.toRect();
+      final result = boundingRect.intersect(boundingRectOther);
+      if (result.width >= 0 || result.height >= 0) {
+        final allPoints = <Offset>[
+          boundingRect.topLeft,
+          boundingRect.bottomLeft,
+          boundingRect.topRight,
+          boundingRect.bottomRight,
+          boundingRectOther.topLeft,
+          boundingRectOther.bottomLeft,
+          boundingRectOther.topRight,
+          boundingRectOther.bottomRight,
+        ];
+        final resultPoints = <Offset>[
+          result.topLeft,
+          result.bottomLeft,
+          result.topRight,
+          result.bottomRight,
+        ];
+
+        for (final point in allPoints) {
+          if (!resultPoints.contains(point)) {
+            intersectionPoints.add(point.toVector2());
+          }
+        }
+      }
+      return intersectionPoints;
+    }
+    return super.intersections(other);
+  }
 }
 
 extension SpatialGridRectangleHitbox on RectangleHitbox {
