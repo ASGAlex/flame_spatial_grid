@@ -95,7 +95,7 @@ class SpatialGrid {
   Cell? get currentCell => _currentCell;
 
   set currentCell(Cell? value) {
-    if (value == null) {
+    if (value == null || _currentCell == value) {
       return;
     }
     _currentCell = value;
