@@ -10,8 +10,9 @@ export 'src/components/animation_global/tickers_manager.dart';
 export 'src/components/camera_wrapper.dart';
 export 'src/components/has_grid_support.dart';
 export 'src/components/layers/cell_layer.dart';
-export 'src/components/layers/cell_static_animation_layer.dart';
-export 'src/components/layers/cell_static_layer.dart';
+export 'src/components/layers/cell_static_animation_layer.dart'
+    hide StaticAnimationLayerCacheEntry;
+export 'src/components/layers/cell_static_layer.dart' hide ImageCacheEntry;
 export 'src/components/layers/cell_trail_layer.dart';
 export 'src/components/layers/has_trail_support.dart';
 export 'src/components/layers/layers_manager.dart';

@@ -4,10 +4,19 @@ import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
+class StaticAnimationLayerCacheEntry {
+  StaticAnimationLayerCacheEntry(this.animationComponent);
+
+  SpriteAnimationGlobalComponent animationComponent;
+  int usageCount = 1;
+}
+
 class CellStaticAnimationLayer extends CellLayer {
   CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
 
-  SpriteAnimationComponent? animationComponent;
+  SpriteAnimationGlobalComponent? animationComponent;
+
+  static final _compiledLayersCache = <int, StaticAnimationLayerCacheEntry>{};
 
   @override
   void render(Canvas canvas) {
@@ -63,6 +72,10 @@ class CellStaticAnimationLayer extends CellLayer {
       animationType: name,
       tickersProvider: game.tickersManager,
     );
+    if (cacheKey.key != null) {
+      _compiledLayersCache[cacheKey.key!] =
+          StaticAnimationLayerCacheEntry(animationComponent!);
+    }
   }
 
   @override
@@ -73,7 +86,25 @@ class CellStaticAnimationLayer extends CellLayer {
 
   @override
   void onRemove() {
-    final frames = animationComponent?.animation?.frames;
+    final cachedImage = _compiledLayersCache[cacheKey.key];
+    if (cachedImage != null) {
+      cachedImage.usageCount--;
+      if (cachedImage.usageCount <= 0) {
+        _disposeAnimationComponent(cachedImage.animationComponent);
+        _compiledLayersCache.remove(cacheKey.key);
+      }
+      animationComponent = null;
+    } else if (animationComponent != null) {
+      _disposeAnimationComponent(animationComponent!);
+      animationComponent = null;
+    }
+    super.onRemove();
+  }
+
+  void _disposeAnimationComponent(
+    SpriteAnimationGlobalComponent animationComponent,
+  ) {
+    final frames = animationComponent.animation?.frames;
     if (frames != null) {
       try {
         for (final element in frames) {
@@ -82,10 +113,23 @@ class CellStaticAnimationLayer extends CellLayer {
         // ignore: avoid_catches_without_on_clauses
       } catch (_) {}
     }
-    animationComponent?.onRemove();
-    animationComponent = null;
-    super.onRemove();
+    animationComponent.onRemove();
   }
+
+  @override
+  bool onCheckCache(int key) {
+    final cache = _compiledLayersCache[key];
+    if (cache == null) {
+      return false;
+    }
+    animationComponent = cache.animationComponent;
+    cache.usageCount++;
+    print('${name}: ${cache.usageCount}');
+
+    return true;
+  }
+
+  static void clearCache() => _compiledLayersCache.clear();
 }
 
 extension _VariableStepTimes on SpriteAnimation {

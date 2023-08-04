@@ -282,6 +282,7 @@ abstract class TiledMapLoader {
         layerType: MapLayerType.static,
         isRenewable: false,
         priority: priority,
+        renderMode: LayerRenderMode.image,
       );
     } else if (component.animation != null) {
       cellLayer = game.layersManager.addComponent(

@@ -218,6 +218,9 @@ class CellTrailLayer extends CellStaticLayer {
     _fadeOutDt += dtElapsedWhileSuspended;
     isUpdateNeeded = true;
   }
+
+  @override
+  bool onCheckCache(int key) => false;
 }
 
 class FadeOutConfig {

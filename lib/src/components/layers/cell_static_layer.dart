@@ -5,11 +5,20 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
-class CellStaticLayer extends CellLayer {
+class ImageCacheEntry {
+  ImageCacheEntry(this.image);
+
+  final Image image;
+  int usageCount = 1;
+}
+
+class CellStaticLayer extends CellLayer<Image> {
   CellStaticLayer(super.cell, {super.name, super.isRenewable}) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
   }
+
+  static final _compiledLayersCache = <int, ImageCacheEntry>{};
 
   final paint = Paint();
   Picture? layerPicture;
@@ -79,6 +88,21 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
+  bool onCheckCache(int key) {
+    if (renderMode != LayerRenderMode.image) {
+      return false;
+    }
+    final cache = _compiledLayersCache[key];
+    if (cache == null) {
+      return false;
+    }
+    layerImage = cache.image;
+    cache.usageCount++;
+    print('${name}: ${cache.usageCount}');
+    return true;
+  }
+
+  @override
   FutureOr compileToSingleLayer(Iterable<Component> children) {
     final renderingChildren = children.whereType<HasGridSupport>();
     if (renderingChildren.isEmpty) {
@@ -109,6 +133,9 @@ class CellStaticLayer extends CellLayer {
         layerCalculatedSize.width.toInt(),
         layerCalculatedSize.height.toInt(),
       );
+      if (cacheKey.key != null) {
+        _compiledLayersCache[cacheKey.key!] = ImageCacheEntry(layerImage!);
+      }
       newPicture.dispose();
     } else if (renderMode == LayerRenderMode.picture ||
         renderMode == LayerRenderMode.auto) {
@@ -129,12 +156,24 @@ class CellStaticLayer extends CellLayer {
   @override
   void onRemove() {
     try {
-      layerImage?.dispose();
+      final cachedImage = _compiledLayersCache[cacheKey.key];
+      if (cachedImage != null) {
+        cachedImage.usageCount--;
+        if (cachedImage.usageCount <= 0) {
+          cachedImage.image.dispose();
+          _compiledLayersCache.remove(cacheKey.key);
+        }
+      } else {
+        layerImage?.dispose();
+        layerImage = null;
+      }
       layerPicture?.dispose();
+      layerPicture = null;
+
       // ignore: avoid_catches_without_on_clauses, empty_catches
     } catch (e) {}
-    layerImage = null;
-    layerPicture = null;
     super.onRemove();
   }
+
+  static void clearCache() => _compiledLayersCache.clear();
 }

@@ -8,6 +8,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 enum LayerRenderMode {
@@ -17,7 +18,40 @@ enum LayerRenderMode {
   auto,
 }
 
-abstract class CellLayer extends PositionComponent
+class LayerCacheKey<T> {
+  T? cachedData;
+  final _data = <String>{};
+
+  void add(Component component) {
+    if (component is PositionComponent) {
+      _data.add(_componentToString(component));
+      _key = null;
+    }
+  }
+
+  void invalidate() {
+    _key = null;
+    _data.clear();
+  }
+
+  String _componentToString(PositionComponent component) =>
+      '${component.position.x}${component.position.y}'
+      '${component is TileComponent ? component.tileCache.tile.type ?? component.runtimeType : component.runtimeType}'
+      '${component.size.x}${component.size.y}';
+
+  int? _key;
+
+  int? get key => _key ?? _computeKey();
+
+  int? _computeKey() {
+    if (_data.isEmpty) {
+      return null;
+    }
+    return _key = Object.hashAllUnordered(_data);
+  }
+}
+
+abstract class CellLayer<T> extends PositionComponent
     with
         HasGridSupport,
         UpdateOnDemand,
@@ -56,6 +90,8 @@ abstract class CellLayer extends PositionComponent
   final _listenerChildrenUpdate = <Component, VoidCallback>{};
 
   final _pendingComponents = <Future>[];
+
+  final cacheKey = LayerCacheKey<T>();
 
   @protected
   FutureOr compileToSingleLayer(Iterable<Component> children);
@@ -135,6 +171,7 @@ abstract class CellLayer extends PositionComponent
     switch (type) {
       case ChildrenChangeType.added:
         updateCorrections(child);
+        cacheKey.add(child);
 
         if (isRenewable) {
           if (child is HasGridSupport) {
@@ -163,6 +200,7 @@ abstract class CellLayer extends PositionComponent
         }
         break;
       case ChildrenChangeType.removed:
+        cacheKey.invalidate();
         if (isRenewable) {
           final callback = _listenerChildrenUpdate.remove(child);
           if (callback != null && child is HasGridSupport) {
@@ -191,6 +229,9 @@ abstract class CellLayer extends PositionComponent
   Future<void> updateLayer([double dt = 0.001]) {
     if (isUpdateNeeded) {
       if (_updateLayerFuture != null) {
+        return Future<void>.value();
+      }
+      if (cacheKey.key != null && onCheckCache(cacheKey.key!)) {
         return Future<void>.value();
       }
       if (isRenewable) {
@@ -242,6 +283,8 @@ abstract class CellLayer extends PositionComponent
         .query<ComponentWithUpdate>()
         .forEach((element) => element.updateTree(dt));
   }
+
+  bool onCheckCache(int key);
 
   bool get isRemovedLayer =>
       !isMounted ||
