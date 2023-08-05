@@ -263,7 +263,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
 
-    spatialGrid.updateCellsStateByRadius();
+    spatialGrid.updateCellsStateByRadius(fullScan: true);
     if (lazyLoad) {
       final currentCell = spatialGrid.currentCell;
       if (currentCell != null) {
@@ -307,7 +307,7 @@ mixin HasSpatialGridFramework on FlameGame
   /// dimensions, including zoom level.
   void onAfterZoom() {
     setRadiusByWindowDimensions();
-    spatialGrid.updateCellsStateByRadius();
+    spatialGrid.updateCellsStateByRadius(fullScan: true);
   }
 
   int maxCells = 0;
@@ -420,7 +420,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
     if (_gameInitializationFinished && trackWindowSize) {
       setRadiusByWindowDimensions();
-      spatialGrid.updateCellsStateByRadius();
+      spatialGrid.updateCellsStateByRadius(fullScan: true);
     }
   }
 

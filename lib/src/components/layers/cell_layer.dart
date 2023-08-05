@@ -232,6 +232,7 @@ abstract class CellLayer<T> extends PositionComponent
         return Future<void>.value();
       }
       if (cacheKey.key != null && onCheckCache(cacheKey.key!)) {
+        isUpdateNeeded = false;
         return Future<void>.value();
       }
       if (isRenewable) {

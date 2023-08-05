@@ -88,6 +88,7 @@ class SpatialGrid {
   final cells = HashMap<Rect, Cell>();
 
   Cell? _currentCell;
+  Cell? _previousCell;
 
   /// The central cell on which [trackedComponent] currently
   /// stay. It changes automatically during [trackedComponent] moving so use
@@ -98,8 +99,9 @@ class SpatialGrid {
     if (value == null || _currentCell == value) {
       return;
     }
+    _previousCell = _currentCell;
     _currentCell = value;
-    updateCellsStateByRadius();
+    updateCellsStateByRadius(fullScan: false);
   }
 
   @internal
@@ -154,7 +156,7 @@ class SpatialGrid {
   /// Updates [Cell.state] of every cell in spatial grid according to values in
   /// [activeRadius] and [unloadRadius], starting from [currentCell] position.
   @internal
-  void updateCellsStateByRadius() {
+  void updateCellsStateByRadius({required bool fullScan}) {
     final cellsToActivate = _findCellsInRadius(activeRadius, create: true);
     var newCellsCreated = false;
     for (final cell in cellsToActivate) {
@@ -167,9 +169,21 @@ class SpatialGrid {
     if (newCellsCreated) {
       _createCellsInPreloadRadius();
     }
-
-    for (final cell in cells.values) {
-      cell.tmpState = CellState.suspended;
+    final previousCells = <Cell>[];
+    if (fullScan) {
+      for (final cell in cells.values) {
+        cell.tmpState = CellState.suspended;
+      }
+    } else {
+      previousCells.addAll(
+        _findCellsInRadius(
+          unloadRadius,
+          initialCell: _previousCell,
+        ),
+      );
+      for (final cell in previousCells) {
+        cell.tmpState = CellState.suspended;
+      }
     }
 
     final cellsToInactivate = _findCellsInRadius(unloadRadius);
@@ -182,8 +196,19 @@ class SpatialGrid {
     }
     _currentCell?.tmpState = CellState.active;
 
-    for (final cell in cells.values) {
-      cell.state = cell.tmpState;
+    if (fullScan) {
+      for (final cell in cells.values) {
+        cell.state = cell.tmpState;
+      }
+    } else {
+      final allAffectedCells = <Cell>[
+        ...cellsToActivate,
+        ...previousCells,
+        ...cellsToInactivate,
+      ];
+      for (final cell in allAffectedCells) {
+        cell.state = cell.tmpState;
+      }
     }
   }
 
@@ -216,8 +241,12 @@ class SpatialGrid {
     return Vector2(diff.x / cellSize.width, diff.y / cellSize.height);
   }
 
-  Set<Cell> _findCellsInRadius(Size radius, {bool create = false}) {
-    final current = _currentCell;
+  Set<Cell> _findCellsInRadius(
+    Size radius, {
+    Cell? initialCell,
+    bool create = false,
+  }) {
+    final current = initialCell ?? _currentCell;
     if (current == null) {
       throw 'current cell cant be null!';
     }
