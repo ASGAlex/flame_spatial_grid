@@ -8,7 +8,25 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
-enum Direction { left, top, right, bottom }
+enum Direction {
+  left,
+  top,
+  right,
+  bottom;
+
+  Direction opposite() {
+    switch (this) {
+      case Direction.left:
+        return Direction.right;
+      case Direction.right:
+        return Direction.left;
+      case Direction.top:
+        return Direction.bottom;
+      case Direction.bottom:
+        return Direction.top;
+    }
+  }
+}
 
 /// The state controls cell's lifecycle and how many resources it consumes
 enum CellState {

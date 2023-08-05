@@ -101,7 +101,18 @@ class SpatialGrid {
     }
     _previousCell = _currentCell;
     _currentCell = value;
-    updateCellsStateByRadius(fullScan: false);
+
+    if (_previousCell == _currentCell!.left) {
+      _updateCellsAfterMovementToNeighbour(Direction.right);
+    } else if (_previousCell == _currentCell!.right) {
+      _updateCellsAfterMovementToNeighbour(Direction.left);
+    } else if (_previousCell == _currentCell!.top) {
+      _updateCellsAfterMovementToNeighbour(Direction.bottom);
+    } else if (_previousCell == _currentCell!.bottom) {
+      _updateCellsAfterMovementToNeighbour(Direction.top);
+    } else {
+      updateCellsStateByRadius(fullScan: false);
+    }
   }
 
   @internal
@@ -151,6 +162,115 @@ class SpatialGrid {
 
   set preloadRadius(Size value) {
     _preloadRadius = value + _unloadRadius.toOffset();
+  }
+
+  void _updateCellsAfterMovementToNeighbour(Direction direction) {
+    final current = _currentCell;
+    if (current == null) {
+      throw 'current cell cant be null!';
+    }
+    var counterActiveRadius = 0;
+    var counterActiveRadiusCrossAxis = 0;
+    var counterUnloadRadius = 0;
+    var counterUnloadRadiusCrossAxis = 0;
+    switch (direction) {
+      case Direction.left:
+      case Direction.right:
+        counterActiveRadius = activeRadius.width.toInt();
+        counterUnloadRadius = unloadRadius.width.toInt();
+        counterActiveRadiusCrossAxis = activeRadius.height.toInt();
+        counterUnloadRadiusCrossAxis = unloadRadius.height.toInt();
+        break;
+
+      case Direction.top:
+      case Direction.bottom:
+        counterActiveRadius = activeRadius.height.toInt();
+        counterUnloadRadius = unloadRadius.height.toInt();
+        counterActiveRadiusCrossAxis = activeRadius.width.toInt();
+        counterUnloadRadiusCrossAxis = unloadRadius.width.toInt();
+    }
+
+    // 1. find previous line of cells with unloadRadius and suspend
+    _findLineAndChangeState(
+      distance: counterUnloadRadius + 1,
+      crossAxisDistance: counterUnloadRadiusCrossAxis + 1,
+      direction: direction.opposite(),
+      newState: CellState.suspended,
+    );
+    // 2. find previous line of cells with activeRadius and inactivate
+    _findLineAndChangeState(
+      distance: counterActiveRadius + 1,
+      crossAxisDistance: counterActiveRadiusCrossAxis + 1,
+      direction: direction.opposite(),
+      newState: CellState.inactive,
+    );
+    // 3. find next line of cells with unloadRadius and inactivate
+    _findLineAndChangeState(
+      distance: counterUnloadRadius,
+      crossAxisDistance: counterUnloadRadiusCrossAxis,
+      direction: direction,
+      newState: CellState.inactive,
+    );
+    // 4. find next line of cells with activeRadius and activate
+    _findLineAndChangeState(
+      distance: counterActiveRadius,
+      crossAxisDistance: counterActiveRadiusCrossAxis,
+      direction: direction,
+      newState: CellState.active,
+    );
+  }
+
+  void _findLineAndChangeState({
+    required int distance,
+    required int crossAxisDistance,
+    required Direction direction,
+    required CellState newState,
+  }) {
+    final current = _currentCell;
+    if (current == null) {
+      throw 'current cell cant be null!';
+    }
+
+    var tmpCell = current;
+    for (var i = 0; i < distance; i++) {
+      switch (direction) {
+        case Direction.left:
+          tmpCell = tmpCell.left;
+          break;
+        case Direction.right:
+          tmpCell = tmpCell.right;
+          break;
+        case Direction.top:
+          tmpCell = tmpCell.top;
+          break;
+        case Direction.bottom:
+          tmpCell = tmpCell.bottom;
+          break;
+      }
+    }
+    final centralCell = tmpCell;
+    centralCell.state = newState;
+    if (direction == Direction.left || direction == Direction.right) {
+      for (var i = 0; i < crossAxisDistance; i++) {
+        tmpCell = tmpCell.top;
+        tmpCell.state = newState;
+      }
+      tmpCell = centralCell;
+      for (var i = 0; i < crossAxisDistance; i++) {
+        tmpCell = tmpCell.bottom;
+        tmpCell.state = newState;
+      }
+    } else {
+      for (var i = 0; i < crossAxisDistance; i++) {
+        tmpCell = tmpCell.left;
+        tmpCell.state = newState;
+      }
+      tmpCell = centralCell;
+      for (var i = 0; i < crossAxisDistance; i++) {
+        tmpCell = tmpCell.right;
+        tmpCell.state = newState;
+      }
+    }
   }
 
   /// Updates [Cell.state] of every cell in spatial grid according to values in
