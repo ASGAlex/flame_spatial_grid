@@ -177,17 +177,19 @@ class SpatialGrid {
       case Direction.left:
       case Direction.right:
         counterActiveRadius = activeRadius.width.toInt();
-        counterUnloadRadius = unloadRadius.width.toInt();
+        counterUnloadRadius = counterActiveRadius + unloadRadius.width.toInt();
         counterActiveRadiusCrossAxis = activeRadius.height.toInt();
-        counterUnloadRadiusCrossAxis = unloadRadius.height.toInt();
+        counterUnloadRadiusCrossAxis =
+            counterActiveRadiusCrossAxis + unloadRadius.height.toInt();
         break;
 
       case Direction.top:
       case Direction.bottom:
         counterActiveRadius = activeRadius.height.toInt();
-        counterUnloadRadius = unloadRadius.height.toInt();
+        counterUnloadRadius = counterActiveRadius + unloadRadius.height.toInt();
         counterActiveRadiusCrossAxis = activeRadius.width.toInt();
-        counterUnloadRadiusCrossAxis = unloadRadius.width.toInt();
+        counterUnloadRadiusCrossAxis =
+            counterActiveRadiusCrossAxis + unloadRadius.width.toInt();
     }
 
     // 1. find previous line of cells with unloadRadius and suspend

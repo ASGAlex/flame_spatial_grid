@@ -235,57 +235,34 @@ class Cell {
   void updateComponentsState() {
     switch (_state) {
       case CellState.active:
-        _activateComponents();
+        _setCollisionType();
         break;
       case CellState.inactive:
-        _deactivateComponents();
+        _setCollisionType();
         break;
       case CellState.suspended:
-        _suspendComponents();
+        _setCollisionType(CollisionType.inactive);
         break;
     }
   }
 
-  void _activateComponents() {
-    for (final component in components) {
-      final allChildren = component.descendants();
-      for (final hitbox in allChildren) {
-        if (hitbox is! ShapeHitbox) {
-          continue;
-        }
-        if (hitbox is BoundingHitbox && hitbox.optimized) {
-          continue;
-        }
-        if (component.toggleCollisionOnSuspendChange) {
-          hitbox.collisionType = hitbox.defaultCollisionType;
-        }
-      }
+  void _setCollisionType([CollisionType? collisionType]) {
+    final broadphase = spatialGrid.game?.collisionDetection.broadphase;
+    if (broadphase == null) {
+      return;
     }
-  }
-
-  void _deactivateComponents() {
-    for (final component in components) {
-      final allChildren = component.descendants();
-      for (final hitbox in allChildren) {
-        if (hitbox is! ShapeHitbox) {
-          continue;
-        }
-        if (hitbox is BoundingHitbox && hitbox.optimized) {
-          continue;
-        }
-        if (component.toggleCollisionOnSuspendChange) {
-          hitbox.collisionType = hitbox.defaultCollisionType;
-        }
-      }
+    final hitboxes = broadphase.allCollisionsByCell[this];
+    if (hitboxes == null) {
+      return;
     }
-  }
-
-  void _suspendComponents() {
-    for (final component in components) {
-      for (final hitbox in component.children.query<ShapeHitbox>()) {
-        if (component.toggleCollisionOnSuspendChange) {
-          hitbox.collisionType = CollisionType.inactive;
-        }
+    for (final hitbox in hitboxes) {
+      if (hitbox is BoundingHitbox && hitbox.optimized) {
+        continue;
+      }
+      if (hitbox.parentWithGridSupport?.toggleCollisionOnSuspendChange ==
+          true) {
+        final newType = collisionType ?? hitbox.defaultCollisionType;
+        hitbox.collisionType = newType;
       }
     }
   }

@@ -90,17 +90,45 @@ mixin HasGridSupport on PositionComponent {
       value.components.add(this);
     }
 
-    if (previousCell == null || previousCell.isRemoving) {
+    if (previousCell != null && previousCell.isRemoving) {
       return;
     }
 
     _updateComponentHitboxes(previousCell);
   }
 
-  void _updateComponentHitboxes(Cell previousCell) {
-    for (final hitbox in children.query<ShapeHitbox>()) {
-      spatialGrid?.game?.collisionDetection.broadphase
-          .updateHitboxIndexes(hitbox, previousCell);
+  void _updateComponentHitboxes([Cell? previousCell]) {
+    final broadphase = spatialGrid?.game?.collisionDetection.broadphase;
+    if (broadphase == null) {
+      return;
+    }
+    _updateHitboxesRecursive(
+      children.query<ShapeHitbox>(),
+      broadphase,
+      previousCell,
+    );
+  }
+
+  void _updateHitboxesRecursive(
+    List<ShapeHitbox> children,
+    SpatialGridBroadphase broadphase, [
+    Cell? previousCell,
+  ]) {
+    for (final hitbox in children) {
+      if (previousCell != null) {
+        broadphase.updateHitboxIndexes(
+          hitbox,
+          previousCell,
+        );
+      }
+      broadphase.saveHitboxCell(hitbox, _currentCell, previousCell);
+      if (hitbox.children.isNotEmpty) {
+        _updateHitboxesRecursive(
+          hitbox.children.query<ShapeHitbox>(),
+          broadphase,
+          previousCell,
+        );
+      }
     }
   }
 

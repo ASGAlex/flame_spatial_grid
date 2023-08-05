@@ -45,6 +45,9 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   final activeCollisions = HashSet<T>();
 
   @internal
+  final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
+
+  @internal
   final passiveCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
 
   @internal
@@ -83,33 +86,49 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     for (final operation in scheduledOperations) {
       if (operation.add) {
         final cell = operation.cell;
-        if (operation.active) {
-          activeCollisions.add(operation.hitbox as T);
-          var list = activeCollisionsByCell[cell];
-          list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
+        if (operation.all) {
+          var list = allCollisionsByCell[cell];
+          list ??= allCollisionsByCell[cell] = HashSet<ShapeHitbox>();
           list.add(operation.hitbox);
         } else {
-          var list = passiveCollisionsByCell[cell];
-          list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-          list.add(operation.hitbox);
+          if (operation.active) {
+            activeCollisions.add(operation.hitbox as T);
+            var list = activeCollisionsByCell[cell];
+            list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
+            list.add(operation.hitbox);
+          } else {
+            var list = passiveCollisionsByCell[cell];
+            list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
+            list.add(operation.hitbox);
+          }
         }
       } else {
         final cell = operation.cell;
-        if (operation.active) {
-          activeCollisions.remove(operation.hitbox as T);
-          final cellCollisions = activeCollisionsByCell[cell];
+        if (operation.all) {
+          final cellCollisions = allCollisionsByCell[cell];
           if (cellCollisions != null) {
             cellCollisions.remove(operation.hitbox);
             if (cellCollisions.isEmpty) {
-              activeCollisionsByCell.remove(cell);
+              allCollisionsByCell.remove(cell);
             }
           }
         } else {
-          final cellCollisions = passiveCollisionsByCell[cell];
-          if (cellCollisions != null) {
-            cellCollisions.remove(operation.hitbox);
-            if (cellCollisions.isEmpty) {
-              passiveCollisionsByCell.remove(cell);
+          if (operation.active) {
+            activeCollisions.remove(operation.hitbox as T);
+            final cellCollisions = activeCollisionsByCell[cell];
+            if (cellCollisions != null) {
+              cellCollisions.remove(operation.hitbox);
+              if (cellCollisions.isEmpty) {
+                activeCollisionsByCell.remove(cell);
+              }
+            }
+          } else {
+            final cellCollisions = passiveCollisionsByCell[cell];
+            if (cellCollisions != null) {
+              cellCollisions.remove(operation.hitbox);
+              if (cellCollisions.isEmpty) {
+                passiveCollisionsByCell.remove(cell);
+              }
             }
           }
         }
@@ -577,6 +596,26 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   @internal
+  void saveHitboxCell(ShapeHitbox hitbox, Cell? cell, [Cell? oldCell]) {
+    if (oldCell != null) {
+      scheduledOperations.add(
+        ScheduledHitboxOperation.removeFromAll(
+          hitbox: hitbox,
+          cell: oldCell,
+        ),
+      );
+    }
+    if (cell != null) {
+      scheduledOperations.add(
+        ScheduledHitboxOperation.addToAll(
+          hitbox: hitbox,
+          cell: cell,
+        ),
+      );
+    }
+  }
+
+  @internal
   void updateHitboxIndexes(ShapeHitbox hitbox, [Cell? oldCell]) {
     if (oldCell != null) {
       scheduledOperations.addAll([
@@ -647,6 +686,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     hasCollisionsLastTime.clear();
     passiveCollisionsByCell.clear();
     activeCollisionsByCell.clear();
+    allCollisionsByCell.clear();
     optimizedCollisionsByGroupBox.clear();
   }
 }
@@ -659,34 +699,54 @@ class ScheduledHitboxOperation {
     required this.active,
     required this.hitbox,
     required this.cell,
+    required this.all,
   });
 
   const ScheduledHitboxOperation.addActive({
     required this.hitbox,
     required this.cell,
   })  : add = true,
-        active = true;
+        active = true,
+        all = false;
 
   const ScheduledHitboxOperation.addPassive({
     required this.hitbox,
     required this.cell,
   })  : add = true,
-        active = false;
+        active = false,
+        all = false;
 
   const ScheduledHitboxOperation.removeActive({
     required this.hitbox,
     required this.cell,
   })  : add = false,
-        active = true;
+        active = true,
+        all = false;
 
   const ScheduledHitboxOperation.removePassive({
     required this.hitbox,
     required this.cell,
   })  : add = false,
-        active = false;
+        active = false,
+        all = false;
+
+  const ScheduledHitboxOperation.addToAll({
+    required this.hitbox,
+    required this.cell,
+  })  : add = true,
+        active = false,
+        all = true;
+
+  const ScheduledHitboxOperation.removeFromAll({
+    required this.hitbox,
+    required this.cell,
+  })  : add = false,
+        active = false,
+        all = true;
 
   final bool add;
   final bool active;
+  final bool all;
   final ShapeHitbox hitbox;
   final Cell cell;
 }

@@ -50,6 +50,10 @@ class SpatialGridCollisionDetection
       withGridSupportComponent.updateTransform();
 
       broadphase.updateHitboxIndexes(item);
+      final componentCurrentCell = withGridSupportComponent.currentCell;
+      if (componentCurrentCell != null) {
+        broadphase.saveHitboxCell(item, componentCurrentCell);
+      }
       withGridSupportComponent.onSpatialGridInitialized();
     }
   }
@@ -82,6 +86,12 @@ class SpatialGridCollisionDetection
         );
         broadphase.scheduledOperations.add(
           ScheduledHitboxOperation.removeActive(
+            hitbox: item,
+            cell: currentCell,
+          ),
+        );
+        broadphase.scheduledOperations.add(
+          ScheduledHitboxOperation.removeFromAll(
             hitbox: item,
             cell: currentCell,
           ),
