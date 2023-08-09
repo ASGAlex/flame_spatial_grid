@@ -256,14 +256,21 @@ class Cell {
       return;
     }
     for (final hitbox in hitboxes) {
-      if (hitbox is BoundingHitbox && hitbox.optimized) {
-        continue;
-      }
-      if (hitbox.parentWithGridSupport?.toggleCollisionOnSuspendChange ==
-          true) {
-        final newType = collisionType ?? hitbox.defaultCollisionType;
-        hitbox.collisionType = newType;
-      }
+      setCollisionTypeForHitbox(hitbox, collisionType);
+    }
+  }
+
+  @internal
+  static void setCollisionTypeForHitbox(
+    ShapeHitbox hitbox, [
+    CollisionType? collisionType,
+  ]) {
+    if (hitbox is BoundingHitbox && hitbox.optimized) {
+      return;
+    }
+    if (hitbox.parentWithGridSupport?.toggleCollisionOnSuspendChange == true) {
+      final newType = collisionType ?? hitbox.defaultCollisionType;
+      hitbox.collisionType = newType;
     }
   }
 

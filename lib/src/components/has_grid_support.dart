@@ -91,14 +91,20 @@ mixin HasGridSupport on PositionComponent {
       value.components.add(this);
     }
 
-    if (previousCell != null && previousCell.isRemoving) {
-      return;
+    CellState? newCellState;
+    if (previousCell != null) {
+      if (previousCell.isRemoving) {
+        return;
+      }
+      if (_currentCell != null && previousCell.state != _currentCell!.state) {
+        newCellState = _currentCell!.state;
+      }
     }
 
-    _updateComponentHitboxes(previousCell);
+    _updateComponentHitboxes(previousCell, newCellState);
   }
 
-  void _updateComponentHitboxes([Cell? previousCell]) {
+  void _updateComponentHitboxes([Cell? previousCell, CellState? newCellState]) {
     final broadphase = spatialGrid?.game?.collisionDetection.broadphase;
     if (broadphase == null) {
       return;
@@ -107,6 +113,7 @@ mixin HasGridSupport on PositionComponent {
       children.query<ShapeHitbox>(),
       broadphase,
       previousCell,
+      newCellState,
     );
   }
 
@@ -114,20 +121,34 @@ mixin HasGridSupport on PositionComponent {
     List<ShapeHitbox> children,
     SpatialGridBroadphase broadphase, [
     Cell? previousCell,
+    CellState? newCellState,
   ]) {
     for (final hitbox in children) {
-      if (previousCell != null) {
+      if (newCellState != null) {
+        switch (newCellState) {
+          case CellState.active:
+          case CellState.inactive:
+            Cell.setCollisionTypeForHitbox(hitbox);
+            break;
+          case CellState.suspended:
+            Cell.setCollisionTypeForHitbox(hitbox, CollisionType.inactive);
+            break;
+        }
+      } else {
+        // if (previousCell != null) {
         broadphase.updateHitboxIndexes(
           hitbox,
           previousCell,
         );
       }
+      // }
       broadphase.saveHitboxCell(hitbox, _currentCell, previousCell);
       if (hitbox.children.isNotEmpty) {
         _updateHitboxesRecursive(
           hitbox.children.query<ShapeHitbox>(),
           broadphase,
           previousCell,
+          newCellState,
         );
       }
     }
@@ -303,10 +324,10 @@ mixin HasGridSupport on PositionComponent {
       //coordinates
       newCell ??= spatialGrid.createNewCellAtPosition(componentCenter);
 
-      currentCell = newCell;
       if (isTracked) {
         spatialGrid.currentCell = newCell;
       }
+      currentCell = newCell;
     }
     _updateOutOfCellBounds();
   }

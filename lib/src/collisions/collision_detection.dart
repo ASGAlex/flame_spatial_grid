@@ -22,6 +22,7 @@ class SpatialGridCollisionDetection
         );
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
+  ShapeHitbox? _trackedComponentScheduledUpdate;
   final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
   final SpatialGrid spatialGrid;
 
@@ -31,7 +32,19 @@ class SpatialGridCollisionDetection
   @override
   void add(ShapeHitbox item) {
     // ignore: invalid_use_of_internal_member
-    item.onAabbChanged = () => _scheduledUpdateAfterTransform.add(item);
+    item.onAabbChanged = () {
+      var added = false;
+      final withGridSupportComponent = item.parentWithGridSupport;
+      if (withGridSupportComponent != null) {
+        if (withGridSupportComponent.isTracked) {
+          _trackedComponentScheduledUpdate = item;
+          added = true;
+        }
+      }
+      if (!added) {
+        _scheduledUpdateAfterTransform.add(item);
+      }
+    };
     final withGridSupportComponent = item.parentWithGridSupport;
     if (withGridSupportComponent != null) {
       withGridSupportComponent.spatialGrid = spatialGrid;
@@ -120,6 +133,10 @@ class SpatialGridCollisionDetection
   void run() {
     broadphase.dt = dt;
     broadphase.update();
+    if (_trackedComponentScheduledUpdate != null) {
+      _updateTransform(_trackedComponentScheduledUpdate!);
+      _trackedComponentScheduledUpdate = null;
+    }
     _scheduledUpdateAfterTransform.forEach(_updateTransform);
     _scheduledUpdateAfterTransform.clear();
     final allPotentials = broadphase.query();
