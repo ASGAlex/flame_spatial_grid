@@ -18,8 +18,8 @@ mixin RepaintOnDemand on HasGridSupport {
   @override
   void renderTree(Canvas canvas) {
     if (isRepaintNeeded) {
-      super.renderTree(canvas);
       _repaintNotifier.isActionNeeded = false;
+      super.renderTree(canvas);
     }
   }
 }
@@ -38,8 +38,8 @@ mixin UpdateOnDemand on Component {
   @override
   void updateTree(double dt) {
     if (isUpdateNeeded) {
-      super.updateTree(dt);
       _updateNotifier.isActionNeeded = false;
+      super.updateTree(dt);
     }
   }
 }
