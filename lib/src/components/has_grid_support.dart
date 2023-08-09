@@ -65,6 +65,7 @@ mixin HasGridSupport on PositionComponent {
   bool toggleCollisionOnSuspendChange = true;
 
   bool noVisibleChildren = false;
+  bool noChildrenToUpdate = false;
 
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
@@ -224,7 +225,11 @@ mixin HasGridSupport on PositionComponent {
       dtElapsedWhileSuspended += dt;
       updateSuspendedTree(dtElapsedWhileSuspended);
     } else {
-      super.updateTree(dt);
+      if (noChildrenToUpdate) {
+        update(dt);
+      } else {
+        super.updateTree(dt);
+      }
     }
   }
 
