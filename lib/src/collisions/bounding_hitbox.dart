@@ -35,6 +35,7 @@ class BoundingHitbox extends RectangleHitbox
     _parentWithGridSupport = parentWithGridSupport;
   }
 
+  bool fastCollisionForRects = false;
   bool _aabbCenterNotSet = true;
   final Vector2 _aabbCenter = Vector2.zero();
 
@@ -237,7 +238,7 @@ class BoundingHitbox extends RectangleHitbox
   /// Where this [ShapeComponent] has intersection points with another shape
   @override
   Set<Vector2> intersections(Hitbox other) {
-    if (other is BoundingHitbox) {
+    if (other is BoundingHitbox && fastCollisionForRects) {
       final intersectionPoints = <Vector2>{};
       final boundingRect = aabb.toRect();
       final boundingRectOther = other.aabb.toRect();
