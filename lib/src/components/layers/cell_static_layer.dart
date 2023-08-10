@@ -12,13 +12,18 @@ class ImageCacheEntry {
   int usageCount = 1;
 }
 
-class CellStaticLayer extends CellLayer<Image> {
+class CellStaticLayer extends CellLayer {
   CellStaticLayer(super.cell, {super.name, super.isRenewable}) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
   }
 
   static final _compiledLayersCache = <int, ImageCacheEntry>{};
+
+  final _layerCacheKey = LayerCacheKey();
+
+  @override
+  LayerCacheKey get cacheKey => _layerCacheKey;
 
   final paint = Paint();
   Picture? layerPicture;

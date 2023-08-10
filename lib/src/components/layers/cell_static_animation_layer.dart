@@ -116,6 +116,11 @@ class CellStaticAnimationLayer extends CellLayer {
     animationComponent.onRemove();
   }
 
+  final _layerCacheKey = LayerCacheKey();
+
+  @override
+  LayerCacheKey get cacheKey => _layerCacheKey;
+
   @override
   bool onCheckCache(int key) {
     final cache = _compiledLayersCache[key];

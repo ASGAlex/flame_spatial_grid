@@ -6,6 +6,17 @@ import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
+class _FalseCacheKey extends LayerCacheKey {
+  @override
+  int? get key => null;
+
+  @override
+  void add(Component component) {}
+
+  @override
+  void invalidate() {}
+}
+
 class CellTrailLayer extends CellStaticLayer {
   CellTrailLayer(
     super.cell, {
@@ -15,6 +26,11 @@ class CellTrailLayer extends CellStaticLayer {
   }) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
+
+  final _falseCacheKey = _FalseCacheKey();
+
+  @override
+  LayerCacheKey get cacheKey => _falseCacheKey;
 
   bool get isFadeOut => fadeOutConfig.isFadeOut;
 

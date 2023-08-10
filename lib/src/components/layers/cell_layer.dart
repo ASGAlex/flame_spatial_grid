@@ -18,8 +18,8 @@ enum LayerRenderMode {
   auto,
 }
 
-class LayerCacheKey<T> {
-  T? cachedData;
+class LayerCacheKey {
+  static int times = 0;
   final _data = <String>{};
 
   void add(Component component) {
@@ -47,11 +47,13 @@ class LayerCacheKey<T> {
     if (_data.isEmpty) {
       return null;
     }
+    times++;
+    print('Calc times: $times');
     return _key = Object.hashAllUnordered(_data);
   }
 }
 
-abstract class CellLayer<T> extends PositionComponent
+abstract class CellLayer extends PositionComponent
     with
         HasGridSupport,
         UpdateOnDemand,
@@ -91,7 +93,7 @@ abstract class CellLayer<T> extends PositionComponent
 
   final _pendingComponents = <Future>[];
 
-  final cacheKey = LayerCacheKey<T>();
+  LayerCacheKey get cacheKey;
 
   @protected
   FutureOr compileToSingleLayer(Iterable<Component> children);
