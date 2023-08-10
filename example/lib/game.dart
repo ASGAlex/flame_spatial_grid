@@ -611,6 +611,9 @@ class Player extends SpriteComponent
     //   ..add('Brick');
   }
 
+  @override
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+
   static const stepSize = 2.0;
   double stepDone = 0;
   final positionNoCollision = Vector2.zero();
@@ -871,6 +874,9 @@ class Bullet extends PositionComponent
         boundingBox.defaultCollisionType = CollisionType.active;
   }
 
+  @override
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+
   double lifetime = 20.0;
   final Vector2 displacement;
   final bool killWater;
@@ -945,6 +951,9 @@ class Brick extends SpriteComponent
   }
 
   @override
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+
+  @override
   void onCollisionStart(
     Set<Vector2> intersectionPoints,
     PositionComponent other,
@@ -982,6 +991,9 @@ class Water extends SpriteAnimationComponent
       context = ctx;
     }
   }
+
+  @override
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
 
   @override
   void onCollisionStart(
@@ -1023,4 +1035,11 @@ class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
   }
 }
 
+class BoundingBoxGridGame extends BoundingHitbox {
+  @override
+  FutureOr<void> onLoad() {
+    fastCollisionForRects = true;
+    return super.onLoad();
+  }
+}
 //#endregion
