@@ -238,7 +238,9 @@ class BoundingHitbox extends RectangleHitbox
   /// Where this [ShapeComponent] has intersection points with another shape
   @override
   Set<Vector2> intersections(Hitbox other) {
-    if (other is BoundingHitbox && fastCollisionForRects) {
+    if (other is BoundingHitbox &&
+        fastCollisionForRects &&
+        other.fastCollisionForRects) {
       final intersectionPoints = <Vector2>{};
       final boundingRect = aabb.toRect();
       final boundingRectOther = other.aabb.toRect();
