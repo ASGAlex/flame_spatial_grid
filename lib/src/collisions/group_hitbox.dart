@@ -13,6 +13,7 @@ class GroupHitbox extends BoundingHitbox {
     isSolid = true;
     collisionType = CollisionType.passive;
     defaultCollisionType = collisionType;
+    fastCollisionForRects = true;
   }
 
   final String tag;

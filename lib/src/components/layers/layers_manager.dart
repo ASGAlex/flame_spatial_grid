@@ -87,7 +87,7 @@ class LayersManager {
   }) {
     Cell? cell;
     if (currentCell == null && component is HasGridSupport) {
-      cell = game.findCellForComponent(component);
+      cell = component.currentCell ?? game.findCellForComponent(component);
     } else if (currentCell != null) {
       cell = currentCell;
     }

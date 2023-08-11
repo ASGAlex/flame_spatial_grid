@@ -30,7 +30,7 @@ class CellStaticLayer extends CellLayer {
   Image? layerImage;
 
   static const secondsBetweenImageUpdate = 5;
-  double _dtBetweenImageUpdate = 0;
+  int _millisecondsBetweenImageUpdate = 0;
   bool _renderAsImage = false;
 
   @override
@@ -56,22 +56,20 @@ class CellStaticLayer extends CellLayer {
           canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
         } else if (layerPicture != null) {
           canvas.drawPicture(layerPicture!);
+          if (_millisecondsBetweenImageUpdate == 0) {
+            _millisecondsBetweenImageUpdate =
+                DateTime.now().millisecondsSinceEpoch;
+          } else {
+            final msNew = DateTime.now().millisecondsSinceEpoch;
+            if ((msNew - _millisecondsBetweenImageUpdate) >=
+                secondsBetweenImageUpdate * 1000) {
+              _renderPictureToImage();
+              _millisecondsBetweenImageUpdate = 0;
+            }
+          }
         }
         break;
     }
-  }
-
-  @override
-  Future<void> updateLayer([double dt = 0.001]) {
-    if (renderMode == LayerRenderMode.auto && !isUpdateNeeded) {
-      if (!_renderAsImage &&
-          _dtBetweenImageUpdate >= secondsBetweenImageUpdate) {
-        _renderPictureToImage();
-      } else {
-        _dtBetweenImageUpdate++;
-      }
-    }
-    return super.updateLayer(dt);
   }
 
   void _renderPictureToImage() {
@@ -119,7 +117,7 @@ class CellStaticLayer extends CellLayer {
       return null;
     }
 
-    _dtBetweenImageUpdate = 0;
+    _millisecondsBetweenImageUpdate = 0;
     _renderAsImage = false;
     final recorder = PictureRecorder();
     final canvas = Canvas(recorder);
