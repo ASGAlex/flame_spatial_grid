@@ -81,6 +81,24 @@ class BoundingHitbox extends RectangleHitbox
     broadphaseMinimumDistanceSkip.clear();
   }
 
+  final Vector2 _absoluteScaledSizeCache = Vector2.zero();
+
+  bool cacheAbsoluteScaledSize = false;
+
+  @override
+  Vector2 get absoluteScaledSize {
+    if (cacheAbsoluteScaledSize) {
+      if (_absoluteScaledSizeCache.isZero()) {
+        _absoluteScaledSizeCache.setFrom(super.absoluteScaledSize);
+      }
+      return _absoluteScaledSizeCache;
+    } else {
+      return super.absoluteScaledSize;
+    }
+  }
+
+  void absoluteScaledSizeCacheReset() => _absoluteScaledSizeCache.setZero();
+
   set aabbCenter(Vector2? value) {
     assert(value != null);
     _aabbCenter.setFrom(value!);
@@ -181,6 +199,7 @@ class BoundingHitbox extends RectangleHitbox
   @override
   void onParentResize(Vector2 maxSize) {
     // resizeToIncludeChildren();  //TODO: static layers bbox expands... why?
+    absoluteScaledSizeCacheReset();
     super.onParentResize(maxSize);
   }
 
