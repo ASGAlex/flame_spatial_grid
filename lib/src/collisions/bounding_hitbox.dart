@@ -82,8 +82,10 @@ class BoundingHitbox extends RectangleHitbox
   }
 
   final Vector2 _absoluteScaledSizeCache = Vector2.zero();
+  double? _absoluteAngleCache;
 
   bool cacheAbsoluteScaledSize = false;
+  bool cacheAbsoluteAngle = false;
 
   @override
   Vector2 get absoluteScaledSize {
@@ -97,7 +99,19 @@ class BoundingHitbox extends RectangleHitbox
     }
   }
 
+  @override
+  double get absoluteAngle {
+    if (cacheAbsoluteAngle) {
+      _absoluteAngleCache ??= super.absoluteAngle;
+      return _absoluteAngleCache!;
+    } else {
+      return super.absoluteAngle;
+    }
+  }
+
   void absoluteScaledSizeCacheReset() => _absoluteScaledSizeCache.setZero();
+
+  void absoluteAngleCacheReset() => _absoluteAngleCache = null;
 
   set aabbCenter(Vector2? value) {
     assert(value != null);
