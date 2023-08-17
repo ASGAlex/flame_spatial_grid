@@ -13,7 +13,14 @@ class CollisionOptimizer {
 
   bool get isEmpty => _createdCollisionLists.isEmpty;
 
-  int get maximumItemsInGroup => game.collisionOptimizerGroupLimit;
+  int? _maximumItemsInGroup;
+
+  set maximumItemsInGroup(int? value) {
+    _maximumItemsInGroup = value;
+  }
+
+  int get maximumItemsInGroup =>
+      _maximumItemsInGroup ?? game.collisionOptimizerGroupLimit;
 
   final _alreadyProcessed = HashSet<ShapeHitbox>();
 
