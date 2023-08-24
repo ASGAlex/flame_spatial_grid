@@ -17,7 +17,7 @@ import 'package:flutter/services.dart';
 //#region World
 
 const tileSize = 8.0;
-const blockSize = 100.0;
+const blockSize = 128.0;
 
 class SpatialGridExample extends FlameGame
     with
@@ -450,33 +450,33 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
     }
     return;
     final tapPosition = event.localPosition;
-    final cellsUnderCursor = <Cell>[];
-    gameRef.spatialGrid.cells.forEach((rect, cell) {
-      if (cell.rect.containsPoint(tapPosition)) {
-        cellsUnderCursor.add(cell);
-        if (kDebugMode) {
-          print(cell.outOfBoundsCounter);
-        }
-        // print('State:  + ${cell.state}');
-        if (kDebugMode) {
-          print('Rect: $rect');
-        }
+    // final cellsUnderCursor = <Cell>[];
+    // gameRef.spatialGrid.cells.forEach((rect, cell) {
+    //   if (cell.rect.containsPoint(tapPosition)) {
+    //     cellsUnderCursor.add(cell);
+    //     if (kDebugMode) {
+    //       print(cell.outOfBoundsCounter);
+    //     }
+    //     // print('State:  + ${cell.state}');
+    //     if (kDebugMode) {
+    //       print('Rect: $rect');
+    //     }
+    //
+    //     // print('Components count: ${cell.components.length}');
+    //   }
+    // });
 
-        // print('Components count: ${cell.components.length}');
-      }
-    });
-
-    if (kDebugMode) {
-      print('========================================');
-    }
+    // if (kDebugMode) {
+    //   print('========================================');
+    // }
     final list = componentsAtPoint(tapPosition).toList(growable: false);
     for (final component in list) {
       if (component is! HasGridSupport) {
         continue;
       }
-      // if (component is CellStaticLayer) {
-      //   component.collisionOptimizer.optimize();
-      // }
+      if (component is CellStaticLayer) {
+        print('123');
+      }
       //
       // final optimized = game.collisionDetection.broadphase
       //     .optimizedCollisionsByGroupBox[component.currentCell];

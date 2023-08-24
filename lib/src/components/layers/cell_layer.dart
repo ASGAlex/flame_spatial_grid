@@ -19,7 +19,6 @@ enum LayerRenderMode {
 }
 
 class LayerCacheKey {
-  static int times = 0;
   final _data = <String>{};
 
   void add(Component component) {
@@ -35,9 +34,9 @@ class LayerCacheKey {
   }
 
   String _componentToString(PositionComponent component) =>
-      '${component.position.x}${component.position.y}'
+      '(${component.position.x},${component.position.y})'
       '${component is TileComponent ? component.tileCache.tile.type ?? component.runtimeType : component.runtimeType}'
-      '${component.size.x}${component.size.y}';
+      '(${component.size.x},${component.size.y})';
 
   int? _key;
 
@@ -47,9 +46,9 @@ class LayerCacheKey {
     if (_data.isEmpty) {
       return null;
     }
-    times++;
-    print('Calc times: $times');
-    return _key = Object.hashAllUnordered(_data);
+    _key = Object.hashAllUnordered(_data);
+    _data.clear();
+    return _key;
   }
 }
 
@@ -173,7 +172,9 @@ abstract class CellLayer extends PositionComponent
     switch (type) {
       case ChildrenChangeType.added:
         updateCorrections(child);
-        cacheKey.add(child);
+        if (child is! BoundingHitbox) {
+          cacheKey.add(child);
+        }
 
         if (isRenewable) {
           if (child is HasGridSupport) {
