@@ -18,6 +18,12 @@ enum LayerRenderMode {
   auto,
 }
 
+enum LayerComponentsStorageMode {
+  defaultComponentTree,
+  internalLayerSet,
+  removeAfterCompile,
+}
+
 class LayerCacheKey {
   final _data = <String>{};
 
@@ -57,8 +63,12 @@ abstract class CellLayer extends PositionComponent
         HasGridSupport,
         UpdateOnDemand,
         HasGameReference<HasSpatialGridFramework> {
-  CellLayer(Cell cell, {this.name = '', bool? isRenewable})
-      : isRenewable = isRenewable ?? true,
+  CellLayer(
+    Cell cell, {
+    this.name = '',
+    LayerComponentsStorageMode? componentsStorageMode,
+  })  : componentsStorageMode = componentsStorageMode ??
+            LayerComponentsStorageMode.defaultComponentTree,
         super(
           position: cell.rect.topLeft.toVector2(),
           size: cell.rect.size.toVector2(),
@@ -74,7 +84,10 @@ abstract class CellLayer extends PositionComponent
 
   Type? primaryHitboxCollisionType;
 
-  final bool isRenewable;
+  final LayerComponentsStorageMode componentsStorageMode;
+
+  @internal
+  final alternativeComponentSet = <Component>{};
 
   @protected
   final nonRenewableComponents = <Component>[];
@@ -95,7 +108,7 @@ abstract class CellLayer extends PositionComponent
   LayerCacheKey get cacheKey;
 
   @protected
-  FutureOr compileToSingleLayer(Iterable<Component> children);
+  FutureOr compileToSingleLayer(Iterable<Component> components);
 
   final String name;
 
@@ -151,7 +164,8 @@ abstract class CellLayer extends PositionComponent
         primaryHitboxCollisionType = component.runtimeType;
       }
     }
-    if (isRenewable) {
+    if (componentsStorageMode ==
+        LayerComponentsStorageMode.defaultComponentTree) {
       super.add(component);
     } else {
       onChildrenChanged(component, ChildrenChangeType.added);
@@ -160,7 +174,8 @@ abstract class CellLayer extends PositionComponent
 
   @override
   void remove(Component component, {bool internalCall = false}) {
-    if (isRenewable) {
+    if (componentsStorageMode ==
+        LayerComponentsStorageMode.defaultComponentTree) {
       super.remove(component);
     } else {
       onChildrenChanged(component, ChildrenChangeType.removed);
@@ -175,46 +190,71 @@ abstract class CellLayer extends PositionComponent
         if (child is! BoundingHitbox) {
           cacheKey.add(child);
         }
-
-        if (isRenewable) {
-          if (child is HasGridSupport) {
-            child.transform.addListener(onChildrenUpdate);
-            _listenerChildrenUpdate[child] = onChildrenUpdate;
-          }
-          if (child is! GroupHitbox) {
-            scheduleLayerUpdate(child, ChildrenChangeType.added);
-          }
-          final future = child.loaded;
-          _pendingComponents.add(future);
-        } else {
-          nonRenewableComponents.add(child);
-          if (child is HasGridSupport) {
-            child.currentCell = null;
-          }
-          if (child is! GroupHitbox) {
-            scheduleLayerUpdate(child, ChildrenChangeType.added);
-          }
-          if (!child.isLoaded) {
-            final future = child.onLoad();
-            if (future is Future) {
-              _pendingComponents.add(future);
-            }
-          }
+        if (child is LayerChildComponent) {
+          child._parentLayer = this;
         }
+
+        switch (componentsStorageMode) {
+          case LayerComponentsStorageMode.defaultComponentTree:
+            if (child is HasGridSupport) {
+              child.transform.addListener(onChildrenUpdate);
+              _listenerChildrenUpdate[child] = onChildrenUpdate;
+            }
+            final future = child.loaded;
+            _pendingComponents.add(future);
+            break;
+          case LayerComponentsStorageMode.internalLayerSet:
+            if (!child.isLoaded) {
+              final future = child.onLoad();
+              if (future is Future) {
+                _pendingComponents.add(future);
+              }
+            }
+            alternativeComponentSet.add(child);
+            break;
+          case LayerComponentsStorageMode.removeAfterCompile:
+            nonRenewableComponents.add(child);
+            if (child is HasGridSupport) {
+              child.currentCell = null;
+            }
+            if (!child.isLoaded) {
+              final future = child.onLoad();
+              if (future is Future) {
+                _pendingComponents.add(future);
+              }
+            }
+            break;
+        }
+
+        if (child is! GroupHitbox) {
+          scheduleLayerUpdate(child, ChildrenChangeType.added);
+        }
+
         break;
       case ChildrenChangeType.removed:
         cacheKey.invalidate();
-        if (isRenewable) {
-          final callback = _listenerChildrenUpdate.remove(child);
-          if (callback != null && child is HasGridSupport) {
-            child.transform.removeListener(callback);
-          }
 
-          if (child is! GroupHitbox) {
-            scheduleLayerUpdate(child, ChildrenChangeType.removed);
-          }
-        } else {
-          nonRenewableComponents.remove(child);
+        switch (componentsStorageMode) {
+          case LayerComponentsStorageMode.defaultComponentTree:
+            final callback = _listenerChildrenUpdate.remove(child);
+            if (callback != null && child is HasGridSupport) {
+              child.transform.removeListener(callback);
+            }
+            if (child is! GroupHitbox) {
+              scheduleLayerUpdate(child, ChildrenChangeType.removed);
+            }
+            break;
+          case LayerComponentsStorageMode.internalLayerSet:
+            alternativeComponentSet.remove(child);
+            child.onRemove();
+            if (child is! GroupHitbox) {
+              scheduleLayerUpdate(child, ChildrenChangeType.removed);
+            }
+            break;
+
+          case LayerComponentsStorageMode.removeAfterCompile:
+            nonRenewableComponents.remove(child);
+            break;
         }
         break;
     }
@@ -238,43 +278,60 @@ abstract class CellLayer extends PositionComponent
         isUpdateNeeded = false;
         return Future<void>.value();
       }
-      if (isRenewable) {
-        _updateTreePart(dt);
-        _updateLayerFuture = waitForComponents().whenComplete(() async {
-          if (isRemovedLayer) {
-            return;
-          }
-          game.processLifecycleEvents();
-          if (optimizeCollisions) {
-            collisionOptimizer.optimize();
+
+      switch (componentsStorageMode) {
+        case LayerComponentsStorageMode.defaultComponentTree:
+          _updateTreePart(dt);
+          _updateLayerFuture = waitForComponents().whenComplete(() async {
+            if (isRemovedLayer) {
+              return;
+            }
             game.processLifecycleEvents();
-          }
-          if (renderMode != LayerRenderMode.component) {
-            await compileToSingleLayer(children);
-          }
-          _pendingComponents.clear();
-          _updateLayerFuture = null;
-        });
-      } else {
-        final futures = List<Future>.from(_pendingComponents, growable: false);
-        _pendingComponents.clear();
-        _updateLayerFuture = Future.wait<void>(futures).whenComplete(() {
-          if (isRemovedLayer) {
-            return;
-          }
-          final result = compileToSingleLayer(nonRenewableComponents);
-          if (result is Future) {
-            result.whenComplete(
-              () {
-                nonRenewableComponents.clear();
-                _updateLayerFuture = null;
-              },
-            );
-          } else {
-            nonRenewableComponents.clear();
+            if (optimizeCollisions) {
+              collisionOptimizer.optimize();
+              game.processLifecycleEvents();
+            }
+            if (renderMode != LayerRenderMode.component) {
+              await compileToSingleLayer(children);
+            }
+            _pendingComponents.clear();
             _updateLayerFuture = null;
-          }
-        });
+          });
+          break;
+        case LayerComponentsStorageMode.internalLayerSet:
+          _updateLayerFuture = waitForComponents().whenComplete(() async {
+            if (isRemovedLayer) {
+              return;
+            }
+            if (renderMode != LayerRenderMode.component) {
+              await compileToSingleLayer(alternativeComponentSet);
+            }
+            _pendingComponents.clear();
+            _updateLayerFuture = null;
+          });
+          break;
+        case LayerComponentsStorageMode.removeAfterCompile:
+          final futures =
+              List<Future>.from(_pendingComponents, growable: false);
+          _pendingComponents.clear();
+          _updateLayerFuture = Future.wait<void>(futures).whenComplete(() {
+            if (isRemovedLayer) {
+              return;
+            }
+            final result = compileToSingleLayer(nonRenewableComponents);
+            if (result is Future) {
+              result.whenComplete(
+                () {
+                  nonRenewableComponents.clear();
+                  _updateLayerFuture = null;
+                },
+              );
+            } else {
+              nonRenewableComponents.clear();
+              _updateLayerFuture = null;
+            }
+          });
+          break;
       }
       isUpdateNeeded = false;
     }
@@ -393,4 +450,19 @@ abstract class CellLayer extends PositionComponent
     }
     super.isUpdateNeeded = update;
   }
+}
+
+mixin LayerChildComponent on Component {
+  CellLayer? _parentLayer;
+
+  @override
+  void removeFromParent() {
+    if (parent == null) {
+      _parentLayer?.remove(this);
+    } else {
+      super.removeFromParent();
+    }
+  }
+
+  CellLayer? get parentLayer => _parentLayer;
 }

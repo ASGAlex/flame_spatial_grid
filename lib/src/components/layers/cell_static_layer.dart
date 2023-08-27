@@ -13,7 +13,7 @@ class ImageCacheEntry {
 }
 
 class CellStaticLayer extends CellLayer {
-  CellStaticLayer(super.cell, {super.name, super.isRenewable}) {
+  CellStaticLayer(super.cell, {super.name, super.componentsStorageMode}) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
   }
@@ -37,8 +37,15 @@ class CellStaticLayer extends CellLayer {
   void render(Canvas canvas) {
     switch (renderMode) {
       case LayerRenderMode.component:
-        for (final c in children) {
-          c.renderTree(canvas);
+        if (componentsStorageMode ==
+            LayerComponentsStorageMode.internalLayerSet) {
+          for (final c in alternativeComponentSet) {
+            c.renderTree(canvas);
+          }
+        } else {
+          for (final c in children) {
+            c.renderTree(canvas);
+          }
         }
         break;
       case LayerRenderMode.picture:
@@ -106,8 +113,8 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> children) {
-    final renderingChildren = children.whereType<HasGridSupport>();
+  FutureOr compileToSingleLayer(Iterable<Component> components) {
+    final renderingChildren = components.whereType<HasGridSupport>();
     if (renderingChildren.isEmpty) {
       return null;
     }

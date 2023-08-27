@@ -280,7 +280,7 @@ abstract class TiledMapLoader {
         component: component,
         layerName: 'static-${context.layerInfo.name}',
         layerType: MapLayerType.static,
-        isRenewable: false,
+        componentsStorageMode: LayerComponentsStorageMode.removeAfterCompile,
         priority: priority,
         renderMode: LayerRenderMode.image,
       );
@@ -289,7 +289,7 @@ abstract class TiledMapLoader {
         component: component,
         layerName: 'animated-${context.layerInfo.name}',
         layerType: MapLayerType.animated,
-        isRenewable: false,
+        componentsStorageMode: LayerComponentsStorageMode.removeAfterCompile,
         priority: priority,
       );
     }

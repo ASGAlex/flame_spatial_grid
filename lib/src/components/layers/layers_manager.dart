@@ -82,7 +82,8 @@ class LayersManager {
     bool absolutePosition = true,
     bool optimizeCollisions = true,
     LayerRenderMode renderMode = LayerRenderMode.auto,
-    bool isRenewable = true,
+    LayerComponentsStorageMode componentsStorageMode =
+        LayerComponentsStorageMode.defaultComponentTree,
     int? priority,
   }) {
     Cell? cell;
@@ -100,8 +101,11 @@ class LayersManager {
     switch (layerType) {
       case MapLayerType.static:
         if (isNew) {
-          layer =
-              CellStaticLayer(cell, name: layerName, isRenewable: isRenewable);
+          layer = CellStaticLayer(
+            cell,
+            name: layerName,
+            componentsStorageMode: componentsStorageMode,
+          );
         }
         break;
       case MapLayerType.animated:
@@ -113,14 +117,16 @@ class LayersManager {
           layer = CellStaticAnimationLayer(
             cell,
             name: layerName,
-            isRenewable: isRenewable,
+            componentsStorageMode: componentsStorageMode,
           );
         }
         break;
       case MapLayerType.trail:
         if (isNew) {
-          layer =
-              CellTrailLayer(cell, name: layerName, isRenewable: isRenewable);
+          layer = CellTrailLayer(
+            cell,
+            name: layerName,
+          );
         }
         break;
     }

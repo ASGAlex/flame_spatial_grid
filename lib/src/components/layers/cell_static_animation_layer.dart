@@ -12,7 +12,8 @@ class StaticAnimationLayerCacheEntry {
 }
 
 class CellStaticAnimationLayer extends CellLayer {
-  CellStaticAnimationLayer(super.cell, {super.name, super.isRenewable});
+  CellStaticAnimationLayer(super.cell,
+      {super.name, super.componentsStorageMode});
 
   SpriteAnimationGlobalComponent? animationComponent;
 
@@ -32,8 +33,8 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> children) {
-    final animatedChildren = children.whereType<SpriteAnimationComponent>();
+  FutureOr compileToSingleLayer(Iterable<Component> components) {
+    final animatedChildren = components.whereType<SpriteAnimationComponent>();
     if (animatedChildren.isEmpty) {
       removeFromParent();
       return null;

@@ -22,8 +22,9 @@ class CellTrailLayer extends CellStaticLayer {
     super.cell, {
     super.name,
     FadeOutConfig? fadeOutConfig,
-    super.isRenewable,
-  }) {
+  }) : super(
+          componentsStorageMode: LayerComponentsStorageMode.removeAfterCompile,
+        ) {
     this.fadeOutConfig = fadeOutConfig ?? FadeOutConfig();
   }
 
@@ -51,9 +52,6 @@ class CellTrailLayer extends CellStaticLayer {
       _fadeOutDt * 1000000 >= fadeOutConfig.fadeOutTimeout.inMicroseconds;
 
   @override
-  bool get isRenewable => false;
-
-  @override
   void remove(Component component, {bool internalCall = false}) {}
 
   @override
@@ -65,7 +63,7 @@ class CellTrailLayer extends CellStaticLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> children) {
+  FutureOr compileToSingleLayer(Iterable<Component> components) {
     if (isRemovedLayer) {
       return null;
     }
