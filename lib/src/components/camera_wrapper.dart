@@ -26,6 +26,7 @@ class SpatialGridCameraWrapper extends PositionComponent
     cameraComponent.viewfinder.transform.scale.addListener(onAfterZoom);
     position.setFrom(cameraComponent.viewfinder.position);
     priority = 999999999;
+    checkOutOfCellBounds = false;
   }
 
   final CameraComponent cameraComponent;

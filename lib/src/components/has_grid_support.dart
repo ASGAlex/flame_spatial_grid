@@ -66,6 +66,7 @@ mixin HasGridSupport on PositionComponent {
 
   bool noVisibleChildren = false;
   bool noChildrenToUpdate = false;
+  bool checkOutOfCellBounds = true;
 
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
@@ -329,7 +330,9 @@ mixin HasGridSupport on PositionComponent {
       }
       currentCell = newCell;
     }
-    _updateOutOfCellBounds();
+    if (checkOutOfCellBounds) {
+      _updateOutOfCellBounds();
+    }
   }
 
   Cell? _previousOutOfBoundsCell;

@@ -75,6 +75,7 @@ abstract class CellLayer extends PositionComponent
         ) {
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
+    checkOutOfCellBounds = false;
   }
 
   bool optimizeCollisions = false;
