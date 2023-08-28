@@ -108,13 +108,12 @@ class CellStaticLayer extends CellLayer {
     }
     layerImage = cache.image;
     cache.usageCount++;
-    print('${name}: ${cache.usageCount}');
     return true;
   }
 
   @override
   FutureOr compileToSingleLayer(Iterable<Component> components) {
-    final renderingChildren = components.whereType<HasGridSupport>();
+    final renderingChildren = components.whereType<PositionComponent>();
     if (renderingChildren.isEmpty) {
       return null;
     }
