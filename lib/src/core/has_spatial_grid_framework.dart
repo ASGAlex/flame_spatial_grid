@@ -22,7 +22,7 @@ enum InitializationStepStage {
 /// If your game could be zoomed, please call [onAfterZoom] after every zoom
 /// event.
 mixin HasSpatialGridFramework on FlameGame
-    implements HasCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
+    implements HasCollisionDetection<SpatialGridBroadphase> {
   late SpatialGridCollisionDetection _collisionDetection;
 
   /// The spatial grid instance for this game, contains at least one cell.
@@ -349,7 +349,7 @@ mixin HasSpatialGridFramework on FlameGame
 
   @override
   set collisionDetection(
-    CollisionDetection<ShapeHitbox, SpatialGridBroadphase<ShapeHitbox>> cd,
+    CollisionDetection<ShapeHitbox, SpatialGridBroadphase> cd,
   ) {
     if (cd is! SpatialGridCollisionDetection) {
       throw 'Must be SpatialGridCollisionDetection!';

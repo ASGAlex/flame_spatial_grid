@@ -8,13 +8,13 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 class SpatialGridCollisionDetection
-    extends StandardCollisionDetection<SpatialGridBroadphase<ShapeHitbox>> {
+    extends StandardCollisionDetection<SpatialGridBroadphase> {
   SpatialGridCollisionDetection({
     required ExternalBroadphaseCheck onComponentExtendedTypeCheck,
     required PureTypeCheck pureTypeCheck,
     required this.spatialGrid,
   }) : super(
-          broadphase: SpatialGridBroadphase<ShapeHitbox>(
+          broadphase: SpatialGridBroadphase(
             spatialGrid: spatialGrid,
             extendedTypeCheck: onComponentExtendedTypeCheck,
             globalPureTypeCheck: pureTypeCheck,
@@ -139,7 +139,8 @@ class SpatialGridCollisionDetection
     }
     _scheduledUpdateAfterTransform.forEach(_updateTransform);
     _scheduledUpdateAfterTransform.clear();
-    final allPotentials = broadphase.query();
+
+    final allPotentials = broadphase.query().toList();
     final repeatBroadphaseForItems = _runForPotentials(allPotentials);
     if (repeatBroadphaseForItems.isNotEmpty) {
       final additionalPotentials =
@@ -147,16 +148,17 @@ class SpatialGridCollisionDetection
       _runForPotentials(additionalPotentials);
       allPotentials.addAll(additionalPotentials);
     }
+
+    final allHashes = Set.unmodifiable(allPotentials.map((p) => p.hash));
     // Handles callbacks for an ended collision that the broadphase didn't
-    // reports as a potential collision anymore.
-    _lastPotentials.difference(allPotentials).forEach((tuple) {
-      if (tuple.a.collidingWith(tuple.b)) {
-        handleCollisionEnd(tuple.a, tuple.b);
+    // report as a potential collision anymore.
+    for (final prospect in _lastPotentials) {
+      if (!allHashes.contains(prospect.hash) &&
+          prospect.a.collidingWith(prospect.b)) {
+        handleCollisionEnd(prospect.a, prospect.b);
       }
-    });
-    _lastPotentials
-      ..clear()
-      ..addAll(allPotentials);
+    }
+    _updateLastPotentials(allPotentials);
   }
 
   void _updateTransform(ShapeHitbox item) {
@@ -178,10 +180,29 @@ class SpatialGridCollisionDetection
     }
   }
 
-  HashSet<CollisionProspect<ShapeHitbox>> _runForPotentials(
-    HashSet<CollisionProspect<ShapeHitbox>> potentials,
+  final _lastPotentialsPool = <CollisionProspect<ShapeHitbox>>[];
+
+  void _updateLastPotentials(
+    Iterable<CollisionProspect<ShapeHitbox>> potentials,
   ) {
-    final repeatBroadphaseForItems = HashSet<CollisionProspect<ShapeHitbox>>();
+    _lastPotentials.clear();
+    for (final potential in potentials) {
+      final CollisionProspect<ShapeHitbox> lastPotential;
+      if (_lastPotentialsPool.length > _lastPotentials.length) {
+        lastPotential = _lastPotentialsPool[_lastPotentials.length]
+          ..setFrom(potential);
+      } else {
+        lastPotential = potential.clone();
+        _lastPotentialsPool.add(lastPotential);
+      }
+      _lastPotentials.add(lastPotential);
+    }
+  }
+
+  Iterable<CollisionProspect<ShapeHitbox>> _runForPotentials(
+    Iterable<CollisionProspect<ShapeHitbox>> potentials,
+  ) {
+    final repeatBroadphaseForItems = <CollisionProspect<ShapeHitbox>>[];
     for (final tuple in potentials) {
       final itemA = tuple.a;
       final itemB = tuple.b;

@@ -28,7 +28,7 @@ mixin DebuggerPause {}
 ///
 /// See [HasQuadTreeCollisionDetection.initializeCollisionDetection] for a
 /// detailed description of its initialization parameters.
-class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
+class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   SpatialGridBroadphase({
     required this.spatialGrid,
     required this.extendedTypeCheck,
@@ -41,8 +41,13 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
 
   final SpatialGrid spatialGrid;
 
+  final _prospectPool = ProspectPool<ShapeHitbox>();
+  var _prospectPoolIndex = 0;
+  final _dummyHitbox = DummyHitbox();
+  final _potentials = <int, CollisionProspect<ShapeHitbox>>{};
+
   @protected
-  final activeCollisions = HashSet<T>();
+  final activeCollisions = HashSet<ShapeHitbox>();
 
   @internal
   final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
@@ -92,7 +97,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           list.add(operation.hitbox);
         } else {
           if (operation.active) {
-            activeCollisions.add(operation.hitbox as T);
+            activeCollisions.add(operation.hitbox);
             var list = activeCollisionsByCell[cell];
             list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
             list.add(operation.hitbox);
@@ -114,7 +119,7 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
           }
         } else {
           if (operation.active) {
-            activeCollisions.remove(operation.hitbox as T);
+            activeCollisions.remove(operation.hitbox);
             final cellCollisions = activeCollisionsByCell[cell];
             if (cellCollisions != null) {
               cellCollisions.remove(operation.hitbox);
@@ -137,10 +142,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
     scheduledOperations.clear();
   }
 
-  HashSet<CollisionProspect<T>> querySubset(
-    HashSet<CollisionProspect<ShapeHitbox>> potentials,
+  Iterable<CollisionProspect<ShapeHitbox>> querySubset(
+    Iterable<CollisionProspect<ShapeHitbox>> potentials,
   ) {
-    final result = HashSet<CollisionProspect<T>>();
+    _potentials.clear();
     for (final tuple in potentials) {
       RectangleHitbox componentHitbox;
       GroupHitbox groupBox;
@@ -166,35 +171,34 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      _compareItemWithPotentials(componentHitbox, hitboxes, result, null, true);
+      _compareItemWithPotentials(componentHitbox, hitboxes, null, true);
     }
 
-    return result;
+    return _potentials.values;
   }
 
   @override
-  HashSet<CollisionProspect<T>> query() {
-    final result = HashSet<CollisionProspect<T>>();
+  Iterable<CollisionProspect<ShapeHitbox>> query() {
+    _potentials.clear();
+    _prospectPoolIndex = 0;
     final activeChecked = HashMap<ShapeHitbox, HashSet<ShapeHitbox>>();
     for (final activeItem in activeCollisions) {
-      final asShapeItem = activeItem as ShapeHitbox;
-      final withGridSupport = asShapeItem.parentWithGridSupport;
+      final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
-          asShapeItem.isRemoving ||
-          asShapeItem.parent == null) {
+          activeItem.isRemoving ||
+          activeItem.parent == null) {
         continue;
       }
 
       if (activeItem is BoundingHitbox) {
-        final boundingHitbox = activeItem as BoundingHitbox;
-        if (boundingHitbox.collisionCheckFrequency != -1) {
-          if (!hasCollisionsLastTime.contains(asShapeItem)) {
-            if (boundingHitbox.collisionCheckCounter <
-                boundingHitbox.collisionCheckFrequency) {
-              boundingHitbox.collisionCheckCounter += dt;
+        if (activeItem.collisionCheckFrequency != -1) {
+          if (!hasCollisionsLastTime.contains(activeItem)) {
+            if (activeItem.collisionCheckCounter <
+                activeItem.collisionCheckFrequency) {
+              activeItem.collisionCheckCounter += dt;
               continue;
             } else {
-              boundingHitbox.collisionCheckCounter = 0;
+              activeItem.collisionCheckCounter = 0;
             }
           }
         }
@@ -216,30 +220,27 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         final items = passiveCollisionsByCell[cell];
         if (items != null && items.isNotEmpty) {
           _compareItemWithPotentials(
-            asShapeItem,
+            activeItem,
             items,
-            result,
           );
         }
 
         final itemsActive = activeCollisionsByCell[cell];
         if (itemsActive != null && itemsActive.isNotEmpty) {
           _compareItemWithPotentials(
-            asShapeItem,
+            activeItem,
             itemsActive,
-            result,
             activeChecked,
           );
         }
       }
     }
-    return result;
+    return _potentials.values;
   }
 
   void _compareItemWithPotentials(
     ShapeHitbox activeItem,
-    Set<ShapeHitbox> potentials,
-    HashSet<CollisionProspect<T>> result, [
+    Set<ShapeHitbox> potentials, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
     bool excludePureTypeCheck = false,
   ]) {
@@ -285,7 +286,13 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
         continue;
       }
 
-      result.add(CollisionProspect(activeItem as T, potential as T));
+      _prospectPoolIndex++;
+      final CollisionProspect<ShapeHitbox> prospect;
+      if (_prospectPool.length <= _prospectPoolIndex) {
+        _prospectPool.expand(_dummyHitbox);
+      }
+      prospect = _prospectPool[_prospectPoolIndex]..set(activeItem, potential);
+      _potentials[prospect.hash] = prospect;
     }
   }
 
@@ -580,12 +587,12 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   @override
-  void remove(T item) {
+  void remove(ShapeHitbox item) {
     final checkCache = broadphaseCheckCache[item];
     if (checkCache != null) {
       for (final hitbox in checkCache.keys) {
         if (hitbox is BoundingHitbox) {
-          hitbox.removeBroadphaseCheckItem(item as ShapeHitbox);
+          hitbox.removeBroadphaseCheckItem(item);
         } else {
           broadphaseCheckCache[hitbox]?.remove(item);
         }
@@ -673,10 +680,10 @@ class SpatialGridBroadphase<T extends Hitbox<T>> extends Broadphase<T> {
   }
 
   @override
-  void add(T item) => throw UnimplementedError();
+  void add(ShapeHitbox item) => throw UnimplementedError();
 
   @override
-  List<T> get items => throw UnimplementedError();
+  List<ShapeHitbox> get items => throw UnimplementedError();
 
   void dispose() {
     scheduledOperations.clear();
@@ -750,3 +757,5 @@ class ScheduledHitboxOperation {
   final ShapeHitbox hitbox;
   final Cell cell;
 }
+
+class DummyHitbox extends BoundingHitbox {}
