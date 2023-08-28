@@ -411,14 +411,25 @@ mixin HasSpatialGridFramework on FlameGame
 
   bool get isSpatialGridDebugEnabled => _isSpatialGridDebugEnabled;
 
+  var _gameResizedBeforeLoad = false;
+  var _gameResizedAfterLoad = false;
+
   @override
   void onGameResize(Vector2 gameSize) {
-    if (doOnGameResizeForAllComponents || !_gameInitializationFinished) {
+    if (!_gameResizedBeforeLoad) {
+      super.onGameResize(gameSize);
+      _gameResizedBeforeLoad = true;
+    }
+    if (doOnGameResizeForAllComponents) {
       super.onGameResize(gameSize);
     } else {
       size.setFrom(gameSize);
     }
     if (_gameInitializationFinished && trackWindowSize) {
+      if (!_gameResizedAfterLoad) {
+        super.onGameResize(gameSize);
+        _gameResizedAfterLoad = true;
+      }
       setRadiusByWindowDimensions();
       spatialGrid.updateCellsStateByRadius(fullScan: true);
     }
