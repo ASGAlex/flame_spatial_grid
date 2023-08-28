@@ -435,8 +435,7 @@ mixin HasSpatialGridFramework on FlameGame
     }
   }
 
-  @override
-  void onRemove() {
+  void dispose() {
     isSpatialGridDebugEnabled = false;
     _spatialGridDebug = null;
     maps.clear();
@@ -449,7 +448,6 @@ mixin HasSpatialGridFramework on FlameGame
     }
     collisionDetection.dispose();
     _clearStaticVariables();
-    super.onRemove();
   }
 
   bool pureTypeCheck(Type activeItemType, Type potentialItemType) => true;
