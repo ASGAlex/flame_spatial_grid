@@ -217,9 +217,7 @@ class Cell {
     if (oldValue == value) {
       return;
     }
-    if (value == CellState.suspended) {
-      beingSuspendedTimeMicroseconds = 0;
-    }
+    beingSuspendedTimeMicroseconds = 0;
 
     _state = value;
     if (isCellBuildFinished) {
