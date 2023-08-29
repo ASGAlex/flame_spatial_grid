@@ -87,12 +87,34 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
   bool cacheAbsoluteScaledSize = false;
   bool cacheAbsoluteAngle = false;
+  bool groupAbsoluteCacheByType = false;
+
+  static final _absoluteScaledSizeCacheForType = <Type, Vector2>{};
+  static final _absoluteAngleCacheForType = <Type, double>{};
+
+  static void resetAbsoluteSizeAngleCache() {
+    _absoluteAngleCacheForType.clear();
+    _absoluteScaledSizeCacheForType.clear();
+  }
 
   @override
   Vector2 get absoluteScaledSize {
     if (cacheAbsoluteScaledSize) {
       if (_absoluteScaledSizeCache.isZero()) {
-        _absoluteScaledSizeCache.setFrom(super.absoluteScaledSize);
+        Vector2? cache;
+        var absoluteCacheNotFound = true;
+        if (groupAbsoluteCacheByType) {
+          cache = _absoluteScaledSizeCacheForType[runtimeType];
+          absoluteCacheNotFound = cache != null;
+        } else {
+          cache = super.absoluteScaledSize;
+        }
+        _absoluteScaledSizeCache.setFrom(cache ?? super.absoluteScaledSize);
+
+        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
+          _absoluteScaledSizeCacheForType[runtimeType] =
+              _absoluteScaledSizeCache.clone();
+        }
       }
       return _absoluteScaledSizeCache;
     } else {
@@ -103,7 +125,20 @@ class BoundingHitbox extends RectangleHitboxOptimized
   @override
   double get absoluteAngle {
     if (cacheAbsoluteAngle) {
-      _absoluteAngleCache ??= super.absoluteAngle;
+      if (_absoluteAngleCache == null) {
+        double? cache;
+        var absoluteCacheNotFound = true;
+        if (groupAbsoluteCacheByType) {
+          cache = _absoluteAngleCacheForType[runtimeType];
+          absoluteCacheNotFound = cache != null;
+        } else {
+          cache = super.absoluteAngle;
+        }
+        _absoluteAngleCache = cache ?? super.absoluteAngle;
+        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
+          _absoluteAngleCacheForType[runtimeType] = _absoluteAngleCache!;
+        }
+      }
       return _absoluteAngleCache!;
     } else {
       return super.absoluteAngle;

@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
+import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
@@ -67,6 +68,7 @@ mixin HasGridSupport on PositionComponent {
   bool noVisibleChildren = false;
   bool noChildrenToUpdate = false;
   bool checkOutOfCellBounds = true;
+  bool needResize = false;
 
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
@@ -158,11 +160,17 @@ mixin HasGridSupport on PositionComponent {
   SpatialGrid? spatialGrid;
 
   HasSpatialGridFramework get sgGame {
-    final game = spatialGrid?.game;
+    Game? game = spatialGrid?.game;
     if (game == null) {
-      throw 'Spatial grid did not initialized correctly';
+      game = findGame();
+      if (game is HasSpatialGridFramework) {
+        spatialGrid = game.spatialGrid;
+      } else {
+        throw 'Spatial grid did not initialized correctly';
+      }
+      game = spatialGrid?.game;
     }
-    return game;
+    return game! as HasSpatialGridFramework;
   }
 
   /// If this component is that component which all spatial grid system keeps
@@ -203,6 +211,14 @@ mixin HasGridSupport on PositionComponent {
   }
 
   void onSpatialGridInitialized() {}
+
+  @override
+  void onGameResize(Vector2 size) {
+    if (sgGame.doOnGameResizeForAllComponents || needResize) {
+      super.onGameResize(size);
+      needResize = false;
+    }
+  }
 
   void onCalculateDistance(
     Component other,

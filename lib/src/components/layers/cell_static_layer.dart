@@ -55,7 +55,11 @@ class CellStaticLayer extends CellLayer {
         break;
       case LayerRenderMode.image:
         if (layerImage != null) {
-          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+          if (layerImage!.debugDisposed) {
+            print('disposed');
+          } else {
+            canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+          }
         }
         break;
       case LayerRenderMode.auto:
@@ -169,14 +173,14 @@ class CellStaticLayer extends CellLayer {
       if (cachedImage != null) {
         cachedImage.usageCount--;
         if (cachedImage.usageCount <= 0) {
-          cachedImage.image.dispose();
+          // cachedImage.image.dispose();
           _compiledLayersCache.remove(cacheKey.key);
         }
       } else {
-        layerImage?.dispose();
+        // layerImage?.dispose();
         layerImage = null;
       }
-      layerPicture?.dispose();
+      // layerPicture?.dispose();
       layerPicture = null;
 
       // ignore: avoid_catches_without_on_clauses, empty_catches
