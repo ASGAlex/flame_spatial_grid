@@ -147,7 +147,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   ) {
     _potentials.clear();
     for (final tuple in potentials) {
-      RectangleHitbox componentHitbox;
+      ShapeHitbox componentHitbox;
       GroupHitbox groupBox;
 
       if (tuple.a is GroupHitbox && tuple.b is GroupHitbox) {
@@ -156,10 +156,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
       if (tuple.a is GroupHitbox) {
         groupBox = tuple.a as GroupHitbox;
-        componentHitbox = tuple.b as RectangleHitbox;
+        componentHitbox = tuple.b;
       } else {
         groupBox = tuple.b as GroupHitbox;
-        componentHitbox = tuple.a as RectangleHitbox;
+        componentHitbox = tuple.a;
       }
 
       final cell = groupBox.parentWithGridSupport?.currentCell;

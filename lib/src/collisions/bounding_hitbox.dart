@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/rectangle_hitbox_optimized.dart';
 import 'package:meta/meta.dart';
 
 typedef BoundingHitboxFactory = BoundingHitbox Function();
@@ -24,7 +25,7 @@ typedef BoundingHitboxFactory = BoundingHitbox Function();
 ///
 /// [SpatialGridRectangleHitbox] and [SpatialGridShapeHitbox] extensions
 /// provides same functionality for pure Flame hitboxes
-class BoundingHitbox extends RectangleHitbox
+class BoundingHitbox extends RectangleHitboxOptimized
     with HasGameRef<HasSpatialGridFramework> {
   BoundingHitbox({
     super.position,

@@ -178,7 +178,7 @@ mixin HasGridSupport on PositionComponent {
 
   BoundingHitboxFactory get boundingHitboxFactory => () => BoundingHitbox(
         position: Vector2.zero(),
-        size: Vector2.zero(),
+        size: size,
         parentWithGridSupport: this,
       );
 

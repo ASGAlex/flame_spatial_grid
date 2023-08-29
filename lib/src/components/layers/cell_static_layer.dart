@@ -137,7 +137,7 @@ class CellStaticLayer extends CellLayer {
         );
       }
       final newPicture = recorder.endRecording();
-      layerImage?.dispose();
+      // layerImage?.dispose();
       layerImage = newPicture.toImageSync(
         layerCalculatedSize.width.toInt(),
         layerCalculatedSize.height.toInt(),
