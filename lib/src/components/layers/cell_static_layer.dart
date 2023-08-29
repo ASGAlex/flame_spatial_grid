@@ -55,11 +55,7 @@ class CellStaticLayer extends CellLayer {
         break;
       case LayerRenderMode.image:
         if (layerImage != null) {
-          if (layerImage!.debugDisposed) {
-            print('disposed');
-          } else {
-            canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
-          }
+          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
         }
         break;
       case LayerRenderMode.auto:
