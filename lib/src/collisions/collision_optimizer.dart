@@ -26,6 +26,8 @@ class CollisionOptimizer {
 
   HasSpatialGridFramework get game => parentLayer.game;
 
+  List<HasGridSupport> _componentsForOptimisation = [];
+
   void optimize() {
     final cell = clear();
     if (cell == null) {
@@ -36,7 +38,9 @@ class CollisionOptimizer {
         game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
     final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
 
-    for (final child in parentLayer.children.query<HasGridSupport>()) {
+    _componentsForOptimisation =
+        parentLayer.children.query<HasGridSupport>().toList(growable: false);
+    for (final child in _componentsForOptimisation) {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
@@ -44,32 +48,32 @@ class CollisionOptimizer {
       }
     }
 
-    for (final child in parentLayer.children.query<HasGridSupport>()) {
+    for (final child in _componentsForOptimisation) {
       if (child.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }
       if (_alreadyProcessed.contains(child.boundingBox)) {
         continue;
       }
-      final hitboxes = _findOverlappingRects(child.boundingBox).toList();
-      if (hitboxes.length > 1) {
-        hitboxes.sort((a, b) {
-          if (a.aabbCenter == b.aabbCenter) {
-            return 0;
-          }
-          if (a.aabbCenter.y < b.aabbCenter.y) {
-            return -1;
-          } else if (a.aabbCenter.y == b.aabbCenter.y) {
-            return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
-          } else {
-            return 1;
-          }
-        });
-
-        if (hitboxes.length > maximumItemsInGroup) {
+      final hitboxesUnsorted = _findOverlappingRects(child.boundingBox);
+      if (hitboxesUnsorted.length > 1) {
+        if (hitboxesUnsorted.length > maximumItemsInGroup) {
+          final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
+          hitboxesSorted.sort((a, b) {
+            if (a.aabbCenter == b.aabbCenter) {
+              return 0;
+            }
+            if (a.aabbCenter.y < b.aabbCenter.y) {
+              return -1;
+            } else if (a.aabbCenter.y == b.aabbCenter.y) {
+              return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
+            } else {
+              return 1;
+            }
+          });
           var totalInChunk = 0;
           var chunk = <ShapeHitbox>[];
-          for (final hbInChunk in hitboxes) {
+          for (final hbInChunk in hitboxesSorted) {
             if (totalInChunk == maximumItemsInGroup) {
               final optimized = OptimizedCollisionList(
                 <ShapeHitbox>{}..addAll(chunk),
@@ -94,19 +98,23 @@ class CollisionOptimizer {
           }
         } else {
           final optimized = OptimizedCollisionList(
-            hitboxes.toSet(),
+            hitboxesUnsorted,
             parentLayer,
           );
           collisionsListByGroup[optimized.boundingBox] = optimized;
           _createdCollisionLists.add(optimized);
         }
-        for (final hb in hitboxes) {
+        for (final hb in hitboxesUnsorted) {
           hb.collisionType = CollisionType.inactive;
           hb.optimized = true;
+        }
+        if (hitboxesUnsorted.length >= _componentsForOptimisation.length) {
+          break;
         }
       }
     }
 
+    _componentsForOptimisation = [];
     _alreadyProcessed.clear();
   }
 
@@ -119,7 +127,7 @@ class CollisionOptimizer {
     final hitboxes = LinkedHashSet<BoundingHitbox>();
     hitboxes.add(hitbox);
     exception.add(hitbox);
-    for (final otherChild in parentLayer.children.query<HasGridSupport>()) {
+    for (final otherChild in _componentsForOptimisation) {
       if (otherChild.boundingBox.collisionType == CollisionType.inactive) {
         continue;
       }
@@ -155,6 +163,7 @@ class CollisionOptimizer {
       collisionsListByGroup.remove(optimized.boundingBox);
       optimized.clear();
     }
+    _componentsForOptimisation = [];
     _createdCollisionLists.clear();
     _alreadyProcessed.clear();
     return cell;
@@ -181,13 +190,13 @@ extension RectSpecialOverlap on Rect {
 }
 
 class OptimizedCollisionList {
-  OptimizedCollisionList(Set<ShapeHitbox> hitboxes, this.parentLayer) {
-    _hitboxes = hitboxes;
+  OptimizedCollisionList(Iterable<ShapeHitbox> hitboxes, this.parentLayer) {
+    _hitboxes.addAll(hitboxes);
     _updateBoundingBox();
   }
 
-  Set<ShapeHitbox> get hitboxes => _hitboxes;
-  var _hitboxes = <ShapeHitbox>{};
+  List<ShapeHitbox> get hitboxes => _hitboxes;
+  final _hitboxes = <ShapeHitbox>[];
   var _boundingBox = GroupHitbox(tag: '');
   final CellLayer parentLayer;
 

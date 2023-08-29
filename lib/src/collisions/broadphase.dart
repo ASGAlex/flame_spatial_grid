@@ -240,7 +240,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   void _compareItemWithPotentials(
     ShapeHitbox activeItem,
-    Set<ShapeHitbox> potentials, [
+    Iterable<ShapeHitbox> potentials, [
     HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
     bool excludePureTypeCheck = false,
   ]) {
