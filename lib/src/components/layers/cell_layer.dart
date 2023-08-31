@@ -24,6 +24,12 @@ enum LayerComponentsStorageMode {
   removeAfterCompile,
 }
 
+mixin LayerCacheKeyProvider on PositionComponent {
+  String getComponentUniqueString() => '(${position.x},${position.y})'
+      '${this is TileComponent ? (this as TileComponent).tileCache.tile.type ?? runtimeType : runtimeType}'
+      '(${size.x},${size.y})';
+}
+
 class LayerCacheKey {
   final _data = <String>{};
 
@@ -39,10 +45,15 @@ class LayerCacheKey {
     _data.clear();
   }
 
-  String _componentToString(PositionComponent component) =>
-      '(${component.position.x},${component.position.y})'
-      '${component is TileComponent ? component.tileCache.tile.type ?? component.runtimeType : component.runtimeType}'
-      '(${component.size.x},${component.size.y})';
+  String _componentToString(PositionComponent component) {
+    if (component is LayerCacheKeyProvider) {
+      return component.getComponentUniqueString();
+    } else {
+      return '(${component.position.x},${component.position.y})'
+          '${component is TileComponent ? component.tileCache.tile.type ?? component.runtimeType : component.runtimeType}'
+          '(${component.size.x},${component.size.y})';
+    }
+  }
 
   int? _key;
 
