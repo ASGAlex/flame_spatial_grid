@@ -72,8 +72,9 @@ class LayersManager {
   /// change [absolutePosition] to false.
   /// If you layer does not contain any collideable components, it is
   /// recommended to switch [optimizeCollisions] parameter to 'false'.
-  /// Change [isRenewable] to "false" if you are sure that components will
-  /// newer be changed, added or removed to the layer.
+  /// Change [componentsStorageMode] to
+  /// [LayerComponentsStorageMode.removeAfterCompile] if you are sure that
+  /// components will newer be changed, added or removed to the layer.
   CellLayer addComponent({
     required PositionComponent component,
     required MapLayerType layerType,

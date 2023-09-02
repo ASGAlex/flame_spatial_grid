@@ -169,3 +169,21 @@ Future<void> onBuildWater(CellBuilderContext context) async {
 
 So, you can add or remove tags in the `groupCollisionsTags` list at any time. This will allow you to
 do 25 fewer checks on every collision with `GroupHitbox` 
+
+## Component storage modes
+
+In some causes it does not worth to store layer's components in default component's tree of 
+FlameGame. For example: 
+1. If layer will be generated only once and will not be changed forever. 
+2. If layer could be updated but we do not need to call `update` function of layer's children
+
+The `LayerComponentsStorageMode` enum and `componentsStorageMode` parameter of 
+`LayersManager.addComponent` function allows you to control this behavior. By default every layer's
+child will be pushed into FlameGame's component tree. Alternatively, you can save it into 
+internal layer's storage and adding\removing components into layer will be faster in this case. 
+Finally, you might use `LayerComponentsStorageMode.removeAfterCompile` option which means that all 
+added components will be removed after compilation of layer's `Image`.
+
+Keep in mind, that only default `LayerComponentsStorageMode.defaultComponentTree` option keeps 
+layer's components interactable, all other options will disable collision behavior for components,
+in fact you can use them only for rendering image. 
