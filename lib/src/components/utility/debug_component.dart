@@ -10,6 +10,7 @@ class SpatialGridDebugComponent extends PositionComponent
   SpatialGridDebugComponent(this.spatialGrid) : super(priority: 10000);
 
   final SpatialGrid spatialGrid;
+  bool drawOutOfBoundsCounter = false;
 
   @override
   void updateTree(double dt) {}
@@ -62,7 +63,7 @@ class SpatialGridDebugComponent extends PositionComponent
     final border = getPaint('border');
     for (final element in spatialGrid.cells.entries) {
       if (element.value.state == CellState.active) {
-        if (element.value.hasOutOfBoundsComponents) {
+        if (element.value.hasOutOfBoundsComponents && drawOutOfBoundsCounter) {
           canvas.drawRect(element.key, broken);
           textPaintOK.render(
             canvas,
@@ -73,7 +74,7 @@ class SpatialGridDebugComponent extends PositionComponent
           canvas.drawRect(element.key, fill);
         }
       } else if (element.value.state == CellState.inactive) {
-        if (element.value.hasOutOfBoundsComponents) {
+        if (element.value.hasOutOfBoundsComponents && drawOutOfBoundsCounter) {
           canvas.drawRect(element.key, broken);
           textPaintOK.render(
             canvas,
@@ -84,7 +85,7 @@ class SpatialGridDebugComponent extends PositionComponent
           canvas.drawRect(element.key, inactive);
         }
       } else {
-        if (element.value.hasOutOfBoundsComponents) {
+        if (element.value.hasOutOfBoundsComponents && drawOutOfBoundsCounter) {
           canvas.drawRect(element.key, broken);
           textPaintOK.render(
             canvas,

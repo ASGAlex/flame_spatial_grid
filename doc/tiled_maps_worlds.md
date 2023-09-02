@@ -10,8 +10,13 @@ With this Framework loading multiple maps into single game area become easy. All
 "world" would be rendered as one big map, but the Framework's resource management system will
 preserve system resources for you.
 
-For now, every map from a "world" file would be processed. But I have the plan to make a map's
-loading also depend on a player's position, so this feature will come in the future.
+By default, the Framework loads full map, on which the tracked component stays now - to prevent 
+loading freezes during intensive game process. This behavior can be disabled by `loadWholeMap` 
+para meter of `WorldLoader`.
+
+The Framework takes care about resources and it automatically builds only current map, and also 
+neighbour maps, if exists. The `SpatialGrid` class is re-used to perform that calculations. 
+`loadWholeMap` option disables this behavior, if set to `false`;
 
 ## Usage
 

@@ -1,12 +1,11 @@
 # Overview
 
-This library is a framework and set of tools for working with infinitive game fields, loading
+This library is a framework and set of tools for working with infinite game fields, loading
 infinite maps for one game level, creating an infinite count of game objects and active game players
 and NPCs - as much as possible.
 
 The framework is fully compatible with Flame and does not contain any strict requirements for the
-game
-structure. Even existing games could be migrated to this framework if necessary.
+game structure. Even existing games could be migrated to this framework if necessary.
 
 This is still in beta. API and whole architecture might be changed at any time, including breaking 
 changes. 
@@ -18,14 +17,12 @@ glance.
 So here is a list of only top-level features:
 
 - __Building endless game levels__ without the need to change the screen for rendering another map.
-  System
-  gives you the ability to create big open worlds with seamless loading of new maps while a player
-  approaches to them.
+  System gives you the ability to create big open worlds with seamless loading of new maps while a 
+  player approaches to them.
 - __Build game levels with a destructible environment.__ Every Tiled tile could be converted into
   separate game component and handle interactions with other game elements individually
 - __Building procedural-generated__ pieces of a map (or whole maps) on the fly, as the player
-  approaches
-  to them.
+  approaches to them.
 - __Wise resource management__: the system does not eat resources greedily, it takes care of proper
   allocation and de-allocation so you can enjoy your game even in a browser or weak mobile phone.
 - __New visual effects__: lean resource management system allows to create trails for many players
@@ -43,16 +40,15 @@ chunks from memory.
 ## Usage: minimal setup
 
 1. Add `HasSpatialGridFramework` mixin into you game
-2. Add `HasGridSupport` mixin to every your game component
+2. Add `HasGridSupport` mixin to every game component
 3. Call `initializeSpatialGrid` at your game's `onLoad` function before adding any component into
    game.
-4. Call `gameInitializationDone` when all components are added and the game should start.
-5. Enjoy!
+4. Enjoy!
 
 See detailed "minimal start" tutorial at [Getting Started](doc/getting_started.md) section.
 
 See [game.dart](example/lib/game.dart) for working code example
-Check out our working demo at https://asgalex.github.io/flame_spatial_grid/
+Check out working demo at https://asgalex.github.io/flame_spatial_grid/
 
 ## Future usage instructions
 

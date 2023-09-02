@@ -784,7 +784,11 @@ class Npc extends Player with DebuggerPause {
       _createNewVector();
     }
 
-    final dtSpeed = _lastDtSpeed = speed * dt;
+    final dtSpeed = speed * dt;
+    if (_lastDtSpeed - dtSpeed > 0.1) {
+      boundingBox.onParentSpeedChange();
+    }
+    _lastDtSpeed = dtSpeed;
     final newStep = vector * dtSpeed;
     if (!vector.isZero()) {
       position.add(newStep);

@@ -51,6 +51,38 @@ priority: 2, // Layer's priority
 
 As you can see, everything is the same, only `layerType` was changed.
 
+## Re-using layers images
+
+There are many cases when two layers can generate same images. Simplest example - a ground pattern
+of game map.
+To avoid creating a lot of similar `Image` instances, every `CellLayer` class generates a key using
+significant tile's parameters. By default it is component's position, component's size and
+component's `runtimeType` or tile type from tiled data.
+If your component have different set of parameters, which could affect rendered image, you might
+want to override component's string used for key generation by adding `LayerCacheKeyProvider` mixin
+and re-implementing `getComponentUniqueString` function.
+It is also recommended to keep `cellSize` value multiple of map's tile size. For example, with tile
+size 8 and `cellSize` 100 there will be much less reused `Image` instances than with `cellSize` 128.
+
+## Layers rendering mode
+
+Layer can be rendered by several ways:
+
+1. Just using `renderTree`, as ordinary component
+2. Call `renderTree` once and save result into `Picture`
+3. Do pt.2 and then rasterize `Picture` to `Image`
+4. Choose between 2 and 3 automatically.
+
+You can control rendering method using `LayerRenderMode` enum and `CellLayer`'s `renderMode`
+parameter. The `LayersManager` also have such option in `addComponent`.
+
+The last variant is most complex. In this mode every layer is rendered into `Picture`. And next 5
+seconds the layer is rendered from Picture. If no re-compiling layer event did happen, the `Picture`
+will be rasterized to `Image` and `Image` will be used for rendering till next layer recompilation.
+
+Such approach is useful, when layer is not permanent and sometimes can be updated very often. Such
+approach helps to skip expensive image rasterization step when layer is updated too intensively.
+
 ## Collisions optimizing
 
 Every layer offers a way of collision optimization. It's enabled by default. To disable this, you
@@ -66,7 +98,9 @@ Items count in one group is limited to 25 items by default. This limitation
 allows to avoid iterating hundreds of grouped items in a moment of collision and prevents heavy
 performance drops. Use `collisionOptimizerGroupLimit` parameter of `initializeSpatialGrid` to change
 default limit to your value, or change `HasSpatialGridFramework.collisionOptimizerDefaultGroupLimit`
-directly anywhere in application's runtime.
+directly anywhere in application's runtime. You also can change this value for a layer individually
+by changing `CellLayer.collisionOptimizer.maximumItemsInGroup`, but all global changes will be
+ignored for the Layer then.
 
 If you enable debug mode either in `initializeSpatialGrid` or using the `isSpatialGridDebugEnabled`
 setter, you will see blue lines in place of group hitboxes.
@@ -76,7 +110,7 @@ space. This is an attempt to obtain the QuadTree approach's advantages without i
 
 ## Collision approximation
 
-In a game, you might have a situation where some of the game objects do not need to have very
+In a game, you might have a situation where some of game objects do not need to have very
 accurate information about collisions. For example, imagine that your NPC might be in two modes:
 random walking and chasing. In the second mode, it needs to know exact collision information because
 it tries to chase and hit a player and needs to avoid any small obstacles. Whereas in the first

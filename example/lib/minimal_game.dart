@@ -16,7 +16,7 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
     final player = Player(position: Vector2(160, 190), isPrimary: true);
     await initializeSpatialGrid(
       cellSize: 50,
-      debug: true,
+      // debug: true,
       activeRadius: const Size(2, 2),
       unloadRadius: const Size(2, 2),
       trackWindowSize: false,
@@ -29,7 +29,7 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
     for (var i = 0; i < 100; i++) {
       add(Player(position: Vector2(i * 10.0, 20)));
     }
-    // add(FpsTextComponent());
+    add(FpsTextComponent());
     return super.onLoad();
   }
 
@@ -54,22 +54,25 @@ class Player extends PositionComponent
     _rect = Rect.fromLTWH(0, 0, size.x, size.y);
 
     if (!_isPrimary) {
-      debugMode = true;
+      // debugMode = true;
     }
 
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
+
+    boundingBox.parentSpeedGetter = () => _dtSpeed;
   }
 
   late final Rect _rect;
   late final bool _isPrimary;
+  var _dtSpeed = 0.0;
 
   @override
   void render(Canvas canvas) {
     canvas.drawRect(_rect, paint);
   }
 
-  final speed = 80;
+  final speed = 80.0;
   final vector = Vector2.zero();
   double dtElapsed = 0;
   final dtMax = 400;
@@ -85,8 +88,12 @@ class Player extends PositionComponent
       _createNewVector();
     }
 
-    final dtSpeed = speed * dt;
-    final newStep = vector * dtSpeed;
+    final newSpeed = speed * dt;
+    if (newSpeed - _dtSpeed > 0.1) {
+      boundingBox.onParentSpeedChange();
+    }
+    _dtSpeed = newSpeed;
+    final newStep = vector * _dtSpeed;
     if (!vector.isZero()) {
       position.add(newStep);
     }

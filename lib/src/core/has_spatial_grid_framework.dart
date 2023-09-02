@@ -108,10 +108,18 @@ mixin HasSpatialGridFramework on FlameGame
   ///   unloaded from memory after some time.
   ///   So, unloadRadius specifies count of cells to preserve in
   ///   [CellState.inactive] state.
+  /// - [preloadRadius] - how many cells should be preloaded and kept in
+  ///   suspended state.
   /// - [suspendedCellLifetime] - how long a cell in [CellState.suspended]
   ///   state should being kept in memory. If state will not be changed, the
   ///   cell will be queued for unload. All components at this cell will be
   ///   removed from game tree, resources will be freed.
+  /// - [suspendCellPrecision] - update interval for [suspendedCellLifetime].
+  ///   Larger interval reduces precision but saves CPU resources because of
+  ///   reducing loops count over cells list.
+  /// - [processCellsLimitToPauseEngine] - if there are a lot of cells to build
+  ///   or remove - on some systems it is better to pause game process because
+  ///   the procedure might be too heavy
   /// - [buildCellsPerUpdate]  - double values which
   ///   describes, how many cells should be built at one
   ///   [update] call. Building new cells includes loading map's chunks,
@@ -121,6 +129,8 @@ mixin HasSpatialGridFramework on FlameGame
   ///   images disposing, components removal from tree - this is cheaper but
   ///   still not too fast. So specify "0.25", for example, if you want to make
   ///   the Framework to load just 1 cell per 4 update() calls.
+  /// - [cleanupCellsPerUpdate] - same as [buildCellsPerUpdate] but for cells
+  ///   removal
   /// - [trackWindowSize] - enable calculation of necessary [activeRadius] to
   ///   keep viewport filled by active cells only.
   /// - [trackedComponent] - a game component which will be the center of
@@ -128,6 +138,10 @@ mixin HasSpatialGridFramework on FlameGame
   ///   spawn. Can be omitted, but [initialPosition] must be specified then!
   /// - [initialPosition] - initial position of spatial grid framework. If you
   ///   can not specify player's component at [onLoad] stage, omit
+  /// - [initialPositionChecker] - if you defined game's starting position in
+  ///   map file by creating special object - you would be able to find such
+  ///   object before building the rest of the game world. This works only with
+  ///   tiled objects - not for tiles!
   ///   [trackedComponent] parameter and set [initialPosition] instead. Then
   ///   use [spatialGrid.trackedComponent] to specify your player's component at
   ///   game runtime, when it become accessible.
@@ -141,6 +155,9 @@ mixin HasSpatialGridFramework on FlameGame
   /// - [lazyLoad] - do not load whole map / world into game. Initially just
   ///   loads map in [activeRadius] and then load map by chunks while player
   ///   discovers the map.
+  /// - [collisionOptimizerDefaultGroupLimit] - how many tiles might be grouped
+  ///   into one optimized collision layer. Overrides the value globally, but
+  ///   it can be overridden also for every [CellLayer] individually
   ///
   Future<void> initializeSpatialGrid({
     bool? debug,

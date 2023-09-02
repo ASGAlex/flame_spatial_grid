@@ -295,6 +295,47 @@ All done! Now, your indigo square will never be alone!
 This was a simplest cell builder in the system. `TiledMapLoader` and `WorldLoader` classes
 provides much more powerful builders especially for working with tiles on a map.
 
+## Optimize collisions for objects with movement
+You can make you game a bit faster by reducing collision checks between objects with movement. Let's
+implement it in our small example. 
+
+Firstly, we should safe every calculated speed value into component's variable. Let's create is for
+`Player` class:
+
+```dart
+  var _dtSpeed = 0.0;
+```
+
+and assign actual value in `update` function: 
+
+```dart
+  _dtSpeed = speed * dt;
+```
+
+Then, we should let `boundingHitbox` to know about component's current speed by assigning callback
+function in `Player` constructor:
+
+```dart
+    boundingBox.parentSpeedGetter = () => _dtSpeed;
+```
+
+We almost finished! The last thing we should to do is letting the `boundingHitbox` to know about
+speed changes. We simple should to call `onParentSpeedChange` function when assigning new value to
+`_dtSpeed`:
+
+```dart
+final newSpeed = speed * dt;
+if (newSpeed - _dtSpeed > 0.1) {
+  boundingBox.onParentSpeedChange();
+}
+_dtSpeed = newSpeed;
+```
+
+With this code broadphase will calculate, how many update cycles will last while two hitboxes will 
+collide. And collision check for these two hitboxes will be skipped for N update cycles. But 
+`onParentSpeedChange` call resets this information, so we should not call it if speed change is not 
+too significant.
+
 ## Final words
 
 Of course this example is too synthetic and small. Why do we ever need to suspend just 10 components
