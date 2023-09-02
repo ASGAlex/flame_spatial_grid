@@ -1,6 +1,6 @@
 name: flame_spatial_grid
 description: Spatial partitioning of game field to improve performance of collision detection and rendering
-version: 0.8.1
+version: 0.8.2
 homepage: https://github.com/ASGAlex/flame_spatial_grid
 
 environment:
