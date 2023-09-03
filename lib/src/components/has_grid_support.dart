@@ -190,6 +190,13 @@ mixin HasGridSupport on PositionComponent {
         parentWithGridSupport: this,
       );
 
+  /// This is the way to reset [onComponentTypeCheck] cache
+  BoundingHitbox recreateBoundingHitbox(BoundingHitboxFactory? hitboxFactory) {
+    boundingBox.removeFromParent();
+    _boundingHitbox = hitboxFactory?.call() ?? boundingHitboxFactory.call();
+    return _boundingHitbox!;
+  }
+
   @internal
   double dtElapsedWhileSuspended = 0;
 
