@@ -36,7 +36,7 @@ class MinimalGame extends FlameGame with HasSpatialGridFramework {
   Future<void> onBuildNewCell(
     Cell cell,
     Component rootComponent,
-    bool isFullyOutside,
+    Iterable<Rect> mapRectOnCell,
   ) async {
     final random = Random();
     final doCreation = random.nextBool();

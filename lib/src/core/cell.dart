@@ -129,6 +129,7 @@ class Cell {
   var _state = CellState.suspended;
 
   TileBuilderContextProvider? tileBuilderContextProvider;
+  bool fullyInsideMap = false;
 
   /// Collection of component currently places inside this cell.
   /// Should not be modified manually!

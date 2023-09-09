@@ -1,6 +1,4 @@
 // ignore_for_file: comment_references
-import 'dart:collection';
-
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
@@ -374,41 +372,29 @@ mixin HasSpatialGridFramework on FlameGame
     _collisionDetection = cd;
   }
 
-  Future<bool> _cellBuilderAllMaps(Cell cell, Component rootComponent) async {
+  final _emptyRectList = List<Rect>.empty(growable: false);
+
+  Future<Iterable<Rect>> _cellBuilderAllMaps(
+      Cell cell, Component rootComponent) async {
     if (TiledMapLoader.loadedMaps.isEmpty) {
-      await _cellBuilderNoMap?.call(cell, rootComponent, true);
-      return true;
+      await _cellBuilderNoMap?.call(cell, rootComponent, _emptyRectList);
+      return _emptyRectList;
     }
 
-    final cache = <Rect, int>{};
-    var isFullyOutside = false;
-    final processedCellsNoMap = HashSet<Cell>();
-    for (final map in TiledMapLoader.loadedMaps) {
-      var pointsOutside = cache[cell.rect];
-      if (pointsOutside == null) {
-        cache[cell.rect] = pointsOutside = map.cellPointsOutsideOfMap(cell);
-      } else {
-        pointsOutside = cache[cell.rect];
+    final mapRectOnCell = TiledMapLoader.mapsRectsOnCell(cell);
+    if (mapRectOnCell.isEmpty) {
+      await _cellBuilderNoMap?.call(cell, rootComponent, _emptyRectList);
+    } else {
+      if (!cell.fullyInsideMap) {
+        await _cellBuilderNoMap?.call(
+            cell, rootComponent, mapRectOnCell.values);
       }
-      if (pointsOutside == 0) {
-        await map.cellBuilder(cell, rootComponent);
-      } else if (pointsOutside == 4) {
-        isFullyOutside = true;
-        if (!processedCellsNoMap.contains(cell)) {
-          await _cellBuilderNoMap?.call(cell, rootComponent, true);
-          processedCellsNoMap.add(cell);
-        }
-      } else {
-        if (!processedCellsNoMap.contains(cell)) {
-          await _cellBuilderNoMap?.call(cell, rootComponent, false);
-          processedCellsNoMap.add(cell);
-        }
+      for (final map in mapRectOnCell.keys) {
         await map.cellBuilder(cell, rootComponent);
       }
     }
-    processedCellsNoMap.clear();
 
-    return isFullyOutside;
+    return mapRectOnCell.values;
   }
 
   set isSpatialGridDebugEnabled(bool debug) {
@@ -511,8 +497,8 @@ mixin HasSpatialGridFramework on FlameGame
   }
 
   Future<void> _buildOneCell(Cell cell) async {
-    final isFullyOutside = await _cellBuilderAllMaps(cell, rootComponent);
-    await _onAfterCellBuild?.call(cell, rootComponent, isFullyOutside);
+    final mapRectOnCell = await _cellBuilderAllMaps(cell, rootComponent);
+    await _onAfterCellBuild?.call(cell, rootComponent, mapRectOnCell);
     cell.isCellBuildFinished = true;
     cell.updateComponentsState();
   }

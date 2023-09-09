@@ -294,10 +294,10 @@ all collisions are disabled.
   Future<void> noMapCellBuilder(
     Cell cell,
     Component rootComponent,
-    bool isFullyOutside,
+    Iterable<Rect> mapRects,
   ) async {
     // return;
-    if (!isFullyOutside) {
+    if (mapRects.isNotEmpty) {
       return;
     }
 

@@ -298,7 +298,7 @@ abstract class TiledMapLoader {
 
   /// Is useful when working with worlds with multiple maps and areas without
   /// any map at all
-  int cellPointsOutsideOfMap(Cell cell) {
+  static int cellPointsOutsideOfMap(Cell cell) {
     final checkList = [
       cell.rect.topLeft,
       cell.rect.bottomLeft,
@@ -321,6 +321,29 @@ abstract class TiledMapLoader {
     }
 
     return checkList.length;
+  }
+
+  static Map<TiledMapLoader, Rect> mapsRectsOnCell(Cell cell) {
+    final mapRects = <TiledMapLoader, Rect>{};
+    final pointsOutsideMap = cellPointsOutsideOfMap(cell);
+    if (pointsOutsideMap >= 4) {
+      return mapRects;
+    } else if (pointsOutsideMap == 0) {
+      cell.fullyInsideMap = true;
+    }
+
+    for (final map in TiledMapLoader.loadedMaps) {
+      if (map.mapRect == Rect.zero) {
+        continue;
+      }
+
+      final intersection = map.mapRect.intersect(cell.rect);
+      if (intersection.width <= 0 || intersection.height <= 0) {
+        continue;
+      }
+      mapRects[map] = intersection;
+    }
+    return mapRects;
   }
 
   List<Layer> _getLayers(
