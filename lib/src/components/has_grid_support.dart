@@ -194,6 +194,7 @@ mixin HasGridSupport on PositionComponent {
   BoundingHitbox recreateBoundingHitbox(BoundingHitboxFactory? hitboxFactory) {
     boundingBox.removeFromParent();
     _boundingHitbox = hitboxFactory?.call() ?? boundingHitboxFactory.call();
+    add(_boundingHitbox!);
     return _boundingHitbox!;
   }
 
