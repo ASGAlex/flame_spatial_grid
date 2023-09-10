@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -682,8 +683,36 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   @override
   void add(ShapeHitbox item) => throw UnimplementedError();
 
+  Rect? _activeCellRect;
+  final _raytraceHitboxes = <ShapeHitbox>[];
+
   @override
-  List<ShapeHitbox> get items => throw UnimplementedError();
+  List<ShapeHitbox> get items {
+    final activeCell = spatialGrid.currentCell;
+    if (activeCell == null) {
+      return <ShapeHitbox>[];
+    }
+    if (_activeCellRect == activeCell.rect) {
+      return _raytraceHitboxes;
+    } else {
+      _raytraceHitboxes.clear();
+      _activeCellRect = activeCell.rect;
+      final cells = spatialGrid.activeRadiusCells;
+      for (final cell in cells) {
+        final collisions = allCollisionsByCell[cell];
+        if (collisions != null) {
+          for (final hitbox in collisions) {
+            if (hitbox is GroupHitbox || hitbox.parent is CellLayer) {
+              continue;
+            }
+            _raytraceHitboxes.add(hitbox);
+          }
+        }
+      }
+    }
+
+    return _raytraceHitboxes;
+  }
 
   void dispose() {
     scheduledOperations.clear();

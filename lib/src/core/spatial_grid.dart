@@ -140,6 +140,14 @@ class SpatialGrid {
   /// by X and Y dimensions.
   Size activeRadius = const Size(2, 2);
 
+  Set<Cell> get activeRadiusCells {
+    if (currentCell == null) {
+      return <Cell>{};
+    }
+    return _findCellsInRadius(activeRadius, initialCell: currentCell!)
+      ..add(currentCell!);
+  }
+
   /// Count of cells after last active cell (by X and Y
   /// dimensions). These cells will work as usual but all components on it
   /// will be hidden. Such cells are in [CellState.inactive] state.
@@ -150,6 +158,14 @@ class SpatialGrid {
   /// [CellState.inactive] state.
   Size get unloadRadius => _unloadRadius;
 
+  Set<Cell> get unloadRadiusCells {
+    if (currentCell == null) {
+      return <Cell>{};
+    }
+    return _findCellsInRadius(unloadRadius, initialCell: currentCell!)
+      ..add(currentCell!);
+  }
+
   Size _unloadRadius = const Size(5, 5);
 
   set unloadRadius(Size value) {
@@ -157,6 +173,14 @@ class SpatialGrid {
   }
 
   Size get preloadRadius => _preloadRadius;
+
+  Set<Cell> get preloadRadiusCells {
+    if (currentCell == null) {
+      return <Cell>{};
+    }
+    return _findCellsInRadius(preloadRadius, initialCell: currentCell!)
+      ..add(currentCell!);
+  }
 
   Size _preloadRadius = const Size(5, 5);
 

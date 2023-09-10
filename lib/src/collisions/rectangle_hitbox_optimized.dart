@@ -5,7 +5,8 @@ import 'package:flame_spatial_grid/src/collisions/polygon_rect_component.dart';
 import 'package:flutter/foundation.dart';
 
 class RectangleHitboxOptimized extends PolygonRectComponent
-    with ShapeHitbox, PolygonRayIntersection<RectangleHitbox> {
+    with ShapeHitbox, PolygonRayIntersection<RectangleHitbox>
+    implements RectangleHitbox {
   @override
   final bool shouldFillParent;
 

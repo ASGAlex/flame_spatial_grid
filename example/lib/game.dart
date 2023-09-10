@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
+import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -221,7 +222,13 @@ all collisions are disabled.
         trailsEnabled = !trailsEnabled;
       }
       if (key == LogicalKeyboardKey.keyR) {
-        removeUnusedCells(forceCleanup: true);
+        final raycast = world.children.query<PlayerRaycast>();
+        if (raycast.isEmpty) {
+          final raycastComponent = PlayerRaycast(player);
+          world.add(raycastComponent);
+        } else {
+          raycast.first.removeFromParent();
+        }
       }
       if (key == LogicalKeyboardKey.keyT) {
         teleportMode = !teleportMode;
@@ -704,6 +711,70 @@ class Player extends SpriteComponent
     canMoveTop = true;
     canMoveBottom = true;
     super.onCollisionEnd(other);
+  }
+}
+
+class PlayerRaycast extends Component
+    with HasGameReference<SpatialGridExample> {
+  PlayerRaycast(this.player) {
+    origin.setFrom(player.position.translated(4, 4));
+    priority = 1000;
+  }
+
+  final Player player;
+  final origin = Vector2(0, 0);
+  Paint rayPaint = Paint();
+
+  final _colorTween = ColorTween(
+    begin: Colors.blue.withOpacity(0.8),
+    end: Colors.red.withOpacity(0.8),
+  );
+
+  var _timePassed = 0.0;
+  static const numberOfRays = 50;
+  final List<RaycastResult<ShapeHitbox>> results = [];
+
+  @override
+  void render(Canvas canvas) {
+    super.render(canvas);
+    renderResult(canvas, origin, results, rayPaint);
+  }
+
+  void renderResult(
+    Canvas canvas,
+    Vector2 origin,
+    List<RaycastResult<ShapeHitbox>> results,
+    Paint paint,
+  ) {
+    final originOffset = origin.toOffset();
+    for (final result in results) {
+      if (!result.isActive) {
+        continue;
+      }
+      final intersectionPoint = result.intersectionPoint!.toOffset();
+      canvas.drawLine(
+        originOffset,
+        intersectionPoint,
+        paint,
+      );
+    }
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    if (origin != player.position || results.isEmpty) {
+      origin.setFrom(player.position.translated(4, 4));
+      game.collisionDetection.raycastAll(
+        origin,
+        numberOfRays: numberOfRays,
+        out: results,
+        ignoreHitboxes: [player.boundingBox],
+      );
+    }
+
+    _timePassed += dt;
+    rayPaint.color = _colorTween.transform(0.5 + (sin(_timePassed) / 2))!;
   }
 }
 
