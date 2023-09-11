@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -71,8 +72,24 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
   bool isDistanceCallbackEnabled = false;
 
+  bool get optimized => _optimized;
+
+  var _optimized = false;
+
+  GroupHitbox? _group;
+
+  GroupHitbox? get group {
+    if (optimized && _group != null) {
+      return _group;
+    }
+    return null;
+  }
+
   @internal
-  bool optimized = false;
+  set group(GroupHitbox? value) {
+    _group = value;
+    _optimized = (value != null);
+  }
 
   final groupCollisionsTags = <String>[];
 
@@ -240,6 +257,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
       }
     }
     _broadphaseCheckCache.clear();
+    _group = null;
 
     size.removeListener(_precalculateCollisionVariables);
     super.onRemove();
@@ -296,12 +314,12 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
   @override
   void renderDebugMode(Canvas canvas) {
-    // canvas.drawRect(
-    //   Rect.fromLTWH(position.x, position.y, size.x, size.y),
-    //   Paint()
-    //     ..color = const Color.fromRGBO(119, 0, 255, 1.0)
-    //     ..style = PaintingStyle.stroke,
-    // );
+    canvas.drawRect(
+      Rect.fromLTWH(position.x, position.y, size.x, size.y),
+      Paint()
+        ..color = const Color.fromRGBO(119, 0, 255, 1.0)
+        ..style = PaintingStyle.stroke,
+    );
   }
 
   /// Where this [ShapeComponent] has intersection points with another shape
@@ -310,35 +328,15 @@ class BoundingHitbox extends RectangleHitboxOptimized
     if (other is BoundingHitbox &&
         fastCollisionForRects &&
         other.fastCollisionForRects) {
-      final intersectionPoints = <Vector2>{};
       final boundingRect = aabb.toRect();
       final boundingRectOther = other.aabb.toRect();
       final result = boundingRect.intersect(boundingRectOther);
-      if (result.width >= 0 || result.height >= 0) {
-        final allPoints = <Offset>[
-          boundingRect.topLeft,
-          boundingRect.bottomLeft,
-          boundingRect.topRight,
-          boundingRect.bottomRight,
-          boundingRectOther.topLeft,
-          boundingRectOther.bottomLeft,
-          boundingRectOther.topRight,
-          boundingRectOther.bottomRight,
-        ];
-        final resultPoints = <Offset>[
-          result.topLeft,
-          result.bottomLeft,
-          result.topRight,
-          result.bottomRight,
-        ];
-
-        for (final point in allPoints) {
-          if (!resultPoints.contains(point)) {
-            intersectionPoints.add(point.toVector2());
-          }
-        }
-      }
-      return intersectionPoints;
+      return <Vector2>{
+        result.topLeft.toVector2(),
+        result.topRight.toVector2(),
+        result.bottomLeft.toVector2(),
+        result.bottomRight.toVector2(),
+      };
     }
     return super.intersections(other);
   }

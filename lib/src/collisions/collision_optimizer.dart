@@ -44,7 +44,7 @@ class CollisionOptimizer {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
-        child.boundingBox.optimized = false;
+        child.boundingBox.group = null;
       }
     }
 
@@ -106,7 +106,6 @@ class CollisionOptimizer {
         }
         for (final hb in hitboxesUnsorted) {
           hb.collisionType = CollisionType.inactive;
-          hb.optimized = true;
         }
         if (hitboxesUnsorted.length >= _componentsForOptimisation.length) {
           break;
@@ -217,9 +216,7 @@ class OptimizedCollisionList {
   }
 
   void _updateBoundingBox() {
-    if (_boundingBox.parent != null) {
-      _boundingBox.removeFromParent();
-    }
+    _boundingBox.removeFromParent();
     var rect = Rect.zero;
     for (final hitbox in _hitboxes) {
       if (rect == Rect.zero) {
@@ -238,6 +235,11 @@ class OptimizedCollisionList {
       size: rect.size.toVector2(),
     )..collisionType = collisionType;
     parentLayer.add(_boundingBox);
+    for (final h in _hitboxes) {
+      if (h is BoundingHitbox) {
+        h.group = _boundingBox;
+      }
+    }
   }
 
   void clear() {

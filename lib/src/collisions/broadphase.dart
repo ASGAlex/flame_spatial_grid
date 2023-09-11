@@ -247,6 +247,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   ]) {
     final activeParent = activeItem.hitboxParent;
     for (final potential in potentials) {
+      if (potential.parent == null) {
+        continue;
+      }
       final potentialParent = potential.hitboxParent;
       if (potentialParent == activeParent) {
         continue;
