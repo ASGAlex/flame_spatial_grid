@@ -371,10 +371,12 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     _collisionDetection = cd;
   }
 
-  final _emptyRectList = List<Rect>.empty(growable: false);
+  final _emptyRectList = List<Rect>.empty();
 
   Future<Iterable<Rect>> _cellBuilderAllMaps(
-      Cell cell, Component rootComponent) async {
+    Cell cell,
+    Component rootComponent,
+  ) async {
     if (TiledMapLoader.loadedMaps.isEmpty) {
       await _cellBuilderNoMap?.call(cell, rootComponent, _emptyRectList);
       return _emptyRectList;
@@ -386,7 +388,10 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     } else {
       if (!cell.fullyInsideMap) {
         await _cellBuilderNoMap?.call(
-            cell, rootComponent, mapRectOnCell.values);
+          cell,
+          rootComponent,
+          mapRectOnCell.values,
+        );
       }
       for (final map in mapRectOnCell.keys) {
         await map.cellBuilder(cell, rootComponent);

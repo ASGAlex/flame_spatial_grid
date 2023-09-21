@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
                 ),
               ),
             );
-          }
+          },
         },
       ),
     );

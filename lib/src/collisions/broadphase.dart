@@ -631,7 +631,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     if (oldCell != null) {
       scheduledOperations.addAll([
         ScheduledHitboxOperation.removeActive(hitbox: hitbox, cell: oldCell),
-        ScheduledHitboxOperation.removePassive(hitbox: hitbox, cell: oldCell)
+        ScheduledHitboxOperation.removePassive(hitbox: hitbox, cell: oldCell),
       ]);
     }
     final currentCell = hitbox.parentWithGridSupport?.currentCell;

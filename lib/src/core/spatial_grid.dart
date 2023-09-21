@@ -144,7 +144,7 @@ class SpatialGrid {
     if (currentCell == null) {
       return <Cell>{};
     }
-    return _findCellsInRadius(activeRadius, initialCell: currentCell!)
+    return _findCellsInRadius(activeRadius, initialCell: currentCell)
       ..add(currentCell!);
   }
 
@@ -162,7 +162,7 @@ class SpatialGrid {
     if (currentCell == null) {
       return <Cell>{};
     }
-    return _findCellsInRadius(unloadRadius, initialCell: currentCell!)
+    return _findCellsInRadius(unloadRadius, initialCell: currentCell)
       ..add(currentCell!);
   }
 
@@ -178,7 +178,7 @@ class SpatialGrid {
     if (currentCell == null) {
       return <Cell>{};
     }
-    return _findCellsInRadius(preloadRadius, initialCell: currentCell!)
+    return _findCellsInRadius(preloadRadius, initialCell: currentCell)
       ..add(currentCell!);
   }
 

@@ -520,7 +520,6 @@ class DemoMapLoader extends TiledMapLoader {
       component: brick,
       layerType: MapLayerType.static,
       layerName: 'Brick',
-      renderMode: LayerRenderMode.auto,
     );
   }
 

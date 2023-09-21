@@ -12,8 +12,11 @@ class StaticAnimationLayerCacheEntry {
 }
 
 class CellStaticAnimationLayer extends CellLayer {
-  CellStaticAnimationLayer(super.cell,
-      {super.name, super.componentsStorageMode});
+  CellStaticAnimationLayer(
+    super.cell, {
+    super.name,
+    super.componentsStorageMode,
+  });
 
   SpriteAnimationGlobalComponent? animationComponent;
 
@@ -130,7 +133,7 @@ class CellStaticAnimationLayer extends CellLayer {
     }
     animationComponent = cache.animationComponent;
     cache.usageCount++;
-    print('${name}: ${cache.usageCount}');
+    print('$name: ${cache.usageCount}');
 
     return true;
   }

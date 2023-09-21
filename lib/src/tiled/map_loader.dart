@@ -303,7 +303,7 @@ abstract class TiledMapLoader {
       cell.rect.topLeft,
       cell.rect.bottomLeft,
       cell.rect.topRight,
-      cell.rect.bottomRight
+      cell.rect.bottomRight,
     ];
     for (final map in TiledMapLoader.loadedMaps) {
       if (map.mapRect == Rect.zero) {

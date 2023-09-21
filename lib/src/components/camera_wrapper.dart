@@ -1,5 +1,4 @@
 import 'package:flame/components.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 
 /// Camera wrapper allows to attach [CameraComponent] as a "trackedComponent"
