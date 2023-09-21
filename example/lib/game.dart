@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/experimental.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
@@ -20,14 +19,14 @@ import 'package:flutter/services.dart';
 const tileSize = 8.0;
 const blockSize = 128.0;
 
-class SpatialGridExample extends FlameGame
+class SpatialGridExample extends FlameGame<MyWorld>
     with
         HasSpatialGridFramework,
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
         HasMessageProviders {
-  SpatialGridExample() {
+  SpatialGridExample() : super(world: MyWorld()) {
     loadingStream = messageProvidersManager
         .getMessageProvider<LoadingProgressMessage<String>>('loading_progress')
         .messagingStream;
@@ -66,12 +65,10 @@ all collisions are disabled.
   @override
   Future<void> onLoad() async {
     super.onLoad();
-
     player = world.player;
-    cameraComponent = CameraComponent(world: world);
-    cameraComponent.viewfinder.zoom = 5;
-    cameraComponent.priority = 999;
-    cameraComponent.follow(player, maxSpeed: 200, snap: true);
+    camera.viewfinder.zoom = 5;
+    camera.priority = 999;
+    camera.follow(player, maxSpeed: 200, snap: true);
 
     // check that manual loading works correctly (not necessary line)
     await tilesetManager.loadTileset('tileset.tsx');
@@ -101,13 +98,13 @@ all collisions are disabled.
       processCellsLimitToPauseEngine: processCellsLimitToPauseEngine,
       collisionOptimizerDefaultGroupLimit: 50,
       cellSize: blockSize,
-      trackedComponent: SpatialGridDebugCameraWrapper(cameraComponent),
+      trackedComponent: SpatialGridDebugCameraWrapper(camera),
       initialPositionChecker: (layer, object, mapOffset, worldName) {
         if (worldName == null) {
           return null;
         }
         if (object.name == 'spawn_player') {
-          cameraComponent.viewfinder.position =
+          camera.viewfinder.position =
               player.position = mapOffset + Vector2(object.x, object.y);
 
           return player.position;
@@ -126,21 +123,17 @@ all collisions are disabled.
         fileName: 'example.world',
         mapLoader: {
           'example': DemoMapLoader.new,
-          'another_map': DemoMapLoader.new
+          'another_map': DemoMapLoader.new,
         },
       ),
     );
     // await demoMapLoader.init(this);
 
-    add(world);
     world.add(player);
     add(FpsTextComponent());
   }
 
   final elapsedMicroseconds = <double>[];
-
-  late final CameraComponent cameraComponent;
-  MyWorld world = MyWorld();
 
   late Player player;
   var _fireBullet = false;
@@ -269,16 +262,16 @@ all collisions are disabled.
 
   @override
   void onScroll(PointerScrollInfo info) {
-    var zoom = cameraComponent.viewfinder.zoom;
+    var zoom = camera.viewfinder.zoom;
     zoom += info.scrollDelta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
+    camera.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
-    var zoom = cameraComponent.viewfinder.zoom;
+    var zoom = camera.viewfinder.zoom;
     zoom += info.delta.game.y.sign * 0.08;
-    cameraComponent.viewfinder.zoom = zoom.clamp(0.5, 8.0);
+    camera.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
   @override
@@ -512,7 +505,7 @@ class DemoMapLoader extends TiledMapLoader {
   Map<String, TileBuilderFunction> get tileBuilders => {
         'Brick': onBuildBrick,
         'Water': onBuildWater,
-        'TestObject': onBuildTestObject
+        'TestObject': onBuildTestObject,
       };
 
   Future<void> onBuildBrick(TileBuilderContext context) async {
@@ -823,7 +816,7 @@ class Npc extends Player with DebuggerPause {
       0.000,
       0.000,
       1.000,
-      0.000
+      0.000,
     ];
     manuallyControlled = false;
     paint.colorFilter = ColorFilter.matrix(matrix);

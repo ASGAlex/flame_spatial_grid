@@ -1,3 +1,7 @@
+# 0.8.4
+
+* Flame 1.9.0 support
+
 # 0.8.3
 
 * Basic raycast support

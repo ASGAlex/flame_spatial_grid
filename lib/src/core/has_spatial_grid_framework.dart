@@ -19,7 +19,7 @@ enum InitializationStepStage {
 /// Calling [initializeSpatialGrid] at [onLoad] as absolute necessary!
 /// If your game could be zoomed, please call [onAfterZoom] after every zoom
 /// event.
-mixin HasSpatialGridFramework on FlameGame
+mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     implements HasCollisionDetection<SpatialGridBroadphase> {
   late SpatialGridCollisionDetection _collisionDetection;
 
@@ -254,7 +254,6 @@ mixin HasSpatialGridFramework on FlameGame
     );
 
     if (trackedComponent is SpatialGridCameraWrapper) {
-      add(trackedComponent.cameraComponent);
       add(trackedComponent);
     }
 
