@@ -26,6 +26,7 @@ class SpatialGridExample extends FlameGame<MyWorld>
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
+        TapCallbacks,
         FastTouch<MyWorld>,
         HasMessageProviders {
   SpatialGridExample() : super(world: MyWorld()) {
@@ -71,7 +72,9 @@ all collisions are disabled.
     camera.viewfinder.zoom = 5;
     camera.priority = 999;
     camera.follow(player, maxSpeed: 200, snap: true);
-    componentsAtPointRoot = camera.viewport;
+    final touchEventsHandler = TouchEventsHandler();
+    world.add(touchEventsHandler);
+    componentsAtPointRoot = touchEventsHandler;
 
     // check that manual loading works correctly (not necessary line)
     await tilesetManager.loadTileset('tileset.tsx');
@@ -404,7 +407,7 @@ all collisions are disabled.
   }
 }
 
-class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
+class MyWorld extends World with HasGameRef<SpatialGridExample> {
   static const mapSize = 50;
 
   final Player player = Player(
@@ -445,48 +448,6 @@ class MyWorld extends World with TapCallbacks, HasGameRef<SpatialGridExample> {
   }
 
   final npcList = <Npc>[];
-
-  @override
-  void onTapDown(TapDownEvent event) {
-    if (game.teleportMode) {
-      player.position.setFrom(event.localPosition);
-    }
-    return;
-    final tapPosition = event.localPosition;
-    // final cellsUnderCursor = <Cell>[];
-    // gameRef.spatialGrid.cells.forEach((rect, cell) {
-    //   if (cell.rect.containsPoint(tapPosition)) {
-    //     cellsUnderCursor.add(cell);
-    //     if (kDebugMode) {
-    //       print(cell.outOfBoundsCounter);
-    //     }
-    //     // print('State:  + ${cell.state}');
-    //     if (kDebugMode) {
-    //       print('Rect: $rect');
-    //     }
-    //
-    //     // print('Components count: ${cell.components.length}');
-    //   }
-    // });
-
-    // if (kDebugMode) {
-    //   print('========================================');
-    // }
-    final list = componentsAtPoint(tapPosition).toList(growable: false);
-    for (final component in list) {
-      if (component is! HasGridSupport) {
-        continue;
-      }
-      if (component is CellStaticLayer) {
-        print('123');
-      }
-      //
-      // final optimized = game.collisionDetection.broadphase
-      //     .optimizedCollisionsByGroupBox[component.currentCell];
-      // print(optimized?.length);
-      // print(component.runtimeType);
-    }
-  }
 }
 
 class DemoMapLoader extends TiledMapLoader {
@@ -1110,6 +1071,55 @@ class BoundingBoxGridGame extends BoundingHitbox {
   FutureOr<void> onLoad() {
     fastCollisionForRects = true;
     return super.onLoad();
+  }
+}
+
+class TouchEventsHandler extends Component
+    with TapCallbacks, HasGameReference<SpatialGridExample> {
+  @override
+  bool containsLocalPoint(Vector2 point) => true;
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    if (game.teleportMode) {
+      game.player.position.setFrom(event.localPosition);
+    }
+    event.continuePropagation = false;
+    return;
+    final tapPosition = event.localPosition;
+    // final cellsUnderCursor = <Cell>[];
+    // gameRef.spatialGrid.cells.forEach((rect, cell) {
+    //   if (cell.rect.containsPoint(tapPosition)) {
+    //     cellsUnderCursor.add(cell);
+    //     if (kDebugMode) {
+    //       print(cell.outOfBoundsCounter);
+    //     }
+    //     // print('State:  + ${cell.state}');
+    //     if (kDebugMode) {
+    //       print('Rect: $rect');
+    //     }
+    //
+    //     // print('Components count: ${cell.components.length}');
+    //   }
+    // });
+
+    // if (kDebugMode) {
+    //   print('========================================');
+    // }
+    final list = componentsAtPoint(tapPosition).toList(growable: false);
+    for (final component in list) {
+      if (component is! HasGridSupport) {
+        continue;
+      }
+      if (component is CellStaticLayer) {
+        print('123');
+      }
+      //
+      // final optimized = game.collisionDetection.broadphase
+      //     .optimizedCollisionsByGroupBox[component.currentCell];
+      // print(optimized?.length);
+      // print(component.runtimeType);
+    }
   }
 }
 //#endregion
