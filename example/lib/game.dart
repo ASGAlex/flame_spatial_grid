@@ -8,6 +8,7 @@ import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/input.dart';
+import 'package:flame_fast_touch/flame_fast_touch.dart';
 import 'package:flame_message_stream/flame_message_stream.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/foundation.dart';
@@ -25,6 +26,7 @@ class SpatialGridExample extends FlameGame<MyWorld>
         KeyboardEvents,
         ScrollDetector,
         ScaleDetector,
+        FastTouch<MyWorld>,
         HasMessageProviders {
   SpatialGridExample() : super(world: MyWorld()) {
     loadingStream = messageProvidersManager
@@ -69,6 +71,7 @@ all collisions are disabled.
     camera.viewfinder.zoom = 5;
     camera.priority = 999;
     camera.follow(player, maxSpeed: 200, snap: true);
+    componentsAtPointRoot = camera.viewport;
 
     // check that manual loading works correctly (not necessary line)
     await tilesetManager.loadTileset('tileset.tsx');
