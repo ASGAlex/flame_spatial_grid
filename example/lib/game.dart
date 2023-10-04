@@ -351,7 +351,7 @@ all collisions are disabled.
         }
       }
     } else {
-      for (var i = 0; i < 50; i++) {
+      for (var i = 0; i < 200; i++) {
         final random = Random();
         final diffX = random.nextInt((blockSize / 2 - 25).ceil()).toDouble() *
             (random.nextBool() ? -1 : 1);
@@ -372,7 +372,7 @@ all collisions are disabled.
         );
       }
 
-      for (var i = 0; i < 50; i++) {
+      for (var i = 0; i < 200; i++) {
         final random = Random();
         final diffX = random.nextInt((blockSize / 2 - 20).ceil()).toDouble() *
             (random.nextBool() ? -1 : 1);
@@ -812,11 +812,13 @@ class Npc extends Player with DebuggerPause {
     }
 
     final dtSpeed = speed * dt;
-    if (_lastDtSpeed - dtSpeed > 0.1) {
+    final newStep = vector * dtSpeed;
+    final longest = max(newStep.x, newStep.y);
+    if (_lastDtSpeed - longest > 0.5) {
       boundingBox.onParentSpeedChange();
     }
-    _lastDtSpeed = dtSpeed;
-    final newStep = vector * dtSpeed;
+    _lastDtSpeed = longest;
+
     if (!vector.isZero()) {
       position.add(newStep);
       createTrail(6);
