@@ -269,14 +269,14 @@ all collisions are disabled.
   @override
   void onScroll(PointerScrollInfo info) {
     var zoom = camera.viewfinder.zoom;
-    zoom += info.scrollDelta.game.y.sign * 0.08;
+    zoom += info.scrollDelta.global.y.sign * 0.08;
     camera.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
   @override
   void onScaleUpdate(ScaleUpdateInfo info) {
     var zoom = camera.viewfinder.zoom;
-    zoom += info.delta.game.y.sign * 0.08;
+    zoom += info.delta.global.y.sign * 0.08;
     camera.viewfinder.zoom = zoom.clamp(0.5, 8.0);
   }
 
