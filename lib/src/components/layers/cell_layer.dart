@@ -6,7 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/collision_optimizer.dart';
+import 'package:flame_spatial_grid/src/collisions/optimizer/collision_optimizer.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
