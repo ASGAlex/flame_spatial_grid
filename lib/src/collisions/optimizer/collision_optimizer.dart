@@ -1,9 +1,13 @@
 import 'dart:collection';
+import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
+import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/extensions.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
+import 'package:meta/meta.dart';
 
 class CollisionOptimizer {
   CollisionOptimizer(this.parentLayer);
@@ -22,11 +26,12 @@ class CollisionOptimizer {
   int get maximumItemsInGroup =>
       _maximumItemsInGroup ?? game.collisionOptimizerGroupLimit;
 
-  final _alreadyProcessed = HashSet<ShapeHitbox>();
-
   HasSpatialGridFramework get game => parentLayer.game;
 
-  List<HasGridSupport> _componentsForOptimisation = [];
+  Set<HasGridSupport> _componentsForOptimisation = {};
+
+  @internal
+  static final rectCache = <PositionComponent, Rect>{};
 
   void optimize() {
     final cell = clear();
@@ -39,22 +44,22 @@ class CollisionOptimizer {
     final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
 
     _componentsForOptimisation =
-        parentLayer.children.query<HasGridSupport>().toList(growable: false);
-    for (final child in _componentsForOptimisation) {
+        parentLayer.children.query<HasGridSupport>().toSet();
+    final temporaryList = _componentsForOptimisation.toList(growable: false);
+    for (final child in temporaryList) {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
         child.boundingBox.group = null;
       }
-    }
-
-    for (final child in _componentsForOptimisation) {
       if (child.boundingBox.collisionType == CollisionType.inactive) {
-        continue;
+        _componentsForOptimisation.remove(child);
       }
-      if (_alreadyProcessed.contains(child.boundingBox)) {
-        continue;
-      }
+    }
+    final totalLength = _componentsForOptimisation.length;
+    var child = _componentsForOptimisation.firstOrNull;
+
+    while (child != null) {
       final hitboxesUnsorted = _findOverlappingRects(child.boundingBox);
       if (hitboxesUnsorted.length > 1) {
         if (hitboxesUnsorted.length > maximumItemsInGroup) {
@@ -107,39 +112,59 @@ class CollisionOptimizer {
         for (final hb in hitboxesUnsorted) {
           hb.collisionType = CollisionType.inactive;
         }
-        if (hitboxesUnsorted.length >= _componentsForOptimisation.length) {
+        if (hitboxesUnsorted.length >= totalLength) {
           break;
         }
       }
+      child = _componentsForOptimisation.firstOrNull;
     }
 
-    _componentsForOptimisation = [];
-    _alreadyProcessed.clear();
+    _componentsForOptimisation.clear();
+    rectCache.clear();
   }
 
   LinkedHashSet<BoundingHitbox> _findOverlappingRects(
     BoundingHitbox hitbox, [
-    HashSet<BoundingHitbox>? exception,
+    int index = 0,
+    Uint16List? removalsIndicesOutput,
   ]) {
-    exception ??= HashSet<BoundingHitbox>();
     // ignore: prefer_collection_literals
     final hitboxes = LinkedHashSet<BoundingHitbox>();
     hitboxes.add(hitbox);
-    exception.add(hitbox);
-    for (final otherChild in _componentsForOptimisation) {
-      if (otherChild.boundingBox.collisionType == CollisionType.inactive) {
-        continue;
-      }
-      if (exception.contains(otherChild.boundingBox)) {
-        continue;
+    _componentsForOptimisation.remove(hitbox.parentWithGridSupport);
+    var initialRemovalsCount = 0;
+    if (removalsIndicesOutput != null) {
+      initialRemovalsCount = removalsIndicesOutput.length;
+      removalsIndicesOutput.add(index);
+    }
+    for (var i = 0; i < _componentsForOptimisation.length;) {
+      HasGridSupport otherChild;
+      if (i == 0) {
+        otherChild = _componentsForOptimisation.first;
+      } else {
+        otherChild = _componentsForOptimisation.elementAt(i);
       }
       if (hitbox
           .toRectSpecial()
           .overlapsSpecial(otherChild.boundingBox.toRectSpecial())) {
         hitboxes.add(otherChild.boundingBox);
-        _alreadyProcessed.add(otherChild.boundingBox);
-        hitboxes
-            .addAll(_findOverlappingRects(otherChild.boundingBox, exception));
+        hitboxes.addAll(_findOverlappingRects(
+          otherChild.boundingBox,
+          i,
+          removalsIndicesOutput,
+        ));
+        if (removalsIndicesOutput != null &&
+            initialRemovalsCount < removalsIndicesOutput.length) {
+          for (final removedIndex in removalsIndicesOutput) {
+            if (removedIndex <= i) {
+              i--;
+            }
+          }
+        } else {
+          i++;
+        }
+      } else {
+        i++;
       }
     }
     return hitboxes;
@@ -162,9 +187,8 @@ class CollisionOptimizer {
       collisionsListByGroup.remove(optimized.boundingBox);
       optimized.clear();
     }
-    _componentsForOptimisation = [];
+    _componentsForOptimisation.clear();
     _createdCollisionLists.clear();
-    _alreadyProcessed.clear();
     return cell;
   }
 }

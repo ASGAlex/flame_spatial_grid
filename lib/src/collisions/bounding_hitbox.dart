@@ -314,12 +314,14 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
   @override
   void renderDebugMode(Canvas canvas) {
-    canvas.drawRect(
-      Rect.fromLTWH(position.x, position.y, size.x, size.y),
-      Paint()
-        ..color = const Color.fromRGBO(119, 0, 255, 1.0)
-        ..style = PaintingStyle.stroke,
-    );
+    if (group == null) {
+      canvas.drawRect(
+        Rect.fromLTWH(position.x, position.y, size.x, size.y),
+        Paint()
+          ..color = const Color.fromRGBO(119, 0, 255, 1.0)
+          ..style = PaintingStyle.stroke,
+      );
+    }
   }
 
   /// Where this [ShapeComponent] has intersection points with another shape
