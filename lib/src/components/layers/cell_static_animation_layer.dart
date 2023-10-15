@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
@@ -16,6 +14,7 @@ class CellStaticAnimationLayer extends CellLayer {
     super.cell, {
     super.name,
     super.componentsStorageMode,
+    super.buildMacroObject,
   });
 
   SpriteAnimationGlobalComponent? animationComponent;
@@ -36,11 +35,11 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> components) {
+  void compileToSingleLayer(Iterable<Component> components) {
     final animatedChildren = components.whereType<SpriteAnimationComponent>();
     if (animatedChildren.isEmpty) {
       removeFromParent();
-      return null;
+      return;
     }
 
     final animation = animatedChildren.first.animation;

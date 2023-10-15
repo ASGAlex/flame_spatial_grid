@@ -123,13 +123,12 @@ class CollisionOptimizer {
     rectCache.clear();
   }
 
-  LinkedHashSet<BoundingHitbox> _findOverlappingRects(
+  Iterable<BoundingHitbox> _findOverlappingRects(
     BoundingHitbox hitbox, [
     int index = 0,
     Uint16List? removalsIndicesOutput,
   ]) {
-    // ignore: prefer_collection_literals
-    final hitboxes = LinkedHashSet<BoundingHitbox>();
+    final hitboxes = <BoundingHitbox>[];
     hitboxes.add(hitbox);
     _componentsForOptimisation.remove(hitbox.parentWithGridSupport);
     var initialRemovalsCount = 0;

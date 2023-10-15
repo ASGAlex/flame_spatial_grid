@@ -4,7 +4,9 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/components/layers/scheduled_layer_operation.dart';
 import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 enum InitializationStepStage {
   none,
@@ -57,6 +59,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   CellBuilderFunction? _onAfterCellBuild;
   double buildCellsPerUpdate = 1;
   double _buildCellsNow = 0;
+  int scheduledLayerOperationLimit = 0;
 
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
@@ -168,6 +171,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     Duration suspendCellPrecision = const Duration(minutes: 1),
     int maxCells = 0,
     int processCellsLimitToPauseEngine = 5,
+    int scheduledLayerOperationLimit = 2,
     double buildCellsPerUpdate = 1,
     double cleanupCellsPerUpdate = 2,
     bool trackWindowSize = true,
@@ -276,6 +280,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       }
     }
     this.buildCellsPerUpdate = buildCellsPerUpdate;
+    this.scheduledLayerOperationLimit = scheduledLayerOperationLimit;
 
     spatialGrid.updateCellsStateByRadius(fullScan: true);
     if (lazyLoad) {
@@ -609,6 +614,31 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     } catch (e) {}
   }
 
+  @internal
+  final scheduledLayerOperations = <ScheduledLayerOperation>[];
+
+  void _runScheduledLayerOperations([bool forceAll = false]) {
+    if (scheduledLayerOperations.isEmpty) {
+      return;
+    }
+    if (scheduledLayerOperationLimit == 0 || forceAll) {
+      for (final operation in scheduledLayerOperations) {
+        operation.run();
+      }
+      scheduledLayerOperations.clear();
+    } else {
+      try {
+        var i = 0;
+        while (i < scheduledLayerOperationLimit) {
+          final operation = scheduledLayerOperations.first;
+          operation.run();
+          scheduledLayerOperations.remove(operation);
+          i++;
+        }
+      } catch (_) {}
+    }
+  }
+
   /// Handles creating new cells and removing outdated.
   /// Also runs [SpriteAnimationGlobalController] to allow
   /// [CellStaticAnimationLayer] to work.
@@ -644,6 +674,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         }
         _loadWholeMap();
         _buildNewCells();
+        _runScheduledLayerOperations();
 
         tickersManager.update(dt);
         collisionDetection.dt = dt;
@@ -834,6 +865,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       _cellsBuildingFutures.clear();
       _initializationStepStage = InitializationStepStage.done;
       _layersToUpdate.clear();
+      _runScheduledLayerOperations(true);
       return true;
     }
 
@@ -849,6 +881,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     final processed = _totalLayersToBuild - _layersToUpdate.length;
     final layer = _layersToUpdate.removeLast();
     _cellsBuildingFutures.add(layer.updateLayer());
+    _runScheduledLayerOperations();
 
     progressManager.setProgress(
       processed * 100 ~/ _totalLayersToBuild,

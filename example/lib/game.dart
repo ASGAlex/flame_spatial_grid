@@ -93,7 +93,7 @@ all collisions are disabled.
     } else {
       preloadRadius = const Size(5, 5);
       unloadRadius = const Size(3, 3);
-      processCellsLimitToPauseEngine = 150;
+      processCellsLimitToPauseEngine = 50;
       buildCellsPerUpdate = 2;
       cleanupCellsPerUpdate = 2;
     }
@@ -121,12 +121,14 @@ all collisions are disabled.
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
       suspendedCellLifetime: const Duration(minutes: 10),
+      scheduledLayerOperationLimit: 1,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),
       ],
       worldLoader: WorldLoader(
         fileName: 'example.world',
+        loadWholeMap: false,
         mapLoader: {
           'example': DemoMapLoader.new,
           'another_map': DemoMapLoader.new,

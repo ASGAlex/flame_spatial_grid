@@ -63,13 +63,13 @@ class CellTrailLayer extends CellStaticLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> components) {
+  void compileToSingleLayer(Iterable<Component> components) {
     if (isRemovedLayer) {
-      return null;
+      return;
     }
     final cell = currentCell;
     if (cell == null) {
-      return null;
+      return;
     }
 
     if (noTrail && nonRenewableComponents.isEmpty) {
@@ -77,7 +77,7 @@ class CellTrailLayer extends CellStaticLayer {
       return null;
     }
     if (_imageRenderInProgress) {
-      return null;
+      return;
     }
     _imageRenderInProgress = true;
     _updateLayerPictureWithFade();

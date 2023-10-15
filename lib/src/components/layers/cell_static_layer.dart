@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
@@ -13,7 +12,12 @@ class ImageCacheEntry {
 }
 
 class CellStaticLayer extends CellLayer {
-  CellStaticLayer(super.cell, {super.name, super.componentsStorageMode}) {
+  CellStaticLayer(
+    super.cell, {
+    super.name,
+    super.componentsStorageMode,
+    super.buildMacroObject,
+  }) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
   }
@@ -112,10 +116,10 @@ class CellStaticLayer extends CellLayer {
   }
 
   @override
-  FutureOr compileToSingleLayer(Iterable<Component> components) {
+  void compileToSingleLayer(Iterable<Component> components) {
     final renderingChildren = components.whereType<PositionComponent>();
     if (renderingChildren.isEmpty) {
-      return null;
+      return;
     }
 
     final cell = currentCell;

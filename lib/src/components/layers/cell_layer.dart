@@ -7,6 +7,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/rendering.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/collision_optimizer.dart';
+import 'package:flame_spatial_grid/src/components/layers/scheduled_layer_operation.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -77,6 +78,7 @@ abstract class CellLayer extends PositionComponent
     Cell cell, {
     this.name = '',
     LayerComponentsStorageMode? componentsStorageMode,
+    bool buildMacroObject = false,
   })  : componentsStorageMode = componentsStorageMode ??
             LayerComponentsStorageMode.defaultComponentTree,
         super(
@@ -86,6 +88,7 @@ abstract class CellLayer extends PositionComponent
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
     checkOutOfCellBounds = false;
+    this.buildMacroObject = buildMacroObject;
   }
 
   bool optimizeCollisions = false;
@@ -118,10 +121,37 @@ abstract class CellLayer extends PositionComponent
 
   LayerCacheKey get cacheKey;
 
-  @protected
-  FutureOr compileToSingleLayer(Iterable<Component> components);
+  Iterable<Component> get components {
+    switch (componentsStorageMode) {
+      case LayerComponentsStorageMode.defaultComponentTree:
+        return children;
+      case LayerComponentsStorageMode.internalLayerSet:
+        return alternativeComponentSet;
+      case LayerComponentsStorageMode.removeAfterCompile:
+        return nonRenewableComponents;
+    }
+  }
+
+  @internal
+  void compileToSingleLayer(Iterable<Component> components);
 
   final String name;
+
+  bool _buildMacroObject = false;
+
+  bool get buildMacroObject => _buildMacroObject;
+
+  set buildMacroObject(bool value) {
+    if (_buildMacroObject == value) {
+      return;
+    }
+    _buildMacroObject = value;
+    if (_buildMacroObject) {
+      game.layersManager.macroObjectsBuilder.addLayer(this);
+    } else {
+      game.layersManager.macroObjectsBuilder.removeLayer(this);
+    }
+  }
 
   Size get layerCalculatedSize {
     final cell = currentCell;
@@ -298,15 +328,22 @@ abstract class CellLayer extends PositionComponent
               return;
             }
             game.processLifecycleEvents();
-            if (optimizeCollisions) {
-              collisionOptimizer.optimize();
-              game.processLifecycleEvents();
+            if (currentCell?.state == CellState.active) {
+              if (optimizeCollisions) {
+                collisionOptimizer.optimize();
+              }
+              if (renderMode != LayerRenderMode.component) {
+                compileToSingleLayer(components);
+              }
+              postCompileActions();
+            } else {
+              final scheduledOperation = ScheduledLayerOperation(
+                cellLayer: this,
+                compileToSingleLayer: renderMode != LayerRenderMode.component,
+                optimizeCollisions: optimizeCollisions,
+              );
+              game.scheduledLayerOperations.add(scheduledOperation);
             }
-            if (renderMode != LayerRenderMode.component) {
-              await compileToSingleLayer(children);
-            }
-            _pendingComponents.clear();
-            _updateLayerFuture = null;
           });
           break;
         case LayerComponentsStorageMode.internalLayerSet:
@@ -314,11 +351,19 @@ abstract class CellLayer extends PositionComponent
             if (isRemovedLayer) {
               return;
             }
-            if (renderMode != LayerRenderMode.component) {
-              await compileToSingleLayer(alternativeComponentSet);
+            if (currentCell?.state == CellState.active) {
+              if (renderMode != LayerRenderMode.component) {
+                compileToSingleLayer(components);
+              }
+              postCompileActions();
+            } else {
+              final scheduledOperation = ScheduledLayerOperation(
+                cellLayer: this,
+                compileToSingleLayer: renderMode != LayerRenderMode.component,
+                optimizeCollisions: false,
+              );
+              game.scheduledLayerOperations.add(scheduledOperation);
             }
-            _pendingComponents.clear();
-            _updateLayerFuture = null;
           });
           break;
         case LayerComponentsStorageMode.removeAfterCompile:
@@ -329,17 +374,16 @@ abstract class CellLayer extends PositionComponent
             if (isRemovedLayer) {
               return;
             }
-            final result = compileToSingleLayer(nonRenewableComponents);
-            if (result is Future) {
-              result.whenComplete(
-                () {
-                  nonRenewableComponents.clear();
-                  _updateLayerFuture = null;
-                },
-              );
+            if (currentCell?.state == CellState.active) {
+              compileToSingleLayer(components);
+              postCompileActions();
             } else {
-              nonRenewableComponents.clear();
-              _updateLayerFuture = null;
+              final scheduledOperation = ScheduledLayerOperation(
+                cellLayer: this,
+                compileToSingleLayer: true,
+                optimizeCollisions: false,
+              );
+              game.scheduledLayerOperations.add(scheduledOperation);
             }
           });
           break;
@@ -350,6 +394,13 @@ abstract class CellLayer extends PositionComponent
     return _updateLayerFuture ?? Future<void>.value();
   }
 
+  @internal
+  void postCompileActions() {
+    nonRenewableComponents.clear();
+    _pendingComponents.clear();
+    _updateLayerFuture = null;
+  }
+
   void _updateTreePart(double dt) {
     children
         .query<ComponentWithUpdate>()
@@ -358,11 +409,14 @@ abstract class CellLayer extends PositionComponent
 
   bool onCheckCache(int key);
 
+  var _markRemovedManually = false;
+
   bool get isRemovedLayer =>
       !isMounted ||
       isRemoving ||
       isRemoved ||
       currentCell == null ||
+      _markRemovedManually ||
       // ignore: use_if_null_to_convert_nulls_to_bools
       currentCell?.isRemoving == true;
 
@@ -386,6 +440,8 @@ abstract class CellLayer extends PositionComponent
     }
     _pendingComponents.clear();
     collisionOptimizer.clear();
+    _markRemovedManually = true;
+    buildMacroObject = false;
     super.onRemove();
   }
 
