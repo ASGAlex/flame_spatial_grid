@@ -206,6 +206,15 @@ class Cell {
   CellState get state => _state;
 
   @internal
+  void setStateInternal(CellState value) {
+    final oldValue = _state;
+    if (oldValue == value) {
+      return;
+    }
+    _state = value;
+  }
+
+  @internal
   CellState tmpState = CellState.active;
 
   set state(CellState value) {

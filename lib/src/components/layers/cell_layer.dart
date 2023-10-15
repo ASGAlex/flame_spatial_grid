@@ -337,10 +337,13 @@ abstract class CellLayer extends PositionComponent
               }
               postCompileActions();
             } else {
+              final currentState = currentCell!.state;
+              currentCell!.setStateInternal(CellState.suspended);
               final scheduledOperation = ScheduledLayerOperation(
                 cellLayer: this,
                 compileToSingleLayer: renderMode != LayerRenderMode.component,
                 optimizeCollisions: optimizeCollisions,
+                stateAfterOperation: currentState,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }
@@ -357,10 +360,13 @@ abstract class CellLayer extends PositionComponent
               }
               postCompileActions();
             } else {
+              final currentState = currentCell!.state;
+              currentCell!.setStateInternal(CellState.suspended);
               final scheduledOperation = ScheduledLayerOperation(
                 cellLayer: this,
                 compileToSingleLayer: renderMode != LayerRenderMode.component,
                 optimizeCollisions: false,
+                stateAfterOperation: currentState,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }
@@ -378,10 +384,13 @@ abstract class CellLayer extends PositionComponent
               compileToSingleLayer(components);
               postCompileActions();
             } else {
+              final currentState = currentCell!.state;
+              currentCell!.setStateInternal(CellState.suspended);
               final scheduledOperation = ScheduledLayerOperation(
                 cellLayer: this,
                 compileToSingleLayer: true,
                 optimizeCollisions: false,
+                stateAfterOperation: currentState,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }

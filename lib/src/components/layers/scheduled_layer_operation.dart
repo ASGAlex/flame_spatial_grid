@@ -28,7 +28,7 @@ class ScheduledLayerOperation {
     }
     if (stateAfterOperation != null &&
         cellLayer.currentCell?.state != stateAfterOperation) {
-      cellLayer.currentCell?.state = stateAfterOperation!;
+      cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
     }
   }
 }
