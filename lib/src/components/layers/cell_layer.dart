@@ -330,7 +330,7 @@ abstract class CellLayer extends PositionComponent
             game.processLifecycleEvents();
             if (currentCell?.state == CellState.active) {
               if (optimizeCollisions) {
-                collisionOptimizer.optimize();
+                await collisionOptimizer.optimize();
               }
               if (renderMode != LayerRenderMode.component) {
                 compileToSingleLayer(components);

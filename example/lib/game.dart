@@ -121,19 +121,19 @@ all collisions are disabled.
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
       suspendedCellLifetime: const Duration(minutes: 10),
-      scheduledLayerOperationLimit: 1,
+      scheduledLayerOperationLimit: 5,
       cellBuilderNoMap: noMapCellBuilder,
-      maps: [
-        DemoMapLoader(Vector2(600, 0)),
-      ],
-      worldLoader: WorldLoader(
-        fileName: 'example.world',
-        loadWholeMap: false,
-        mapLoader: {
-          'example': DemoMapLoader.new,
-          'another_map': DemoMapLoader.new,
-        },
-      ),
+      // maps: [
+      //   DemoMapLoader(Vector2(600, 0)),
+      // ],
+      // worldLoader: WorldLoader(
+      //   fileName: 'example.world',
+      //   loadWholeMap: false,
+      //   mapLoader: {
+      //     'example': DemoMapLoader.new,
+      //     'another_map': DemoMapLoader.new,
+      //   },
+      // ),
     );
     // await demoMapLoader.init(this);
 
@@ -299,15 +299,21 @@ all collisions are disabled.
     hideLoadingComponent();
   }
 
+  bool nomapFinished = false;
+
   Future<void> noMapCellBuilder(
     Cell cell,
     Component rootComponent,
     Iterable<Rect> mapRects,
   ) async {
     // return;
-    if (mapRects.isNotEmpty) {
+
+    if (mapRects.isNotEmpty || nomapFinished) {
       return;
     }
+    // if (!nomapFinished) {
+    //   nomapFinished = true;
+    // }
 
     final brickTile = tilesetManager.getTile('tileset', 'Brick');
     final waterTile = tilesetManager.getTile('tileset', 'Water');
@@ -432,7 +438,7 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
   }
 
   void spawnNpcTeam([bool aiEnabled = false]) {
-    // return;
+    return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;

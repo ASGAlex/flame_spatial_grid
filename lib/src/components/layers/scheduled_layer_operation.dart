@@ -19,8 +19,9 @@ class ScheduledLayerOperation {
     if (cellLayer.isRemovedLayer) {
       return;
     }
+    Future? future;
     if (optimizeCollisions) {
-      cellLayer.collisionOptimizer.optimize();
+      future = cellLayer.collisionOptimizer.optimize();
     }
     if (compileToSingleLayer) {
       cellLayer.compileToSingleLayer(cellLayer.components);
@@ -28,7 +29,13 @@ class ScheduledLayerOperation {
     }
     if (stateAfterOperation != null &&
         cellLayer.currentCell?.state != stateAfterOperation) {
-      cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
+      if (future == null) {
+        cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
+      } else {
+        future.then((value) {
+          cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
+        });
+      }
     }
   }
 }
