@@ -334,17 +334,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             potentialParent.primaryHitboxCollisionType ?? potentialType;
       }
       var key = activeItem.runtimeType.hashCode & potentialType.hashCode;
-      final cache =
-          _getPureTypeCheckCache(activeItem.runtimeType, potentialType, key);
+      final cache = _checkByTypeCache[key];
       if (cache == null) {
         canToCollide =
             _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
-        _saveCheckByPureTypeCache(
-          activeItem.runtimeType,
-          potentialType,
-          canToCollide,
-          key,
-        );
+        _checkByTypeCache[key] = canToCollide;
       } else {
         canToCollide = cache;
       }
@@ -355,18 +349,12 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           potentialType = potentialParent.runtimeType;
         }
         final activeItemParentType = activeParent.runtimeType;
-        key = activeItem.runtimeType.hashCode & potentialType.hashCode;
-        final cache =
-            _getPureTypeCheckCache(activeItemParentType, potentialType, key);
+        key = activeItemParentType.hashCode & potentialType.hashCode;
+        final cache = _checkByTypeCache[key];
 
         if (cache == null) {
           canToCollide = _pureTypeCheckComponent(activeParent, potentialParent);
-          _saveCheckByPureTypeCache(
-            activeItemParentType,
-            potentialType,
-            canToCollide,
-            key,
-          );
+          _checkByTypeCache[key] = canToCollide;
         } else {
           canToCollide = cache;
         }
@@ -441,18 +429,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       return activeCanCollide && potentialCanCollide;
     }
     return canToCollide;
-  }
-
-  bool? _getPureTypeCheckCache(Type activeType, Type potentialType, int key) =>
-      _checkByTypeCache[key];
-
-  void _saveCheckByPureTypeCache(
-    Type activeType,
-    Type potentialType,
-    bool canToCollide,
-    int key,
-  ) {
-    _checkByTypeCache[key] = canToCollide;
   }
 
   bool _minimumDistanceCheck(
