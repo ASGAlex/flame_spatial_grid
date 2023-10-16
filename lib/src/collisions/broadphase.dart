@@ -188,7 +188,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   Iterable<CollisionProspect<ShapeHitbox>> query() {
     _potentials.clear();
     _prospectPoolIndex = 0;
-    final activeChecked = HashMap<ShapeHitbox, HashSet<ShapeHitbox>>();
+    final activeChecked = HashSet<int>();
     final unmodifiableActiveList = activeCollisions.toList(growable: false);
     for (final activeItem in unmodifiableActiveList) {
       final withGridSupport = activeItem.parentWithGridSupport;
@@ -259,7 +259,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   void _compareItemWithPotentials(
     ShapeHitbox activeItem,
     Iterable<ShapeHitbox> potentials, [
-    HashMap<ShapeHitbox, HashSet<ShapeHitbox>>? activeChecked,
+    HashSet<int>? activeChecked,
     bool excludePureTypeCheck = false,
   ]) {
     final activeParent = activeItem.hitboxParent;
@@ -272,12 +272,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         continue;
       }
       if (activeChecked != null) {
-        if (activeChecked[activeItem]?.contains(potential) ?? false) {
+        final key = activeItem.hashCode & potential.hashCode;
+        if (activeChecked.contains(key)) {
           continue;
         } else {
-          var checked = activeChecked[potential];
-          checked ??= activeChecked[potential] = HashSet<ShapeHitbox>();
-          checked.add(activeItem);
+          activeChecked.add(key);
         }
       }
       if (excludePureTypeCheck) {
