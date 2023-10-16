@@ -72,7 +72,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   PureTypeCheck? globalPureTypeCheck;
 
-  final _checkByTypeCache = HashMap<Type, Map<Type, bool>>();
+  final _checkByTypeCache = <int, bool>{};
 
   @internal
   static final broadphaseCheckCache =
@@ -316,8 +316,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         potentialType =
             potentialParent.primaryHitboxCollisionType ?? potentialType;
       }
+      var key = activeItem.runtimeType.hashCode & potentialType.hashCode;
       final cache =
-          _getPureTypeCheckCache(activeItem.runtimeType, potentialType);
+          _getPureTypeCheckCache(activeItem.runtimeType, potentialType, key);
       if (cache == null) {
         canToCollide =
             _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
@@ -325,6 +326,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           activeItem.runtimeType,
           potentialType,
           canToCollide,
+          key,
         );
       } else {
         canToCollide = cache;
@@ -336,8 +338,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           potentialType = potentialParent.runtimeType;
         }
         final activeItemParentType = activeParent.runtimeType;
+        key = activeItem.runtimeType.hashCode & potentialType.hashCode;
         final cache =
-            _getPureTypeCheckCache(activeItemParentType, potentialType);
+            _getPureTypeCheckCache(activeItemParentType, potentialType, key);
 
         if (cache == null) {
           canToCollide = _pureTypeCheckComponent(activeParent, potentialParent);
@@ -345,6 +348,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             activeItemParentType,
             potentialType,
             canToCollide,
+            key,
           );
         } else {
           canToCollide = cache;
@@ -422,22 +426,16 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     return canToCollide;
   }
 
-  bool? _getPureTypeCheckCache(Type activeType, Type potentialType) =>
-      _checkByTypeCache[activeType]?[potentialType] ??
-      _checkByTypeCache[potentialType]?[activeType];
+  bool? _getPureTypeCheckCache(Type activeType, Type potentialType, int key) =>
+      _checkByTypeCache[key];
 
   void _saveCheckByPureTypeCache(
     Type activeType,
     Type potentialType,
     bool canToCollide,
+    int key,
   ) {
-    var itemTypeCache = _checkByTypeCache[activeType];
-    itemTypeCache ??= _checkByTypeCache[activeType] = <Type, bool>{};
-    itemTypeCache[potentialType] = canToCollide;
-
-    var potentialTypeCache = _checkByTypeCache[potentialType];
-    potentialTypeCache ??= _checkByTypeCache[potentialType] = <Type, bool>{};
-    potentialTypeCache[activeType] = canToCollide;
+    _checkByTypeCache[key] = canToCollide;
   }
 
   bool _minimumDistanceCheck(
