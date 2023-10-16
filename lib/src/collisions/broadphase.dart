@@ -48,7 +48,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   final _potentials = <int, CollisionProspect<ShapeHitbox>>{};
 
   @protected
-  final activeCollisions = HashSet<ShapeHitbox>();
+  final activeCollisions = <ShapeHitbox>{};
 
   @internal
   final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
@@ -178,12 +178,16 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     return _potentials.values;
   }
 
+  final _passiveByCellUnmodifiable = <Cell, List<ShapeHitbox>?>{};
+  final _activeByCellUnmodifiable = <Cell, List<ShapeHitbox>?>{};
+
   @override
   Iterable<CollisionProspect<ShapeHitbox>> query() {
     _potentials.clear();
     _prospectPoolIndex = 0;
     final activeChecked = HashMap<ShapeHitbox, HashSet<ShapeHitbox>>();
-    for (final activeItem in activeCollisions) {
+    final unmodifiableActiveList = activeCollisions.toList(growable: false);
+    for (final activeItem in unmodifiableActiveList) {
       final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
           activeItem.isRemoving ||
@@ -212,13 +216,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
 
       if (currentCell.hasOutOfBoundsComponents) {
-        cellsToCheck = currentCell.neighboursAndMe;
+        cellsToCheck = currentCell.neighboursAndMe.toList(growable: false);
       } else {
-        cellsToCheck = [currentCell];
+        cellsToCheck = List<Cell>.filled(1, currentCell);
       }
 
       for (final cell in cellsToCheck) {
-        final items = passiveCollisionsByCell[cell];
+        var items = _passiveByCellUnmodifiable[cell];
+        if (items == null) {
+          items = passiveCollisionsByCell[cell]?.toList(growable: false);
+          _passiveByCellUnmodifiable[cell] = items;
+        }
         if (items != null && items.isNotEmpty) {
           _compareItemWithPotentials(
             activeItem,
@@ -226,7 +234,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           );
         }
 
-        final itemsActive = activeCollisionsByCell[cell];
+        var itemsActive = _activeByCellUnmodifiable[cell];
+        if (itemsActive == null) {
+          itemsActive = activeCollisionsByCell[cell]?.toList(growable: false);
+          _activeByCellUnmodifiable[cell] = itemsActive;
+        }
         if (itemsActive != null && itemsActive.isNotEmpty) {
           _compareItemWithPotentials(
             activeItem,
@@ -236,6 +248,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         }
       }
     }
+    _passiveByCellUnmodifiable.clear();
+    _activeByCellUnmodifiable.clear();
     return _potentials.values;
   }
 
