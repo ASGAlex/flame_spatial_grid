@@ -149,8 +149,10 @@ class SpatialGridCollisionDetection
       _runForPotentials(additionalPotentials);
       allPotentials.addAll(additionalPotentials);
     }
+    final unmodifiableAllPotentials = allPotentials.toList(growable: false);
 
-    final allHashes = Set.unmodifiable(allPotentials.map((p) => p.hash));
+    final allHashes =
+        Set.unmodifiable(unmodifiableAllPotentials.map((p) => p.hash));
     // Handles callbacks for an ended collision that the broadphase didn't
     // report as a potential collision anymore.
     for (final prospect in _lastPotentials) {
@@ -159,7 +161,7 @@ class SpatialGridCollisionDetection
         handleCollisionEnd(prospect.a, prospect.b);
       }
     }
-    _updateLastPotentials(allPotentials);
+    _updateLastPotentials(unmodifiableAllPotentials);
   }
 
   void _updateTransform(ShapeHitbox item) {
