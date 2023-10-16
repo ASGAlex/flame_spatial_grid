@@ -142,7 +142,8 @@ class SpatialGridCollisionDetection
 
     final allPotentials = broadphase.query().toList();
     final repeatBroadphaseForItems = _runForPotentials(allPotentials);
-    if (repeatBroadphaseForItems.isNotEmpty) {
+    if (repeatBroadphaseForItems.isNotEmpty &&
+        repeatBroadphaseForItems[0] != null) {
       final additionalPotentials =
           broadphase.querySubset(repeatBroadphaseForItems);
       _runForPotentials(additionalPotentials);
@@ -199,10 +200,12 @@ class SpatialGridCollisionDetection
     }
   }
 
-  Iterable<CollisionProspect<ShapeHitbox>> _runForPotentials(
+  List<CollisionProspect<ShapeHitbox>?> _runForPotentials(
     Iterable<CollisionProspect<ShapeHitbox>> potentials,
   ) {
-    final repeatBroadphaseForItems = <CollisionProspect<ShapeHitbox>>[];
+    final repeatBroadphaseForItems =
+        List<CollisionProspect<ShapeHitbox>?>.filled(potentials.length, null);
+    var i = 0;
     for (final tuple in potentials) {
       final itemA = tuple.a;
       final itemB = tuple.b;
@@ -223,7 +226,8 @@ class SpatialGridCollisionDetection
             }
 
             if (!handleCollisions) {
-              repeatBroadphaseForItems.add(tuple);
+              repeatBroadphaseForItems[i] = tuple;
+              i++;
               continue;
             }
           }

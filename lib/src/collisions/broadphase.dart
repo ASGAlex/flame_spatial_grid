@@ -144,10 +144,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   }
 
   Iterable<CollisionProspect<ShapeHitbox>> querySubset(
-    Iterable<CollisionProspect<ShapeHitbox>> potentials,
+    List<CollisionProspect<ShapeHitbox>?> potentials,
   ) {
     _potentials.clear();
     for (final tuple in potentials) {
+      if (tuple == null) {
+        break;
+      }
       ShapeHitbox componentHitbox;
       GroupHitbox groupBox;
 
