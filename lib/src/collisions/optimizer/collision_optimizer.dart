@@ -14,29 +14,21 @@ import 'package:meta/meta.dart';
 class OverlappingSearchRequest {
   const OverlappingSearchRequest({
     required this.hitboxes,
-    required this.target,
+    required this.maximumItemsInGroup,
   });
 
-  final List<BoundingHitboxHydrated> hitboxes;
-  final BoundingHitboxHydrated target;
+  final List<BoundingHitboxDehydrated> hitboxes;
+  final int maximumItemsInGroup;
 }
 
 class OverlappedSearchResponse {
-  OverlappedSearchResponse(this.index, this.hydratedRect);
+  OverlappedSearchResponse(this.optimizedCollisions);
 
-  final int index;
-  final Float64List hydratedRect;
-
-  Rect get rect => Rect.fromLTRB(
-        hydratedRect[0],
-        hydratedRect[1],
-        hydratedRect[2],
-        hydratedRect[3],
-      );
+  final List<OptimizedCollisionListDehydrated> optimizedCollisions;
 }
 
-class BoundingHitboxHydrated {
-  BoundingHitboxHydrated(BoundingHitbox hitbox, this.index) {
+class BoundingHitboxDehydrated {
+  BoundingHitboxDehydrated(BoundingHitbox hitbox, this.index) {
     aabb = hitbox.aabb;
     positionStorage = hitbox.position.storage;
 
@@ -59,6 +51,17 @@ class BoundingHitboxHydrated {
   Float64List get hydratedRect {
     toRectSpecial();
     return _hydratedRect;
+  }
+
+  final Vector2 _aabbCenter = Vector2.zero();
+  bool _aabbCenterNotSet = true;
+
+  Vector2 get aabbCenter {
+    if (_aabbCenterNotSet) {
+      _aabbCenterNotSet = false;
+      _aabbCenter.setFrom(aabb.center);
+    }
+    return _aabbCenter;
   }
 
   Rect toRectSpecial() {
@@ -94,18 +97,82 @@ class BoundingHitboxHydrated {
 }
 
 @pragma('vm:entry-point')
-Iterable<OverlappedSearchResponse> findOverlappingRectsIsolated(
+OverlappedSearchResponse findOverlappingRectsIsolated(
   OverlappingSearchRequest parameters,
-) =>
-    _findOverlappingRects(parameters.target, parameters.hitboxes);
+) {
+  final skip = <int>{};
+  final optimizedCollisions = <OptimizedCollisionListDehydrated>[];
+  for (var i = 0; i < parameters.hitboxes.length; i++) {
+    if (skip.contains(i)) {
+      continue;
+    }
+    final target = parameters.hitboxes[i];
+    if (target.skip) {
+      continue;
+    }
+    final hitboxesUnsorted = _findOverlappingRects(target, parameters.hitboxes);
+    for (final element in hitboxesUnsorted) {
+      skip.add(element.index);
+    }
 
-Iterable<OverlappedSearchResponse> _findOverlappingRects(
-  BoundingHitboxHydrated target,
-  List<BoundingHitboxHydrated> hitboxesForOptimization, [
+    if (hitboxesUnsorted.length > 1) {
+      if (hitboxesUnsorted.length > parameters.maximumItemsInGroup) {
+        final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
+        hitboxesSorted.sort((a, b) {
+          if (a.aabbCenter == b.aabbCenter) {
+            return 0;
+          }
+          if (a.aabbCenter.y < b.aabbCenter.y) {
+            return -1;
+          } else if (a.aabbCenter.y == b.aabbCenter.y) {
+            return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
+          } else {
+            return 1;
+          }
+        });
+        var totalInChunk = 0;
+        var chunk = <BoundingHitboxDehydrated>[];
+        for (final hbInChunk in hitboxesSorted) {
+          if (totalInChunk == parameters.maximumItemsInGroup) {
+            final optimized = OptimizedCollisionListDehydrated(
+              <BoundingHitboxDehydrated>{}..addAll(chunk),
+            );
+            optimizedCollisions.add(optimized);
+            totalInChunk = 0;
+            chunk = <BoundingHitboxDehydrated>[];
+          } else {
+            chunk.add(hbInChunk);
+            totalInChunk++;
+          }
+        }
+        if (chunk.isNotEmpty) {
+          final optimized = OptimizedCollisionListDehydrated(
+            HashSet<BoundingHitboxDehydrated>()..addAll(chunk),
+          );
+          optimizedCollisions.add(optimized);
+        }
+      } else {
+        final optimized = OptimizedCollisionListDehydrated(
+          hitboxesUnsorted,
+        );
+        optimizedCollisions.add(optimized);
+      }
+      if (hitboxesUnsorted.length >= parameters.hitboxes.length) {
+        break;
+      }
+    }
+  }
+
+  return OverlappedSearchResponse(optimizedCollisions);
+}
+
+Iterable<BoundingHitboxDehydrated> _findOverlappingRects(
+  BoundingHitboxDehydrated target,
+  List<BoundingHitboxDehydrated> hitboxesForOptimization, [
   Set<int>? excludedIndices,
 ]) {
-  final hitboxes = <OverlappedSearchResponse>[];
-  hitboxes.add(OverlappedSearchResponse(target.index, target.hydratedRect));
+  final hitboxes = <BoundingHitboxDehydrated>[];
+  hitboxes.add(target);
   if (excludedIndices != null) {
     excludedIndices.add(target.index);
   } else {
@@ -138,8 +205,8 @@ class CollisionOptimizer {
     );
   }
 
-  static IsolateManager<Iterable<OverlappedSearchResponse>,
-      OverlappingSearchRequest>? _isolateManager;
+  static IsolateManager<OverlappedSearchResponse, OverlappingSearchRequest>?
+      _isolateManager;
 
   final CellLayer parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
@@ -157,12 +224,10 @@ class CollisionOptimizer {
 
   HasSpatialGridFramework get game => parentLayer.game;
 
-  Set<HasGridSupport> _componentsForOptimisation = {};
-
   @internal
   static final rectCache = <PositionComponent, Rect>{};
 
-  Future optimizeIsolated() async {
+  Future optimize() async {
     final cell = clear();
     if (cell == null) {
       return;
@@ -175,245 +240,40 @@ class CollisionOptimizer {
     final componentsForOptimization =
         parentLayer.children.query<HasGridSupport>();
     var i = 0;
-    final toCheck = <BoundingHitboxHydrated>[];
+    final toCheck = <BoundingHitboxDehydrated>[];
     for (final child in componentsForOptimization) {
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
         child.boundingBox.group = null;
       }
-      toCheck.add(BoundingHitboxHydrated(child.boundingBox, i));
+      toCheck.add(BoundingHitboxDehydrated(child.boundingBox, i));
       i++;
     }
 
-    final skip = <int>{};
-    for (var i = 0; i < toCheck.length; i++) {
-      if (skip.contains(i)) {
-        continue;
-      }
-      final target = toCheck[i];
-      if (target.skip) {
-        continue;
-      }
-      final params = OverlappingSearchRequest(
-        hitboxes: toCheck,
-        target: target,
-      );
-      final hitboxesUnsortedIndices = await _isolateManager!.compute(params);
-      final hitboxesUnsorted = <BoundingHitbox>[];
-      for (final responseItem in hitboxesUnsortedIndices) {
+    final params = OverlappingSearchRequest(
+      hitboxes: toCheck,
+      maximumItemsInGroup: maximumItemsInGroup,
+    );
+
+    final response = await _isolateManager!.compute(params);
+    for (final collisionsList in response.optimizedCollisions) {
+      final hydratedHitboxes = <BoundingHitbox>[];
+      for (final dehydrated in collisionsList.hitboxes) {
         try {
-          final hitbox =
-              componentsForOptimization[responseItem.index].boundingBox;
-          CollisionOptimizer.rectCache[hitbox] = responseItem.rect;
-          skip.add(responseItem.index);
-          hitboxesUnsorted.add(hitbox);
-        } on RangeError catch (_) {
-          skip.add(responseItem.index);
-        }
+          final component = componentsForOptimization[dehydrated.index];
+          component.boundingBox.collisionType = CollisionType.inactive;
+          hydratedHitboxes.add(component.boundingBox);
+        } on RangeError catch (_) {}
       }
-      if (hitboxesUnsorted.length > 1) {
-        if (hitboxesUnsorted.length > maximumItemsInGroup) {
-          final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
-          hitboxesSorted.sort((a, b) {
-            if (a.aabbCenter == b.aabbCenter) {
-              return 0;
-            }
-            if (a.aabbCenter.y < b.aabbCenter.y) {
-              return -1;
-            } else if (a.aabbCenter.y == b.aabbCenter.y) {
-              return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
-            } else {
-              return 1;
-            }
-          });
-          var totalInChunk = 0;
-          var chunk = <ShapeHitbox>[];
-          for (final hbInChunk in hitboxesSorted) {
-            if (totalInChunk == maximumItemsInGroup) {
-              final optimized = OptimizedCollisionList(
-                <ShapeHitbox>{}..addAll(chunk),
-                parentLayer,
-              );
-              collisionsListByGroup[optimized.boundingBox] = optimized;
-              _createdCollisionLists.add(optimized);
-              totalInChunk = 0;
-              chunk = <ShapeHitbox>[];
-            } else {
-              chunk.add(hbInChunk);
-              totalInChunk++;
-            }
-          }
-          if (chunk.isNotEmpty) {
-            final optimized = OptimizedCollisionList(
-              HashSet<ShapeHitbox>()..addAll(chunk),
-              parentLayer,
-            );
-            collisionsListByGroup[optimized.boundingBox] = optimized;
-            _createdCollisionLists.add(optimized);
-          }
-        } else {
-          final optimized = OptimizedCollisionList(
-            hitboxesUnsorted,
-            parentLayer,
-          );
-          collisionsListByGroup[optimized.boundingBox] = optimized;
-          _createdCollisionLists.add(optimized);
-        }
-        for (final hb in hitboxesUnsorted) {
-          hb.collisionType = CollisionType.inactive;
-        }
-        if (hitboxesUnsorted.length >= toCheck.length) {
-          break;
-        }
-      }
+      final optimized = OptimizedCollisionList(
+        hydratedHitboxes,
+        parentLayer,
+        collisionsList.expandedBoundingRect,
+      );
+      _createdCollisionLists.add(optimized);
+      collisionsListByGroup[optimized.boundingBox] = optimized;
     }
-  }
-
-  Future optimize() async {
-    await optimizeIsolated();
-    return;
-
-    final cell = clear();
-    if (cell == null) {
-      return;
-    }
-
-    final optimizedCollisionsByGroupBox =
-        game.collisionDetection.broadphase.optimizedCollisionsByGroupBox;
-    final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
-
-    _componentsForOptimisation =
-        parentLayer.children.query<HasGridSupport>().toSet();
-    final temporaryList = _componentsForOptimisation.toList(growable: false);
-    for (final child in temporaryList) {
-      if (cell.state != CellState.inactive) {
-        child.boundingBox.collisionType =
-            child.boundingBox.defaultCollisionType;
-        child.boundingBox.group = null;
-      }
-      if (child.boundingBox.collisionType == CollisionType.inactive) {
-        _componentsForOptimisation.remove(child);
-      }
-    }
-    final totalLength = _componentsForOptimisation.length;
-    var child = _componentsForOptimisation.firstOrNull;
-
-    while (child != null) {
-      final hitboxesUnsorted = _findOverlappingRects(child.boundingBox);
-      if (hitboxesUnsorted.length > 1) {
-        if (hitboxesUnsorted.length > maximumItemsInGroup) {
-          final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
-          hitboxesSorted.sort((a, b) {
-            if (a.aabbCenter == b.aabbCenter) {
-              return 0;
-            }
-            if (a.aabbCenter.y < b.aabbCenter.y) {
-              return -1;
-            } else if (a.aabbCenter.y == b.aabbCenter.y) {
-              return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
-            } else {
-              return 1;
-            }
-          });
-          var totalInChunk = 0;
-          var chunk = <ShapeHitbox>[];
-          for (final hbInChunk in hitboxesSorted) {
-            if (totalInChunk == maximumItemsInGroup) {
-              final optimized = OptimizedCollisionList(
-                <ShapeHitbox>{}..addAll(chunk),
-                parentLayer,
-              );
-              collisionsListByGroup[optimized.boundingBox] = optimized;
-              _createdCollisionLists.add(optimized);
-              totalInChunk = 0;
-              chunk = <ShapeHitbox>[];
-            } else {
-              chunk.add(hbInChunk);
-              totalInChunk++;
-            }
-          }
-          if (chunk.isNotEmpty) {
-            final optimized = OptimizedCollisionList(
-              HashSet<ShapeHitbox>()..addAll(chunk),
-              parentLayer,
-            );
-            collisionsListByGroup[optimized.boundingBox] = optimized;
-            _createdCollisionLists.add(optimized);
-          }
-        } else {
-          final optimized = OptimizedCollisionList(
-            hitboxesUnsorted,
-            parentLayer,
-          );
-          collisionsListByGroup[optimized.boundingBox] = optimized;
-          _createdCollisionLists.add(optimized);
-        }
-        for (final hb in hitboxesUnsorted) {
-          hb.collisionType = CollisionType.inactive;
-        }
-        if (hitboxesUnsorted.length >= totalLength) {
-          break;
-        }
-      }
-      child = _componentsForOptimisation.firstOrNull;
-    }
-
-    _componentsForOptimisation.clear();
-    rectCache.clear();
-  }
-
-  Iterable<BoundingHitbox> _findOverlappingRects(
-    BoundingHitbox hitbox, [
-    int index = 0,
-    List<int>? removalsIndicesOutput,
-  ]) {
-    final hitboxes = <BoundingHitbox>[];
-    hitboxes.add(hitbox);
-    _componentsForOptimisation.remove(hitbox.parentWithGridSupport);
-    var initialRemovalsCount = 0;
-    if (removalsIndicesOutput != null) {
-      initialRemovalsCount = removalsIndicesOutput.length;
-      removalsIndicesOutput.add(index);
-    } else {
-      removalsIndicesOutput = <int>[];
-    }
-    for (var i = 0; i < _componentsForOptimisation.length;) {
-      HasGridSupport otherChild;
-      if (i == 0) {
-        otherChild = _componentsForOptimisation.first;
-      } else {
-        otherChild = _componentsForOptimisation.elementAt(i);
-      }
-      if (hitbox
-          .toRectSpecial()
-          .overlapsSpecial(otherChild.boundingBox.toRectSpecial())) {
-        hitboxes.add(otherChild.boundingBox);
-        hitboxes.addAll(
-          _findOverlappingRects(
-            otherChild.boundingBox,
-            i,
-            removalsIndicesOutput,
-          ),
-        );
-        if (removalsIndicesOutput.isNotEmpty &&
-            initialRemovalsCount < removalsIndicesOutput.length) {
-          for (final removedIndex in removalsIndicesOutput) {
-            if (removedIndex <= i) {
-              i--;
-              if (i < 0) {
-                i = 0;
-              }
-            }
-          }
-        } else {
-          i++;
-        }
-      } else {
-        i++;
-      }
-    }
-    return hitboxes;
   }
 
   Cell? clear() {
@@ -433,7 +293,6 @@ class CollisionOptimizer {
       collisionsListByGroup.remove(optimized.boundingBox);
       optimized.clear();
     }
-    _componentsForOptimisation.clear();
     _createdCollisionLists.clear();
     return cell;
   }
