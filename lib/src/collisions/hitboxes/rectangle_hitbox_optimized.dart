@@ -1,7 +1,7 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/src/geometry/polygon_ray_intersection.dart';
-import 'package:flame_spatial_grid/src/collisions/polygon_rect_component.dart';
+import 'package:flame_spatial_grid/src/collisions/hitboxes/polygon_rect_component.dart';
 import 'package:flutter/foundation.dart';
 
 class RectangleHitboxOptimized extends PolygonRectComponent

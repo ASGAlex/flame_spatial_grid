@@ -1,7 +1,6 @@
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/optimizer/collision_optimizer.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/extensions.dart';
 
 class OptimizedCollisionList {
@@ -72,33 +71,6 @@ class OptimizedCollisionList {
     _hitboxes.clear();
     if (_boundingBox.parent != null) {
       _boundingBox.removeFromParent();
-    }
-  }
-}
-
-class OptimizedCollisionListDehydrated {
-  OptimizedCollisionListDehydrated(
-      Iterable<BoundingHitboxDehydrated> hitboxes) {
-    _hitboxes.addAll(hitboxes);
-    _updateBoundingBox();
-  }
-
-  List<BoundingHitboxDehydrated> get hitboxes => _hitboxes;
-  final _hitboxes = <BoundingHitboxDehydrated>[];
-
-  Rect _expandedBoundingRect = Rect.zero;
-
-  Rect get expandedBoundingRect => _expandedBoundingRect;
-
-  void _updateBoundingBox() {
-    _expandedBoundingRect = Rect.zero;
-    for (final hitbox in _hitboxes) {
-      if (_expandedBoundingRect == Rect.zero) {
-        _expandedBoundingRect = hitbox.toRectSpecial();
-        continue;
-      }
-      _expandedBoundingRect =
-          _expandedBoundingRect.expandToInclude(hitbox.toRectSpecial());
     }
   }
 }
