@@ -70,6 +70,9 @@ mixin HasGridSupport on PositionComponent {
   bool checkOutOfCellBounds = true;
   bool needResize = false;
 
+  bool _positionCached = false;
+  final _absolutePositionOfCache = Vector2.zero();
+
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
       currentCell != null && currentCell?.state == CellState.suspended;
@@ -215,7 +218,30 @@ mixin HasGridSupport on PositionComponent {
   FutureOr<void>? onLoad() {
     boundingBox.size.setFrom(size);
     add(boundingBox);
+    position.addListener(_onPositionChanged);
     return super.onLoad();
+  }
+
+  void _onPositionChanged() {
+    _positionCached = false;
+  }
+
+  @override
+  Vector2 absolutePositionOf(Vector2 point) {
+    if (_positionCached) {
+      return _absolutePositionOfCache;
+    } else {
+      var parentPoint = positionOf(point);
+      var ancestor = parent;
+      while (ancestor != null) {
+        if (ancestor is PositionComponent) {
+          parentPoint = ancestor.positionOf(parentPoint);
+        }
+        ancestor = ancestor.parent;
+      }
+      _absolutePositionOfCache.setFrom(parentPoint);
+      return _absolutePositionOfCache;
+    }
   }
 
   void onSpatialGridInitialized() {}
@@ -260,6 +286,8 @@ mixin HasGridSupport on PositionComponent {
       // otherwise it will be removed with hitbox removal.
       currentCell = null;
     }
+    position.removeListener(_onPositionChanged);
+
   }
 
   @override

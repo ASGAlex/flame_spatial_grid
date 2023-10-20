@@ -45,6 +45,9 @@ class BoundingHitbox extends RectangleHitboxOptimized
   final _broadphaseCheckCacheTrue = HashSet<int>();
   final _broadphaseCheckCacheFalse = HashSet<int>();
 
+  bool _positionCached = false;
+  final _absolutePositionOfCache = Vector2.zero();
+
   @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
 
@@ -114,6 +117,24 @@ class BoundingHitbox extends RectangleHitboxOptimized
   static void resetAbsoluteSizeAngleCache() {
     _absoluteAngleCacheForType.clear();
     _absoluteScaledSizeCacheForType.clear();
+  }
+
+  @override
+  Vector2 absolutePositionOf(Vector2 point) {
+    if (_positionCached) {
+      return _absolutePositionOfCache;
+    } else {
+      var parentPoint = positionOf(point);
+      var ancestor = parent;
+      while (ancestor != null) {
+        if (ancestor is PositionComponent) {
+          parentPoint = ancestor.positionOf(parentPoint);
+        }
+        ancestor = ancestor.parent;
+      }
+      _absolutePositionOfCache.setFrom(parentPoint);
+      return _absolutePositionOfCache;
+    }
   }
 
   @override
@@ -271,7 +292,12 @@ class BoundingHitbox extends RectangleHitboxOptimized
   void onMount() {
     _precalculateCollisionVariables();
     size.addListener(_precalculateCollisionVariables);
+    position.addListener(_onPositionChanged);
     super.onMount();
+  }
+
+  void _onPositionChanged() {
+    _positionCached = false;
   }
 
   static final _removedKeys = <int>[];
@@ -287,6 +313,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
     _group = null;
 
+    position.removeListener(_onPositionChanged);
     size.removeListener(_precalculateCollisionVariables);
     super.onRemove();
     _parentWithGridSupport = null;
