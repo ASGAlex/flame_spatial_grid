@@ -26,6 +26,10 @@ class BoundingHitboxDehydrated {
   Rect? _rectCache;
   late Float64List _hydratedRect;
 
+  static final empty = BoundingHitboxDehydrated(emptyBoundingHitbox, 0);
+
+  static final emptyBoundingHitbox = BoundingHitbox();
+
   Float64List get hydratedRect {
     toRectSpecial();
     return _hydratedRect;

@@ -50,16 +50,18 @@ class CollisionOptimizer {
 
     final componentsForOptimization =
         parentLayer.children.query<HasGridSupport>();
-    var i = 0;
-    final toCheck = <BoundingHitboxDehydrated>[];
-    for (final child in componentsForOptimization) {
+    final toCheck = List<BoundingHitboxDehydrated>.filled(
+      componentsForOptimization.length,
+      BoundingHitboxDehydrated.empty,
+    );
+    for (var i = 0; i < toCheck.length; i++) {
+      final child = componentsForOptimization[i];
       if (cell.state != CellState.inactive) {
         child.boundingBox.collisionType =
             child.boundingBox.defaultCollisionType;
         child.boundingBox.group = null;
       }
-      toCheck.add(BoundingHitboxDehydrated(child.boundingBox, i));
-      i++;
+      toCheck[i] = BoundingHitboxDehydrated(child.boundingBox, i);
     }
 
     final params = OverlappingSearchRequest(
@@ -69,12 +71,16 @@ class CollisionOptimizer {
 
     final response = await _isolateManager!.compute(params);
     for (final collisionsList in response.optimizedCollisions) {
-      final hydratedHitboxes = <BoundingHitbox>[];
-      for (final dehydrated in collisionsList.hitboxes) {
+      final hydratedHitboxes = List<BoundingHitbox>.filled(
+        collisionsList.hitboxes.length,
+        BoundingHitboxDehydrated.emptyBoundingHitbox,
+      );
+      for (var i = 0; i < hydratedHitboxes.length; i++) {
         try {
+          final dehydrated = collisionsList.hitboxes[i];
           final component = componentsForOptimization[dehydrated.index];
           component.boundingBox.collisionType = CollisionType.inactive;
-          hydratedHitboxes.add(component.boundingBox);
+          hydratedHitboxes[i] = component.boundingBox;
         } on RangeError catch (_) {}
       }
       final optimized = OptimizedCollisionList(
