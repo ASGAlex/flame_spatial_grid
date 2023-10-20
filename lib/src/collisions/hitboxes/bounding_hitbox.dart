@@ -41,7 +41,9 @@ class BoundingHitbox extends RectangleHitboxOptimized
   bool _aabbCenterNotSet = true;
   final Vector2 _aabbCenter = Vector2.zero();
 
-  final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
+  // final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
+  final _broadphaseCheckCacheTrue = HashSet<int>();
+  final _broadphaseCheckCacheFalse = HashSet<int>();
 
   @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
@@ -184,19 +186,44 @@ class BoundingHitbox extends RectangleHitboxOptimized
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
-    _broadphaseCheckCache[item] = canCollide;
+    final key = hashCode & item.hashCode;
+    if (canCollide) {
+      _broadphaseCheckCacheTrue.add(key);
+    } else {
+      _broadphaseCheckCacheFalse.add(key);
+    }
+    // _broadphaseCheckCache[item] = canCollide;
     if (item is BoundingHitbox) {
-      item._broadphaseCheckCache[this] = canCollide;
+      if (canCollide) {
+        item._broadphaseCheckCacheTrue.add(key);
+      } else {
+        item._broadphaseCheckCacheFalse.add(key);
+      }
+      // item._broadphaseCheckCache[this] = canCollide;
     } else {
       item.storeBroadphaseCheckCache(this, canCollide);
     }
   }
 
-  bool? getBroadphaseCheckCache(ShapeHitbox item) =>
-      _broadphaseCheckCache[item];
+  bool? getBroadphaseCheckCache(ShapeHitbox item) {
+    final key = hashCode & item.hashCode;
+
+    final isTrue = _broadphaseCheckCacheTrue.contains(key);
+    if (isTrue) {
+      return true;
+    } else {
+      final isFalse = _broadphaseCheckCacheFalse.contains(key);
+      if (isFalse) {
+        return isFalse;
+      }
+    }
+    return null;
+  }
 
   void removeBroadphaseCheckItem(ShapeHitbox item) {
-    _broadphaseCheckCache.remove(item);
+    final key = hashCode & item.hashCode;
+    _broadphaseCheckCacheTrue.remove(key);
+    _broadphaseCheckCacheFalse.remove(key);
   }
 
   HasGridSupport? _parentWithGridSupport;
@@ -247,21 +274,40 @@ class BoundingHitbox extends RectangleHitboxOptimized
     super.onMount();
   }
 
+  static final _removedKeys = <int>[];
+
   @override
   void onRemove() {
-    for (final item in _broadphaseCheckCache.keys) {
-      if (item is BoundingHitbox) {
-        item._broadphaseCheckCache.remove(this);
-      } else {
-        SpatialGridBroadphase.broadphaseCheckCache[item]?.remove(this);
-      }
+    _removedKeys.addAll(_broadphaseCheckCacheTrue);
+    _removedKeys.addAll(_broadphaseCheckCacheFalse);
+
+    if (_removedKeys.length >= 1000) {
+      cleanOldKeys();
     }
-    _broadphaseCheckCache.clear();
+
     _group = null;
 
     size.removeListener(_precalculateCollisionVariables);
     super.onRemove();
     _parentWithGridSupport = null;
+  }
+
+  void cleanOldKeys() {
+    final totalKeys = _removedKeys.length;
+    for (var i = 0; i < totalKeys; i++) {
+      final key = _removedKeys[i];
+      _broadphaseCheckCacheTrue.remove(key);
+      _broadphaseCheckCacheFalse.remove(key);
+      // FIXME: support of vanilla hitboxes is broken!!!
+      // for (final item in _broadphaseCheckCache.keys) {
+      //   if (item is BoundingHitbox) {
+      //     item._broadphaseCheckCache.remove(this);
+      //   } else {
+      //     SpatialGridBroadphase.broadphaseCheckCache[item]?.remove(this);
+      //   }
+      // }
+      // _broadphaseCheckCache.clear();
+    }
   }
 
   @override
