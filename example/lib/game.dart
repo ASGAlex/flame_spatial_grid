@@ -1079,7 +1079,8 @@ class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
 class BoundingBoxGridGame extends BoundingHitbox {
   @override
   FutureOr<void> onLoad() {
-    fastCollisionForRects = true;
+    cacheAbsoluteScaledSize = cacheAbsoluteAngle =
+        groupAbsoluteCacheByType = fastCollisionForRects = true;
     return super.onLoad();
   }
 }

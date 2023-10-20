@@ -49,6 +49,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   @protected
   final activeCollisions = <ShapeHitbox>{};
+  var _activeCollisionsUnmodifiable = <ShapeHitbox>[];
 
   @internal
   final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
@@ -89,6 +90,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   @override
   void update() {
+    var activeCollisionsChanged = false;
     for (final operation in scheduledOperations) {
       if (operation.add) {
         final cell = operation.cell;
@@ -102,6 +104,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             var list = activeCollisionsByCell[cell];
             list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
             list.add(operation.hitbox);
+            activeCollisionsChanged = true;
           } else {
             var list = passiveCollisionsByCell[cell];
             list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
@@ -121,6 +124,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         } else {
           if (operation.active) {
             activeCollisions.remove(operation.hitbox);
+            activeCollisionsChanged = true;
             final cellCollisions = activeCollisionsByCell[cell];
             if (cellCollisions != null) {
               cellCollisions.remove(operation.hitbox);
@@ -141,6 +145,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
     }
     scheduledOperations.clear();
+    if (activeCollisionsChanged) {
+      _activeCollisionsUnmodifiable = activeCollisions.toList(growable: false);
+    }
   }
 
   Iterable<CollisionProspect<ShapeHitbox>> querySubset(
@@ -189,8 +196,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     _potentials.clear();
     _prospectPoolIndex = 0;
     final activeChecked = HashSet<int>();
-    final unmodifiableActiveList = activeCollisions.toList(growable: false);
-    for (final activeItem in unmodifiableActiveList) {
+    for (final activeItem in _activeCollisionsUnmodifiable) {
       final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
           activeItem.isRemoving ||
@@ -258,12 +264,14 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   void _compareItemWithPotentials(
     ShapeHitbox activeItem,
-    Iterable<ShapeHitbox> potentials, [
+    List<ShapeHitbox> potentials, [
     HashSet<int>? activeChecked,
     bool excludePureTypeCheck = false,
   ]) {
     final activeParent = activeItem.hitboxParent;
-    for (final potential in potentials) {
+    final potentialsLength = potentials.length;
+    for (var i = 0; i < potentialsLength; i++) {
+      final potential = potentials[i];
       if (potential.parent == null) {
         continue;
       }
@@ -479,14 +487,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     } else {
       if (activeItem is BoundingHitbox) {
         var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
-        if (skipTimes != null) {
-          if (skipTimes <= 0) {
-            activeItem.broadphaseMinimumDistanceSkip.remove(potential);
-          } else {
-            skipTimes--;
-            activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
-            return false;
-          }
+        if (skipTimes != null && skipTimes != 0) {
+          skipTimes--;
+          activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
+          return false;
         }
       }
 
