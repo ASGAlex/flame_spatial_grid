@@ -78,7 +78,6 @@ abstract class CellLayer extends PositionComponent
     Cell cell, {
     this.name = '',
     LayerComponentsStorageMode? componentsStorageMode,
-    bool buildMacroObject = false,
   })  : componentsStorageMode = componentsStorageMode ??
             LayerComponentsStorageMode.defaultComponentTree,
         super(
@@ -88,7 +87,6 @@ abstract class CellLayer extends PositionComponent
     currentCell = cell;
     collisionOptimizer = CollisionOptimizer(this);
     checkOutOfCellBounds = false;
-    this.buildMacroObject = buildMacroObject;
   }
 
   bool optimizeCollisions = false;
@@ -136,22 +134,6 @@ abstract class CellLayer extends PositionComponent
   void compileToSingleLayer(Iterable<Component> components);
 
   final String name;
-
-  bool _buildMacroObject = false;
-
-  bool get buildMacroObject => _buildMacroObject;
-
-  set buildMacroObject(bool value) {
-    if (_buildMacroObject == value) {
-      return;
-    }
-    _buildMacroObject = value;
-    if (_buildMacroObject) {
-      game.layersManager.macroObjectsBuilder.addLayer(this);
-    } else {
-      game.layersManager.macroObjectsBuilder.removeLayer(this);
-    }
-  }
 
   Size get layerCalculatedSize {
     final cell = currentCell;
@@ -450,7 +432,6 @@ abstract class CellLayer extends PositionComponent
     _pendingComponents.clear();
     collisionOptimizer.clear();
     _markRemovedManually = true;
-    buildMacroObject = false;
     super.onRemove();
   }
 

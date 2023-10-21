@@ -14,7 +14,6 @@ class CellStaticAnimationLayer extends CellLayer {
     super.cell, {
     super.name,
     super.componentsStorageMode,
-    super.buildMacroObject,
   });
 
   SpriteAnimationGlobalComponent? animationComponent;

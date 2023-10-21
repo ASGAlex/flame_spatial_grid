@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/components/macro_object_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -44,7 +45,7 @@ import 'package:meta/meta.dart';
 /// all component's child components. So if you have an hitbox outside from
 /// component, keep in mind that [boundingBox] will contain it too!
 ///
-mixin HasGridSupport on PositionComponent {
+mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
@@ -76,6 +77,12 @@ mixin HasGridSupport on PositionComponent {
   /// If component stay at cell with state [CellState.suspended]
   bool get isSuspended =>
       currentCell != null && currentCell?.state == CellState.suspended;
+
+  @override
+  Vector2 get macroSize => boundingBox.macroSize;
+
+  @override
+  Vector2 get macroPosition => boundingBox.macroPosition;
 
   Cell? _currentCell;
 

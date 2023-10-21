@@ -16,7 +16,6 @@ class CellStaticLayer extends CellLayer {
     super.cell, {
     super.name,
     super.componentsStorageMode,
-    super.buildMacroObject,
   }) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;

@@ -3,7 +3,6 @@ import 'dart:collection';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/optimizer/macro_object_builder.dart';
 import 'package:meta/meta.dart';
 
 class LayersRootComponent extends Component with UpdateOnDemand {}
@@ -19,7 +18,6 @@ class LayersManager {
   final layers = HashMap<Cell, HashMap<String, CellLayer>>();
 
   HasSpatialGridFramework game;
-  final macroObjectsBuilder = MacroObjectsBuilder();
 
   final layersRootComponent = <int, LayersRootComponent>{};
 

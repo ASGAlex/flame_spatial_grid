@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/hitboxes/rectangle_hitbox_optimized.dart';
+import 'package:flame_spatial_grid/src/components/macro_object_interface.dart';
 import 'package:meta/meta.dart';
 
 typedef BoundingHitboxFactory = BoundingHitbox Function();
@@ -27,7 +28,8 @@ typedef BoundingHitboxFactory = BoundingHitbox Function();
 /// [SpatialGridRectangleHitbox] and [SpatialGridShapeHitbox] extensions
 /// provides same functionality for pure Flame hitboxes
 class BoundingHitbox extends RectangleHitboxOptimized
-    with HasGameRef<HasSpatialGridFramework> {
+    with HasGameRef<HasSpatialGridFramework>
+    implements MacroObjectInterface {
   BoundingHitbox({
     super.position,
     super.size,
@@ -80,6 +82,25 @@ class BoundingHitbox extends RectangleHitboxOptimized
   bool get optimized => _optimized;
 
   var _optimized = false;
+
+  @override
+  Vector2 get macroSize {
+    final group = this.group;
+    if (group == null) {
+      return size;
+    }
+    return group.size;
+  }
+
+  @override
+  Vector2 get macroPosition {
+    final group = this.group;
+    if (group == null) {
+      return position;
+    }
+
+    return group.position;
+  }
 
   GroupHitbox? _group;
 
