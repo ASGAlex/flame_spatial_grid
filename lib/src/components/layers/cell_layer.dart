@@ -326,6 +326,7 @@ abstract class CellLayer extends PositionComponent
                 compileToSingleLayer: renderMode != LayerRenderMode.component,
                 optimizeCollisions: optimizeCollisions,
                 stateAfterOperation: currentState,
+                buildMacroObjects: false,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }
@@ -349,6 +350,7 @@ abstract class CellLayer extends PositionComponent
                 compileToSingleLayer: renderMode != LayerRenderMode.component,
                 optimizeCollisions: false,
                 stateAfterOperation: currentState,
+                buildMacroObjects: false,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }
@@ -373,6 +375,7 @@ abstract class CellLayer extends PositionComponent
                 compileToSingleLayer: true,
                 optimizeCollisions: false,
                 stateAfterOperation: currentState,
+                buildMacroObjects: false,
               );
               game.scheduledLayerOperations.add(scheduledOperation);
             }

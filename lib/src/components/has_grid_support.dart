@@ -6,7 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/components/macro_object_interface.dart';
+import 'package:flame_spatial_grid/src/components/macro_object.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
