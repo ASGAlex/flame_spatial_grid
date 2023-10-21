@@ -350,10 +350,13 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
     if (spatialGrid == null) {
       return;
     }
-    boundingBox.aabbCenter = boundingBox.aabb.center;
-    cachedCenters.remove(boundingBox);
-    final componentCenter = boundingBox.aabbCenter;
+    final componentCenter = boundingBox.aabbCenter =
+        cachedCenters[boundingBox] = boundingBox.aabb.center;
     var current = currentCell;
+    if (kDebugMode && current == null) {
+      print('better to set currentCell manually. Component: $runtimeType');
+    }
+
     List<Cell?>? previousCellNeighbours;
     current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
         spatialGrid.createNewCellAtPosition(componentCenter);

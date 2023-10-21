@@ -28,7 +28,7 @@ typedef BoundingHitboxFactory = BoundingHitbox Function();
 /// [SpatialGridRectangleHitbox] and [SpatialGridShapeHitbox] extensions
 /// provides same functionality for pure Flame hitboxes
 class BoundingHitbox extends RectangleHitboxOptimized
-    with HasGameRef<HasSpatialGridFramework>
+    with HasGameReference<HasSpatialGridFramework>
     implements MacroObjectInterface {
   BoundingHitbox({
     super.position,

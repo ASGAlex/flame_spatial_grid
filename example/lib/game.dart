@@ -121,7 +121,7 @@ all collisions are disabled.
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
       suspendedCellLifetime: const Duration(minutes: 10),
-      scheduledLayerOperationLimit: 5,
+      scheduledLayerOperationLimit: 1,
       cellBuilderNoMap: noMapCellBuilder,
       maps: [
         DemoMapLoader(Vector2(600, 0)),

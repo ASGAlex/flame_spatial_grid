@@ -60,7 +60,7 @@ class SpatialGridCollisionDetection
       _listenerCollisionType[item] = listenerCollisionType;
 
       item.defaultCollisionType; //init defaults with current value;
-      withGridSupportComponent.updateTransform();
+      _scheduledUpdateAfterTransform.add(item);
 
       broadphase.updateHitboxIndexes(item);
       final componentCurrentCell = withGridSupportComponent.currentCell;
