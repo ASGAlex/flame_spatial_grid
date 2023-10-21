@@ -287,7 +287,6 @@ mixin HasGridSupport on PositionComponent {
       currentCell = null;
     }
     position.removeListener(_onPositionChanged);
-
   }
 
   @override
@@ -348,7 +347,7 @@ mixin HasGridSupport on PositionComponent {
     cachedCenters.remove(boundingBox);
     final componentCenter = boundingBox.aabbCenter;
     var current = currentCell;
-    List<Cell>? previousCellNeighbours;
+    List<Cell?>? previousCellNeighbours;
     current ??= spatialGrid.findExistingCellByPosition(componentCenter) ??
         spatialGrid.createNewCellAtPosition(componentCenter);
     if (current.rect.containsPoint(componentCenter)) {
@@ -358,7 +357,7 @@ mixin HasGridSupport on PositionComponent {
       //look close neighbours
       previousCellNeighbours = current.neighbours;
       for (final cell in previousCellNeighbours) {
-        if (cell.rect.containsPoint(componentCenter)) {
+        if (cell?.rect.containsPoint(componentCenter) == true) {
           newCell = cell;
           break;
         }
@@ -418,19 +417,23 @@ mixin HasGridSupport on PositionComponent {
   void _increaseOutOfBoundsCounter(Cell centralCell) {
     final cellNeighbours = centralCell.neighboursAndMe;
     for (final cell in cellNeighbours) {
-      cell.outOfBoundsCounter++;
+      cell?.outOfBoundsCounter++;
     }
   }
 
   void _decreaseOutOfBoundsCounter(Cell centralCell) {
     final cellNeighbours = centralCell.neighboursAndMe;
     for (final cell in cellNeighbours) {
-      cell.outOfBoundsCounter--;
-      if (cell.outOfBoundsCounter < 0) {
-        if (kDebugMode) {
-          print('outOfBoundsCounter should not be below zero!');
+      var outOfBoundsCounter = cell?.outOfBoundsCounter;
+      if (outOfBoundsCounter != null) {
+        outOfBoundsCounter--;
+        cell!.outOfBoundsCounter = outOfBoundsCounter;
+        if (outOfBoundsCounter < 0) {
+          if (kDebugMode) {
+            print('outOfBoundsCounter should not be below zero!');
+          }
+          cell.outOfBoundsCounter = 0;
         }
-        cell.outOfBoundsCounter = 0;
       }
     }
   }

@@ -218,19 +218,22 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         }
       }
 
-      var cellsToCheck = <Cell>[];
+      var cellsToCheck = <Cell?>[];
       final currentCell = withGridSupport.currentCell;
       if (currentCell == null) {
         continue;
       }
 
       if (currentCell.hasOutOfBoundsComponents) {
-        cellsToCheck = currentCell.neighboursAndMe.toList(growable: false);
+        cellsToCheck = currentCell.neighboursAndMe;
       } else {
         cellsToCheck = List<Cell>.filled(1, currentCell);
       }
 
       for (final cell in cellsToCheck) {
+        if (cell == null) {
+          continue;
+        }
         var items = _passiveByCellUnmodifiable[cell];
         if (items == null) {
           items = passiveCollisionsByCell[cell]?.toList(growable: false);

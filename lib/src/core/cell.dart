@@ -168,6 +168,10 @@ class Cell {
   Cell? _rawTop;
   Cell? _rawBottom;
 
+  bool _neighboursCacheReset = true;
+  final List<Cell?> _neighboursCache = List.filled(8, null);
+  final List<Cell?> _neighboursAndMeCache = List.filled(9, null);
+
   /// A time in microseconds from the moment when cell's state was changed into
   /// [CellState.suspended].
   /// See [updateComponentsState] too.
@@ -304,12 +308,24 @@ class Cell {
     }
 
     _remove = true;
+    _neighboursCacheReset = true;
+    rawLeft?.rawRight?._neighboursCacheReset = true;
+    rawLeft?._neighboursCacheReset = true;
     rawLeft?.rawRight = null;
     rawLeft = null;
+
+    rawRight?.rawLeft?._neighboursCacheReset = true;
+    rawRight?._neighboursCacheReset = true;
     rawRight?.rawLeft = null;
     rawRight = null;
+
+    rawTop?.rawBottom?._neighboursCacheReset = true;
+    rawTop?._neighboursCacheReset = true;
     rawTop?.rawBottom = null;
     rawTop = null;
+
+    rawBottom?.rawTop?._neighboursCacheReset = true;
+    rawBottom?._neighboursCacheReset = true;
     rawBottom?.rawTop = null;
     rawBottom = null;
 
@@ -378,41 +394,36 @@ class Cell {
   /// Also includes left-top, right-top, right-bottom and left-bottom
   /// neighbours.
   /// Useful for collision detection system.
-  List<Cell> get neighbours {
-    final list = <Cell>[];
-    if (rawLeft != null) {
-      list.add(rawLeft!);
-      final leftTop = rawLeft!.rawTop;
-      if (leftTop != null) {
-        list.add(leftTop);
-      }
-      final leftBottom = rawLeft!.rawBottom;
-      if (leftBottom != null) {
-        list.add(leftBottom);
-      }
-    }
-    if (rawRight != null) {
-      list.add(rawRight!);
-
-      final rightTop = rawRight!.rawTop;
-      if (rightTop != null) {
-        list.add(rightTop);
-      }
-      final rightBottom = rawRight!.rawBottom;
-      if (rightBottom != null) {
-        list.add(rightBottom);
+  List<Cell?> get neighbours {
+    if (_neighboursCacheReset) {
+      final list = [
+        rawLeft,
+        rawLeft?.rawTop,
+        rawLeft?.rawBottom,
+        rawRight,
+        rawRight?.rawTop,
+        rawRight?.rawBottom,
+        rawTop,
+        rawBottom,
+      ];
+      for (var i = 0; i < _neighboursCache.length; i++) {
+        _neighboursCache[i] = list[i];
       }
     }
-    if (rawTop != null) {
-      list.add(rawTop!);
-    }
-    if (rawBottom != null) {
-      list.add(rawBottom!);
-    }
-    return list;
+    return _neighboursCache;
   }
 
-  List<Cell> get neighboursAndMe => neighbours..add(this);
+  List<Cell?> get neighboursAndMe {
+    if (_neighboursCacheReset) {
+      final list = neighbours;
+      var i = 0;
+      for (; i < _neighboursCache.length; i++) {
+        _neighboursAndMeCache[i] = list[i];
+      }
+      _neighboursAndMeCache[i] = this;
+    }
+    return _neighboursAndMeCache;
+  }
 }
 
 extension RoundPrecision on Rect {
