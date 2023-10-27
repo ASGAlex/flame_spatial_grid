@@ -193,7 +193,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     progressManager.setProgress(0, 'Init core variables');
 
     layersManager = LayersManager(this);
-    this.rootComponent = rootComponent ?? this;
+    this.rootComponent = rootComponent ?? world;
     _cellBuilderNoMap = cellBuilderNoMap;
     _onAfterCellBuild = onAfterCellBuild;
     this.maxCells = maxCells;
