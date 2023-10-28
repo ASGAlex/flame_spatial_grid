@@ -117,7 +117,6 @@ all collisions are disabled.
         }
         return null;
       },
-      rootComponent: world,
       buildCellsPerUpdate: buildCellsPerUpdate,
       cleanupCellsPerUpdate: cleanupCellsPerUpdate,
       suspendedCellLifetime: const Duration(minutes: 10),

@@ -93,6 +93,10 @@ class CollisionOptimizer {
     }
   }
 
+  Future buildMacroObjects() {
+    throw UnimplementedError();
+  }
+
   Cell? clear() {
     final cell = parentLayer.currentCell;
     if (cell == null) {

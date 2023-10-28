@@ -7,12 +7,14 @@ class ScheduledLayerOperation {
     required this.cellLayer,
     required this.compileToSingleLayer,
     required this.optimizeCollisions,
+    required this.buildMacroObjects,
     this.stateAfterOperation,
   });
 
   final CellLayer cellLayer;
   final bool optimizeCollisions;
   final bool compileToSingleLayer;
+  final bool buildMacroObjects;
   final CellState? stateAfterOperation;
 
   void run() {
@@ -32,10 +34,17 @@ class ScheduledLayerOperation {
       if (future == null) {
         cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
       } else {
-        future.then((value) {
+        future.then((_) {
           cellLayer.currentCell?.setStateInternal(stateAfterOperation!);
+          if (buildMacroObjects) {
+            cellLayer.collisionOptimizer.buildMacroObjects();
+          }
         });
       }
+    } else if (buildMacroObjects && future != null) {
+      future.then((_) {
+        cellLayer.collisionOptimizer.buildMacroObjects();
+      });
     }
   }
 }
