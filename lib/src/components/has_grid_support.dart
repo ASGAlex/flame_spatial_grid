@@ -298,7 +298,7 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
 
   @override
   void updateTree(double dt) {
-    if (currentCell == null || _currentCell!.isRemoving) {
+    if (_currentCell?.isRemoving == true) {
       removeFromParent();
     }
     if (isSuspended) {
