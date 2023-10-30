@@ -1,0 +1,8 @@
+include "rect.fbs";
+
+namespace Optimizer;
+
+table OptimizedCollisions {
+  indicies: [int];
+  optimizedBoundingRect: Rect;
+}

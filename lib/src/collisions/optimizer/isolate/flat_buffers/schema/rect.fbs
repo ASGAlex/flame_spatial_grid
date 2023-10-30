@@ -1,0 +1,8 @@
+namespace Optimizer;
+
+struct Rect {
+  left: float;
+  top: float;
+  right: float;
+  bottom: float;
+}

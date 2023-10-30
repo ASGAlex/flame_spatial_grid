@@ -1,7 +1,11 @@
-import 'dart:collection';
+import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/extensions.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/bounding_hitbox_dehydrated.dart';
+import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
+    as fb;
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/optimized_collision_list_dehydrated.dart';
 import 'package:meta/meta.dart';
 
@@ -23,81 +27,114 @@ class OverlappedSearchResponse {
 }
 
 @pragma('vm:entry-point')
-OverlappedSearchResponse findOverlappingRectsIsolated(
-  OverlappingSearchRequest parameters,
+Uint8List findOverlappingRectsIsolated(
+  Uint8List parameters,
 ) {
+  final request = fb.OverlappingSearchRequest(parameters);
+  final hitboxes = request.hitboxes!;
   final skip = <int>{};
-  final optimizedCollisions = <OptimizedCollisionListDehydrated>[];
-  for (var i = 0; i < parameters.hitboxes.length; i++) {
+  final optimizedCollisions = <fb.OptimizedCollisionsObjectBuilder>[];
+  // final optimizedCollisions = <fb.OptimizedCollisionList>[];
+  for (var i = 0; i < hitboxes.length; i++) {
     if (skip.contains(i)) {
       continue;
     }
-    final target = parameters.hitboxes[i];
+    final target = hitboxes[i];
     if (target.skip) {
       continue;
     }
-    final hitboxesUnsorted = _findOverlappingRects(target, parameters.hitboxes);
+    final hitboxesUnsorted = _findOverlappingRects(target, hitboxes);
     for (final element in hitboxesUnsorted) {
       skip.add(element.index);
     }
 
     if (hitboxesUnsorted.length > 1) {
-      if (hitboxesUnsorted.length > parameters.maximumItemsInGroup) {
+      if (hitboxesUnsorted.length > request.maximumItemsInGroup) {
         final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
         hitboxesSorted.sort((a, b) {
           if (a.aabbCenter == b.aabbCenter) {
             return 0;
           }
-          if (a.aabbCenter.y < b.aabbCenter.y) {
+          if (a.aabbCenter!.y < b.aabbCenter!.y) {
             return -1;
-          } else if (a.aabbCenter.y == b.aabbCenter.y) {
-            return a.aabbCenter.x < b.aabbCenter.x ? -1 : 1;
+          } else if (a.aabbCenter!.y == b.aabbCenter!.y) {
+            return a.aabbCenter!.x < b.aabbCenter!.x ? -1 : 1;
           } else {
             return 1;
           }
         });
         var totalInChunk = 0;
-        var chunk = <BoundingHitboxDehydrated>[];
-        for (final hbInChunk in hitboxesSorted) {
-          if (totalInChunk == parameters.maximumItemsInGroup) {
-            final optimized = OptimizedCollisionListDehydrated(
-              <BoundingHitboxDehydrated>{}..addAll(chunk),
+        final chunk = List<int>.filled(request.maximumItemsInGroup, -1);
+
+        for (var sortedIndex = 0;
+            sortedIndex < hitboxesSorted.length;
+            sortedIndex++) {
+          if (totalInChunk == request.maximumItemsInGroup) {
+            var boundingRect = Rect.zero;
+            final indices = List<int>.filled(chunk.length, 0);
+            for (var i = 0; i < chunk.length; i++) {
+              final hitbox = hitboxesSorted[chunk[i]];
+              indices[i] = hitbox.index;
+              boundingRect =
+                  boundingRect.expandToInclude(hitbox.toRectSpecial());
+            }
+            final optimized = fb.OptimizedCollisionsObjectBuilder(
+              indicies: indices,
+              optimizedBoundingRect: boundingRect.toFlatBufferRect(),
             );
             optimizedCollisions.add(optimized);
             totalInChunk = 0;
-            chunk = <BoundingHitboxDehydrated>[];
+            chunk.fillRange(0, request.maximumItemsInGroup, -1);
           } else {
-            chunk.add(hbInChunk);
+            chunk[totalInChunk] = sortedIndex;
             totalInChunk++;
           }
         }
-        if (chunk.isNotEmpty) {
-          final optimized = OptimizedCollisionListDehydrated(
-            HashSet<BoundingHitboxDehydrated>()..addAll(chunk),
+        if (totalInChunk != 0) {
+          final indices = List<int>.filled(chunk.length, 0);
+          var boundingRect = Rect.zero;
+          for (var i = 0; i < chunk.length; i++) {
+            final hitbox = hitboxesUnsorted[i];
+            indices[i] = hitbox.index;
+            boundingRect = boundingRect.expandToInclude(hitbox.toRectSpecial());
+          }
+          final optimized = fb.OptimizedCollisionsObjectBuilder(
+            indicies: indices,
+            optimizedBoundingRect: boundingRect.toFlatBufferRect(),
           );
           optimizedCollisions.add(optimized);
         }
       } else {
-        final optimized = OptimizedCollisionListDehydrated(
-          hitboxesUnsorted,
+        final indices = List<int>.filled(hitboxesUnsorted.length, 0);
+        var boundingRect = Rect.zero;
+        for (var i = 0; i < hitboxesUnsorted.length; i++) {
+          final hitbox = hitboxesUnsorted[i];
+          indices[i] = hitbox.index;
+          boundingRect = boundingRect.expandToInclude(hitbox.toRectSpecial());
+        }
+        final optimized = fb.OptimizedCollisionsObjectBuilder(
+          indicies: indices,
+          optimizedBoundingRect: boundingRect.toFlatBufferRect(),
         );
         optimizedCollisions.add(optimized);
       }
-      if (hitboxesUnsorted.length >= parameters.hitboxes.length) {
+      if (hitboxesUnsorted.length >= hitboxes.length) {
         break;
       }
     }
   }
 
-  return OverlappedSearchResponse(optimizedCollisions);
+  final responseBuilder = fb.OverlappedSearchResponseObjectBuilder(
+      optimizedCollisions: optimizedCollisions);
+  return responseBuilder.toBytes();
 }
 
-Iterable<BoundingHitboxDehydrated> _findOverlappingRects(
-  BoundingHitboxDehydrated target,
-  List<BoundingHitboxDehydrated> hitboxesForOptimization, [
+List<fb.BoundingHitbox> _findOverlappingRects(
+  fb.BoundingHitbox target,
+  List<fb.BoundingHitbox> hitboxesForOptimization, [
   Set<int>? excludedIndices,
 ]) {
-  final hitboxes = <BoundingHitboxDehydrated>[];
+  final hitboxes = <fb.BoundingHitbox>[];
   hitboxes.add(target);
   if (excludedIndices != null) {
     excludedIndices.add(target.index);
@@ -121,4 +158,50 @@ Iterable<BoundingHitboxDehydrated> _findOverlappingRects(
     }
   }
   return hitboxes;
+}
+
+extension ToFlatBuffersRect on Rect {
+  fb.RectObjectBuilder toFlatBufferRect() => fb.RectObjectBuilder(
+        left: left,
+        right: right,
+        top: top,
+        bottom: bottom,
+      );
+}
+
+extension ToRectSpecial on fb.BoundingHitbox {
+  Rect toRectSpecial() {
+    final cache = rectCache;
+    if (cache != null) {
+      _aabbCenterUpdate();
+      return cache;
+    } else {
+      if (this.parentPosition == null) {
+        return Rect.zero;
+      }
+      final parentPosition =
+          Vector2(this.parentPosition!.x, this.parentPosition!.y);
+      final position = Vector2(this.position!.x, this.position!.y);
+      final size = Vector2(this.size!.x, this.size!.y);
+      final cache = Rect.fromLTWH(
+        parentPosition.x + position.x,
+        parentPosition.y + position.y,
+        size.x,
+        size.y,
+      );
+
+      rectCache = cache;
+      _aabbCenterUpdate();
+      return cache;
+    }
+  }
+
+  void _aabbCenterUpdate() {
+    if (aabbCenter == null) {
+      final aabb = Aabb2();
+      aabb.min.setValues(this.aabb!.min.x, this.aabb!.min.y);
+      aabb.max.setValues(this.aabb!.max.x, this.aabb!.max.y);
+      aabbCenter = aabb.center;
+    }
+  }
 }

@@ -1,9 +1,14 @@
+import 'dart:typed_data';
+
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/bounding_hitbox_dehydrated.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/entry_point.dart';
+import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/extensions.dart';
+import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
+    as fb;
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
 import 'package:isolate_manager/isolate_manager.dart';
 import 'package:meta/meta.dart';
@@ -16,8 +21,7 @@ class CollisionOptimizer {
     );
   }
 
-  static IsolateManager<OverlappedSearchResponse, OverlappingSearchRequest>?
-      _isolateManager;
+  static IsolateManager<Uint8List, Uint8List>? _isolateManager;
 
   final CellLayer parentLayer;
   final _createdCollisionLists = <OptimizedCollisionList>[];
@@ -50,10 +54,11 @@ class CollisionOptimizer {
 
     final componentsForOptimization =
         parentLayer.children.query<HasGridSupport>();
-    final toCheck = List<BoundingHitboxDehydrated>.filled(
+    final toCheck = List<fb.BoundingHitboxObjectBuilder>.filled(
       componentsForOptimization.length,
-      BoundingHitboxDehydrated.empty,
+      defaultBoundingHitboxObjectBuilder,
     );
+
     for (var i = 0; i < toCheck.length; i++) {
       final child = componentsForOptimization[i];
       if (cell.state != CellState.inactive) {
@@ -61,32 +66,39 @@ class CollisionOptimizer {
             child.boundingBox.defaultCollisionType;
         child.boundingBox.group = null;
       }
-      toCheck[i] = BoundingHitboxDehydrated(child.boundingBox, i);
+      toCheck[i] = child.boundingBox.toBuilder(i);
     }
 
-    final params = OverlappingSearchRequest(
-      hitboxes: toCheck,
-      maximumItemsInGroup: maximumItemsInGroup,
-    );
+    final params = fb.OverlappingSearchRequestObjectBuilder(hitboxes: toCheck);
+    final buffer = params.toBytes();
 
-    final response = await _isolateManager!.compute(params);
-    for (final collisionsList in response.optimizedCollisions) {
+    final responseData = await _isolateManager!.compute(
+      buffer,
+    );
+    final response = fb.OverlappedSearchResponse(responseData);
+    for (final collisionsList in response.optimizedCollisions!) {
       final hydratedHitboxes = List<BoundingHitbox>.filled(
-        collisionsList.hitboxes.length,
+        collisionsList.indicies!.length,
         BoundingHitboxDehydrated.emptyBoundingHitbox,
       );
       for (var i = 0; i < hydratedHitboxes.length; i++) {
         try {
-          final dehydrated = collisionsList.hitboxes[i];
-          final component = componentsForOptimization[dehydrated.index];
+          final index = collisionsList.indicies![i];
+          final component = componentsForOptimization[index];
           component.boundingBox.collisionType = CollisionType.inactive;
           hydratedHitboxes[i] = component.boundingBox;
         } on RangeError catch (_) {}
       }
+      final rect = Rect.fromLTRB(
+        collisionsList.optimizedBoundingRect!.left,
+        collisionsList.optimizedBoundingRect!.top,
+        collisionsList.optimizedBoundingRect!.right,
+        collisionsList.optimizedBoundingRect!.bottom,
+      );
       final optimized = OptimizedCollisionList(
         hydratedHitboxes,
         parentLayer,
-        collisionsList.expandedBoundingRect,
+        rect,
       );
       _createdCollisionLists.add(optimized);
       collisionsListByGroup[optimized.boundingBox] = optimized;
