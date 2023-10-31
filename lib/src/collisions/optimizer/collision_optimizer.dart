@@ -17,6 +17,7 @@ class CollisionOptimizer {
     _isolateManager ??= IsolateManager.create(
       findOverlappingRectsIsolated,
       concurrent: 4,
+      workerName: 'spatial_grid_optimizer_worker',
     );
   }
 

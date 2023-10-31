@@ -4,9 +4,10 @@
 library optimizer;
 
 import 'dart:typed_data' show Uint8List;
-import 'dart:ui' as ui;
 
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart';
+import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/geometry_universal.dart'
+    as ui;
 import 'package:flat_buffers/flat_buffers.dart' as fb;
 import 'package:vector_math/vector_math_64.dart' as vector;
 

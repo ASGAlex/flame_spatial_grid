@@ -1,10 +1,9 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
-import 'package:flame/components.dart';
-import 'package:flame_spatial_grid/src/collisions/optimizer/extensions.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
     as fb;
+import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/geometry_universal.dart';
+import 'package:vector_math/vector_math_64.dart';
 
 @pragma('vm:entry-point')
 Uint8List findOverlappingRectsIsolated(
@@ -201,5 +200,24 @@ extension ToRectSpecial on fb.BoundingHitbox {
       aabb.max.setValues(this.aabb!.max.x, this.aabb!.max.y);
       aabbCenter = aabb.center;
     }
+  }
+}
+
+extension RectSpecialOverlap on Rect {
+  /// Whether `other` has a nonzero area of overlap with this rectangle.
+  bool overlapsSpecial(Rect other) {
+    if (topLeft == other.bottomRight ||
+        topRight == other.bottomLeft ||
+        bottomLeft == other.topRight ||
+        bottomRight == other.topLeft) {
+      return false;
+    }
+    if (right < other.left || other.right < left) {
+      return false;
+    }
+    if (bottom < other.top || other.bottom < top) {
+      return false;
+    }
+    return true;
   }
 }
