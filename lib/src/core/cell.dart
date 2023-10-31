@@ -212,7 +212,7 @@ class Cell {
   @internal
   void setStateInternal(CellState value) {
     final oldValue = _state;
-    if (oldValue == value) {
+    if (oldValue >= value) {
       return;
     }
     _state = value;

@@ -49,7 +49,8 @@ Uint8List findOverlappingRectsIsolated(
     }
 
     if (hitboxesUnsorted.length > 1) {
-      if (hitboxesUnsorted.length > request.maximumItemsInGroup) {
+      if (hitboxesUnsorted.length > request.maximumItemsInGroup &&
+          request.maximumItemsInGroup > 0) {
         final hitboxesSorted = hitboxesUnsorted.toList(growable: false);
         hitboxesSorted.sort((a, b) {
           if (a.aabbCenter == b.aabbCenter) {
@@ -75,8 +76,12 @@ Uint8List findOverlappingRectsIsolated(
             for (var i = 0; i < chunk.length; i++) {
               final hitbox = hitboxesSorted[chunk[i]];
               indices[i] = hitbox.index;
-              boundingRect =
-                  boundingRect.expandToInclude(hitbox.toRectSpecial());
+              if (boundingRect == Rect.zero) {
+                boundingRect = hitbox.toRectSpecial();
+              } else {
+                boundingRect =
+                    boundingRect.expandToInclude(hitbox.toRectSpecial());
+              }
             }
             final optimized = fb.OptimizedCollisionsObjectBuilder(
               indicies: indices,
@@ -94,9 +99,18 @@ Uint8List findOverlappingRectsIsolated(
           final indices = List<int>.filled(chunk.length, 0);
           var boundingRect = Rect.zero;
           for (var i = 0; i < chunk.length; i++) {
-            final hitbox = hitboxesUnsorted[i];
+            final index = chunk[i];
+            if (index == -1) {
+              break;
+            }
+            final hitbox = hitboxesSorted[index];
             indices[i] = hitbox.index;
-            boundingRect = boundingRect.expandToInclude(hitbox.toRectSpecial());
+            if (boundingRect == Rect.zero) {
+              boundingRect = hitbox.toRectSpecial();
+            } else {
+              boundingRect =
+                  boundingRect.expandToInclude(hitbox.toRectSpecial());
+            }
           }
           final optimized = fb.OptimizedCollisionsObjectBuilder(
             indicies: indices,
@@ -110,7 +124,11 @@ Uint8List findOverlappingRectsIsolated(
         for (var i = 0; i < hitboxesUnsorted.length; i++) {
           final hitbox = hitboxesUnsorted[i];
           indices[i] = hitbox.index;
-          boundingRect = boundingRect.expandToInclude(hitbox.toRectSpecial());
+          if (boundingRect == Rect.zero) {
+            boundingRect = hitbox.toRectSpecial();
+          } else {
+            boundingRect = boundingRect.expandToInclude(hitbox.toRectSpecial());
+          }
         }
         final optimized = fb.OptimizedCollisionsObjectBuilder(
           indicies: indices,

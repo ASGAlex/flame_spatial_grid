@@ -69,7 +69,10 @@ class CollisionOptimizer {
       toCheck[i] = child.boundingBox.toBuilder(i);
     }
 
-    final params = fb.OverlappingSearchRequestObjectBuilder(hitboxes: toCheck);
+    final params = fb.OverlappingSearchRequestObjectBuilder(
+      hitboxes: toCheck,
+      maximumItemsInGroup: maximumItemsInGroup,
+    );
     final buffer = params.toBytes();
 
     final responseData = await _isolateManager!.compute(
