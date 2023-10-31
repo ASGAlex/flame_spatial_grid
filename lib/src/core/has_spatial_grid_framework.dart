@@ -675,6 +675,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         _loadWholeMap();
         _buildNewCells();
         _runScheduledLayerOperations();
+        _collectDt(dt);
 
         tickersManager.update(dt);
         collisionDetection.dt = dt;
@@ -692,6 +693,32 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         }
       }
       stopwatch.stop();
+    }
+  }
+
+  final _dtList = List<double>.filled(10, -1);
+  var _dtIndex = 0;
+  var _medianDt = 0.0;
+
+  double get medianDt => _medianDt;
+
+  bool get isRenderingSlow => medianDt > 0.025;
+
+  void _collectDt(double dt) {
+    _dtList[_dtIndex] = dt;
+    _dtIndex++;
+    if (_dtIndex > 9) {
+      _dtIndex = 0;
+      _medianDt = _median(_dtList);
+    }
+  }
+
+  double _median(List<double> list) {
+    final middle = list.length ~/ 2;
+    if (list.length.isOdd) {
+      return list[middle];
+    } else {
+      return (list[middle - 1] + list[middle]) / 2.0;
     }
   }
 
