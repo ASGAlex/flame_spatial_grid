@@ -3,28 +3,8 @@ import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/extensions.dart';
-import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/bounding_hitbox_dehydrated.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
     as fb;
-import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/optimized_collision_list_dehydrated.dart';
-import 'package:meta/meta.dart';
-
-@immutable
-class OverlappingSearchRequest {
-  const OverlappingSearchRequest({
-    required this.hitboxes,
-    required this.maximumItemsInGroup,
-  });
-
-  final List<BoundingHitboxDehydrated> hitboxes;
-  final int maximumItemsInGroup;
-}
-
-class OverlappedSearchResponse {
-  OverlappedSearchResponse(this.optimizedCollisions);
-
-  final List<OptimizedCollisionListDehydrated> optimizedCollisions;
-}
 
 @pragma('vm:entry-point')
 Uint8List findOverlappingRectsIsolated(

@@ -4,7 +4,6 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
-import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/bounding_hitbox_dehydrated.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/entry_point.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/extensions.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
@@ -82,7 +81,7 @@ class CollisionOptimizer {
     for (final collisionsList in response.optimizedCollisions!) {
       final hydratedHitboxes = List<BoundingHitbox>.filled(
         collisionsList.indicies!.length,
-        BoundingHitboxDehydrated.emptyBoundingHitbox,
+        _emptyBoundingHitbox,
       );
       for (var i = 0; i < hydratedHitboxes.length; i++) {
         try {
@@ -133,3 +132,5 @@ class CollisionOptimizer {
     return cell;
   }
 }
+
+final _emptyBoundingHitbox = BoundingHitbox();
