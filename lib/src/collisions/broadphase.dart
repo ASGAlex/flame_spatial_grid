@@ -520,16 +520,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       return false;
     } else {
       if (activeItem is BoundingHitbox &&
-          activeItem.collisionCheckFrequency > 0) {
-        if (potential is BoundingHitbox &&
-            potential.collisionCheckFrequency <= 0) {
-        } else {
-          var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
-          if (skipTimes != null && skipTimes != 0) {
-            skipTimes--;
-            activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
-            return false;
-          }
+          _doSkipDistance(activeItem) &&
+          _doSkipDistance(potential)) {
+        var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
+        if (skipTimes != null && skipTimes != 0) {
+          skipTimes--;
+          activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
+          return false;
         }
       }
 
@@ -559,17 +556,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           return false;
         } else {
           if (activeItem is BoundingHitbox &&
-              activeItem.collisionCheckFrequency > 0) {
-            if (potential is BoundingHitbox &&
-                potential.collisionCheckFrequency <= 0) {
-            } else {
-              final parentSpeed = activeItem.parentSpeedGetter?.call();
-              if (parentSpeed != null && parentSpeed > 0) {
-                final skipTimes =
-                    min(distanceX / parentSpeed, distanceY / parentSpeed)
-                        .floor();
-                activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
-              }
+              _doSkipDistance(activeItem) &&
+              _doSkipDistance(potential)) {
+            final parentSpeed = activeItem.parentSpeedGetter?.call();
+            if (parentSpeed != null && parentSpeed > 0) {
+              final skipTimes =
+                  min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
+              activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
             }
           }
           return false;
@@ -600,6 +593,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
     }
   }
+
+  bool _doSkipDistance(ShapeHitbox item) =>
+      (item is BoundingHitbox && item.collisionCheckFrequency <= 0) ||
+      item is! BoundingHitbox;
 
   (bool, double, double) _fastDistanceCheck(
     Vector2 activeItemCenter,
