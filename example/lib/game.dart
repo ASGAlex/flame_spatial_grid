@@ -846,11 +846,11 @@ class Npc extends Player with DebuggerPause {
       final yValue = rand.nextDouble();
       vector.setValues(xValue * xSign, yValue * ySign);
       if (vector.x.abs() < 0.05 && vector.y.abs() < 0.05) {
-        boundingBox.collisionCheckFrequency = 3;
+        boundingBox.collisionCheckFrequency = 5;
       } else if (vector.x.abs() < 0.2 && vector.y.abs() < 0.2) {
-        boundingBox.collisionCheckFrequency = 2;
+        boundingBox.collisionCheckFrequency = 3;
       } else {
-        boundingBox.collisionCheckFrequency = 0.8;
+        boundingBox.collisionCheckFrequency = 1.5;
       }
     }
   }
