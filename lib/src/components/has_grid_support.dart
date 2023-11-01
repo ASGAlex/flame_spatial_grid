@@ -55,6 +55,9 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   @internal
   static final defaultCollisionType = HashMap<ShapeHitbox, CollisionType>();
 
+  @internal
+  static final shapeHitboxIndex = HashMap<ShapeHitbox, int>();
+
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
   /// system, so "boundingBox.collisionType" become [CollisionType.inactive].

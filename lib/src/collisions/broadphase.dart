@@ -50,6 +50,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   @protected
   final activeCollisions = <ShapeHitbox>{};
   var _activeCollisionsUnmodifiable = <ShapeHitbox>[];
+  var _activeChecked = <List<bool>>[];
+  var _activeCheckedRecreated = false;
 
   @internal
   final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
@@ -91,6 +93,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   @override
   void update() {
     var activeCollisionsChanged = false;
+    var passiveCollisionsChanged = false;
     for (final operation in scheduledOperations) {
       if (operation.add) {
         final cell = operation.cell;
@@ -109,6 +112,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             var list = passiveCollisionsByCell[cell];
             list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
             list.add(operation.hitbox);
+            passiveCollisionsChanged = true;
           }
         }
       } else {
@@ -124,6 +128,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         } else {
           if (operation.active) {
             activeCollisions.remove(operation.hitbox);
+            operation.hitbox.broadphaseActiveIndex = -1;
             activeCollisionsChanged = true;
             final cellCollisions = activeCollisionsByCell[cell];
             if (cellCollisions != null) {
@@ -139,6 +144,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
               if (cellCollisions.isEmpty) {
                 passiveCollisionsByCell.remove(cell);
               }
+              passiveCollisionsChanged = true;
             }
           }
         }
@@ -147,6 +153,18 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     scheduledOperations.clear();
     if (activeCollisionsChanged) {
       _activeCollisionsUnmodifiable = activeCollisions.toList(growable: false);
+      _activeChecked = List<List<bool>>.filled(
+        _activeCollisionsUnmodifiable.length,
+        List<bool>.filled(_activeCollisionsUnmodifiable.length, false),
+      );
+      _activeCheckedRecreated = true;
+      for (var i = 0; i < _activeCollisionsUnmodifiable.length; i++) {
+        _activeCollisionsUnmodifiable[i].broadphaseActiveIndex = i;
+      }
+      _activeByCellUnmodifiable.clear();
+    }
+    if (passiveCollisionsChanged) {
+      _passiveByCellUnmodifiable.clear();
     }
   }
 
@@ -195,7 +213,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   Iterable<CollisionProspect<ShapeHitbox>> query() {
     _potentials.clear();
     _prospectPoolIndex = 0;
-    final activeChecked = HashSet<int>();
+    if (_activeCheckedRecreated) {
+      _activeCheckedRecreated = false;
+    } else {
+      for (final list in _activeChecked) {
+        list.fillRange(0, list.length, false);
+      }
+    }
     for (final activeItem in _activeCollisionsUnmodifiable) {
       final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
@@ -255,20 +279,19 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           _compareItemWithPotentials(
             activeItem,
             itemsActive,
-            activeChecked,
+            _activeChecked,
           );
         }
       }
     }
-    _passiveByCellUnmodifiable.clear();
-    _activeByCellUnmodifiable.clear();
+
     return _potentials.values;
   }
 
   void _compareItemWithPotentials(
     ShapeHitbox activeItem,
     List<ShapeHitbox> potentials, [
-    HashSet<int>? activeChecked,
+    List<List<bool>>? activeChecked,
     bool excludePureTypeCheck = false,
   ]) {
     final activeParent = activeItem.hitboxParent;
@@ -283,18 +306,26 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         continue;
       }
       if (activeChecked != null) {
-        final key = activeItem.hashCode & potential.hashCode;
-        if (activeChecked.contains(key)) {
-          continue;
-        } else {
-          activeChecked.add(key);
+        try {
+          final isChecked = activeChecked[activeItem.broadphaseActiveIndex]
+              [potential.broadphaseActiveIndex];
+          if (isChecked) {
+            continue;
+          } else {
+            activeChecked[potential.broadphaseActiveIndex]
+                [activeItem.broadphaseActiveIndex] = true;
+          }
+        } on RangeError catch (e) {
+          print('Invalid index on active check!');
         }
       }
       if (excludePureTypeCheck) {
-        final canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
-            _runExternalBroadphaseCheck(activeItem, potential);
-        if (!canToCollide) {
-          continue;
+        if (activeItem.doExtendedTypeCheck) {
+          final canToCollide = activeItem.getBroadphaseCheckCache(potential) ??
+              _runExternalBroadphaseCheck(activeItem, potential);
+          if (!canToCollide) {
+            continue;
+          }
         }
       } else {
         final canToCollide = _canPairToCollide(
@@ -371,11 +402,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
 
       /// 3. Run extended type check for components - as for ordinary hitbox
-      if (canToCollide) {
+      if (canToCollide && activeItem.doExtendedTypeCheck) {
         canToCollide = activeItem.getBroadphaseCheckCache(potentialItem) ??
             _runExternalBroadphaseCheck(activeItem, potentialItem);
       }
-    } else {
+    } else if (activeItem.doExtendedTypeCheck) {
       /// This is default extended type check for hitbox. It invokes into
       /// hitbox, then propagating to hitboxParent, then propagating to
       /// parents recursively until end of components tree. This cycle stops

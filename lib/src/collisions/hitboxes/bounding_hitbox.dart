@@ -43,7 +43,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
   bool _aabbCenterNotSet = true;
   final Vector2 _aabbCenter = Vector2.zero();
 
-  // final _broadphaseCheckCache = HashMap<ShapeHitbox, bool>();
+  bool doExtendedTypeCheck = true;
   final _broadphaseCheckCacheTrue = HashSet<int>();
   final _broadphaseCheckCacheFalse = HashSet<int>();
 
@@ -52,6 +52,9 @@ class BoundingHitbox extends RectangleHitboxOptimized
 
   @internal
   final broadphaseMinimumDistanceSkip = HashMap<ShapeHitbox, int>();
+
+  @internal
+  int broadphaseActiveIndex = -1;
 
   /// [aabb] calculates center at each call. This method provides
   /// caching.
@@ -472,6 +475,30 @@ extension SpatialGridShapeHitbox on ShapeHitbox {
       cache = HasGridSupport.cachedCenters[this];
     }
     return cache!;
+  }
+
+  bool get doExtendedTypeCheck => true;
+
+  @internal
+  set broadphaseActiveIndex(int value) {
+    if (this is BoundingHitbox) {
+      (this as BoundingHitbox).broadphaseActiveIndex = value;
+    } else {
+      if (value == -1) {
+        HasGridSupport.shapeHitboxIndex.remove(this);
+      } else {
+        HasGridSupport.shapeHitboxIndex[this] = value;
+      }
+    }
+  }
+
+  @internal
+  int get broadphaseActiveIndex {
+    if (this is BoundingHitbox) {
+      return (this as BoundingHitbox).broadphaseActiveIndex;
+    } else {
+      return HasGridSupport.shapeHitboxIndex[this] ?? -1;
+    }
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {

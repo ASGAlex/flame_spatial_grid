@@ -579,6 +579,7 @@ class Player extends SpriteComponent
     });
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
+    boundingBox.doExtendedTypeCheck = false;
     // boundingBox.groupCollisionsTags
     //   ..add('Water')
     //   ..add('Brick');
@@ -913,6 +914,7 @@ class Bullet extends PositionComponent
     paint.color = Colors.deepOrange;
     priority = 10;
     size = Vector2.all(1);
+    boundingBox.doExtendedTypeCheck = false;
     boundingBox.collisionType =
         boundingBox.defaultCollisionType = CollisionType.active;
   }
@@ -1081,6 +1083,7 @@ class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
 class BoundingBoxGridGame extends BoundingHitbox {
   @override
   FutureOr<void> onLoad() {
+    doExtendedTypeCheck = false;
     cacheAbsoluteScaledSize = cacheAbsoluteAngle =
         groupAbsoluteCacheByType = fastCollisionForRects = true;
     return super.onLoad();
