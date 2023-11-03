@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:dart_bloom_filter/dart_bloom_filter.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
@@ -76,6 +77,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   PureTypeCheck? globalPureTypeCheck;
 
   final _checkByTypeCache = <int, bool>{};
+  BloomFilter<int>? _checkByTypeCacheBloomTrue;
+  BloomFilter<int>? _checkByTypeCacheBloomFalse;
 
   @internal
   static final broadphaseCheckCache =
@@ -358,6 +361,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     }
   }
 
+  var _key1 = 0;
+  var _canToCollide1 = true;
+  var _key2 = 0;
+  var _canToCollide2 = true;
+
   bool _canPairToCollide(
     ShapeHitbox activeItem,
     PositionComponent activeParent,
@@ -375,13 +383,24 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             potentialParent.primaryHitboxCollisionType ?? potentialType;
       }
       var key = activeItem.runtimeType.hashCode & potentialType.hashCode;
-      final cache = _checkByTypeCache[key];
-      if (cache == null) {
-        canToCollide =
-            _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
-        _checkByTypeCache[key] = canToCollide;
+      if (key == _key1) {
+        canToCollide = _canToCollide1;
       } else {
-        canToCollide = cache;
+        _key1 = key;
+        final bloomCheck = _bloomCacheCheck(key);
+        if (bloomCheck == null) {
+          final cache = _checkByTypeCache[key];
+          if (cache == null) {
+            canToCollide =
+                _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
+            _checkByTypeCache[key] = canToCollide;
+          } else {
+            canToCollide = cache;
+          }
+          _canToCollide1 = canToCollide;
+        } else {
+          _canToCollide1 = canToCollide = bloomCheck;
+        }
       }
 
       /// 2. Checking types of components itself.
@@ -391,13 +410,26 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         }
         final activeItemParentType = activeParent.runtimeType;
         key = activeItemParentType.hashCode & potentialType.hashCode;
-        final cache = _checkByTypeCache[key];
-
-        if (cache == null) {
-          canToCollide = _pureTypeCheckComponent(activeParent, potentialParent);
-          _checkByTypeCache[key] = canToCollide;
+        if (key == _key2) {
+          canToCollide = _canToCollide2;
         } else {
-          canToCollide = cache;
+          _key2 = key;
+          final bloomCheck = _bloomCacheCheck(key);
+          if (bloomCheck == null) {
+            final cache = _checkByTypeCache[key];
+
+            if (cache == null) {
+              canToCollide =
+                  _pureTypeCheckComponent(activeParent, potentialParent);
+              _checkByTypeCache[key] = canToCollide;
+            } else {
+              canToCollide = cache;
+            }
+            _canToCollide2 = canToCollide;
+          } else {
+            canToCollide = bloomCheck;
+            _canToCollide2 = canToCollide;
+          }
         }
       }
 
@@ -470,6 +502,56 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       return activeCanCollide && potentialCanCollide;
     }
     return canToCollide;
+  }
+
+  void pureTypeCheckWarmUp(List<PositionComponent> components) {
+    final result = <int, bool>{};
+    for (var i = 0; i < components.length; i++) {
+      final active = components[i];
+      for (var j = 0; j < components.length; j++) {
+        final potential = components[j];
+        var canToCollide = true;
+        if (active is BoundingHitbox && potential is ShapeHitbox) {
+          canToCollide =
+              _pureTypeCheckHitbox(active, potential, potential.runtimeType);
+        }
+        if (canToCollide) {
+          canToCollide = _pureTypeCheckComponent(active, potential);
+        }
+        //store result here
+        final key =
+            active.runtimeType.hashCode & potential.runtimeType.hashCode;
+        result[key] = canToCollide;
+      }
+    }
+
+    _checkByTypeCacheBloomTrue = BloomFilter<int>(result.length, 0.01);
+    _checkByTypeCacheBloomFalse = BloomFilter<int>(result.length, 0.01);
+    for (final item in result.entries) {
+      if (item.value) {
+        _checkByTypeCacheBloomTrue!.add(item: item.key);
+      } else {
+        _checkByTypeCacheBloomFalse!.add(item: item.key);
+      }
+    }
+  }
+
+  bool? _bloomCacheCheck(int key) {
+    if (_checkByTypeCacheBloomTrue == null) {
+      return null;
+    }
+
+    final collide = _checkByTypeCacheBloomTrue!.contains(item: key);
+    if (collide) {
+      final noCollide = _checkByTypeCacheBloomFalse!.contains(item: key);
+      if (!noCollide) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   bool _minimumDistanceCheck(

@@ -74,6 +74,8 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
   bool doOnGameResizeForAllComponents = false;
 
+  var pureTypeCheckWarmUpComponents = <PositionComponent>[];
+
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all
   /// resources were loaded before game loop start.
@@ -290,6 +292,11 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       } else {
         throw 'Lazy load initialization error!';
       }
+    }
+
+    if (pureTypeCheckWarmUpComponents.isNotEmpty) {
+      collisionDetection.broadphase
+          .pureTypeCheckWarmUp(pureTypeCheckWarmUpComponents);
     }
   }
 
