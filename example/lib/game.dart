@@ -248,7 +248,7 @@ all collisions are disabled.
         world.npcList.clear();
       }
       if (key == LogicalKeyboardKey.keyC) {
-        world.spawnNpcTeam(true);
+        world.spawnNpcTeam(true, player.position.toOffset());
       }
       if (key == LogicalKeyboardKey.keyI) {
         isAIEnabled = !isAIEnabled;
@@ -447,12 +447,14 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
     spawnNpcTeam();
   }
 
-  void spawnNpcTeam([bool aiEnabled = false]) {
+  void spawnNpcTeam([bool aiEnabled = false, Offset offset = Offset.zero]) {
     // return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
       final y = i <= 40 ? 0.0 : -20.0;
-      final position = Vector2(-100, 0)..add(Vector2(x, y));
+      final position = offset.toVector2()
+        ..add(Vector2(-100, 0))
+        ..add(Vector2(x, y));
       final npc = Npc(
         position: position,
         size: Vector2.all(tileSize),
@@ -1108,6 +1110,7 @@ class TouchEventsHandler extends Component
     if (game.teleportMode) {
       game.player.position.setFrom(event.localPosition);
     }
+    if (event.deviceKind == PointerDeviceKind.mouse) {}
     event.continuePropagation = false;
     return;
     final tapPosition = event.localPosition;
