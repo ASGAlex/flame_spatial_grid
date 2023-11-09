@@ -225,9 +225,8 @@ abstract class TiledMapLoader {
     return tiledComponent!;
   }
 
-  Future<void> _preloadTileSets(TiledMap map) async {
-    game.tilesetManager.addFromMap(map);
-  }
+  Future<void> _preloadTileSets(TiledMap map) =>
+      game.tilesetManager.addFromMap(map);
 
   /// Core build function. Reimplement it only when you have good understanding,
   /// what to do!
@@ -239,17 +238,34 @@ abstract class TiledMapLoader {
     }
 
     for (final context in contextList) {
+      final builderType =
+          context.tileDataProvider?.tile.type ?? context.tiledObject?.type;
       if (context.removed) {
         continue;
       } else {
         cell.tileBuilderContextProvider = tileBuilderContextProvider;
-        final builderType =
-            context.tileDataProvider?.tile.type ?? context.tiledObject?.type;
-        final processor = tileBuilders?[builderType];
+        var processor = tileBuilders?[builderType];
         if (processor != null) {
           await processor(context);
         } else {
-          await notFoundBuilder?.call(context);
+          final builderKeys = tileBuilders?.keys;
+          if (builderKeys != null && builderType != null) {
+            for (final searchSubstring in builderKeys) {
+              if (!searchSubstring.contains('*')) {
+                continue;
+              }
+              final search = searchSubstring.replaceFirst('*', '').trim();
+              if (search.matchAsPrefix(builderType) != null) {
+                processor = tileBuilders![searchSubstring];
+                break;
+              }
+            }
+          }
+          if (processor != null) {
+            await processor(context);
+          } else {
+            await notFoundBuilder?.call(context);
+          }
         }
       }
 

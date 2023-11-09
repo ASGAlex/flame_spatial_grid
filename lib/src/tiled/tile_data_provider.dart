@@ -34,19 +34,19 @@ class TileDataProvider {
     return null;
   }
 
-  FutureOr<Sprite> getSprite() {
+  Future<Sprite> getSprite() {
     final sprite = cache?.sprite;
     if (sprite != null) {
-      return sprite;
+      return Future.value(sprite);
     } else {
       return tile.getSprite(tileset);
     }
   }
 
-  FutureOr<SpriteAnimation?> getSpriteAnimation() {
+  Future<SpriteAnimation?> getSpriteAnimation() {
     final animation = cache?.spriteAnimation;
     if (animation != null) {
-      return animation;
+      return Future.value(animation);
     } else {
       return tile.getSpriteAnimation(tileset);
     }
