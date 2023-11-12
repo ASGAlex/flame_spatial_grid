@@ -305,7 +305,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         continue;
       }
       final potentialParent = potential.hitboxParent;
-      if (potentialParent == activeParent) {
+      if (!activeItem.allowSiblingCollision &&
+          !potential.allowSiblingCollision &&
+          potentialParent == activeParent) {
         continue;
       }
       if (alreadyChecked != null && potential.broadphaseActiveIndex != -1) {
@@ -450,19 +452,27 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     return canToCollide;
   }
 
-  bool _globalTypeCheck(Type activeType, Type potentialType) {
+  bool _globalTypeCheck(
+    Type activeType,
+    Type potentialType,
+    bool potentialCanBeActive,
+  ) {
     if (globalPureTypeCheck == null) {
       return true;
     }
 
-    return globalPureTypeCheck!.call(
-          activeType,
-          potentialType,
-        ) &&
-        globalPureTypeCheck!.call(
-          potentialType,
-          activeType,
-        );
+    final canCollide = globalPureTypeCheck!.call(
+      activeType,
+      potentialType,
+    );
+    if (potentialCanBeActive) {
+      return canCollide &&
+          globalPureTypeCheck!.call(
+            potentialType,
+            activeType,
+          );
+    }
+    return canCollide;
   }
 
   bool _pureTypeCheckHitbox(
@@ -470,7 +480,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     ShapeHitbox potential,
     Type potentialType,
   ) {
-    final canToCollide = _globalTypeCheck(active.runtimeType, potentialType);
+    final canToCollide = _globalTypeCheck(
+      active.runtimeType,
+      potentialType,
+      potential.canBeActive,
+    );
 
     if (canToCollide) {
       final activeCanCollide = active.pureTypeCheck(potentialType);
@@ -487,8 +501,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     PositionComponent active,
     PositionComponent potential,
   ) {
-    final canToCollide =
-        _globalTypeCheck(active.runtimeType, potential.runtimeType);
+    final canToCollide = _globalTypeCheck(
+      active.runtimeType,
+      potential.runtimeType,
+      potential.canBeActive,
+    );
 
     if (canToCollide) {
       var activeCanCollide = true;

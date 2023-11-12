@@ -38,7 +38,7 @@ enum MapLayerType {
 /// ("Class"). If no builder had been found for type - the [notFoundBuilder]
 /// function will be called. Bu default it runs [genericTileBuilder] - useful
 /// to create map's backgrounds - but you always free to reimplement this.
-abstract class TiledMapLoader {
+abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   static List<TiledMapLoader> loadedMaps = [];
 
   /// File name in '/assets/tiles' directory, with extension
@@ -81,8 +81,8 @@ abstract class TiledMapLoader {
 
   /// The link to the current game. Is necessary for accessing [SpatialGrid]
   /// class and working with layers.
-  HasSpatialGridFramework get game => _game!;
-  HasSpatialGridFramework? _game;
+  T get game => _game!;
+  T? _game;
 
   TiledComponent? tiledComponent;
 
@@ -171,7 +171,7 @@ abstract class TiledMapLoader {
   /// There is no need to call this function manually. If you have listed
   /// the map in [HasSpatialGridFramework.initializeSpatialGrid] function,
   /// it will be called automatically.
-  Future<TiledComponent> init(HasSpatialGridFramework game) async {
+  Future<TiledComponent> init(T game) async {
     _game ??= game;
     tileBuilderContextProvider =
         TileBuilderContextProvider<TiledMapLoader>(parent: this);

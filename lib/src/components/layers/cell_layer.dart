@@ -119,6 +119,9 @@ abstract class CellLayer extends PositionComponent
 
   LayerCacheKey get cacheKey;
 
+  @override
+  bool get canBeActive => false;
+
   Iterable<Component> get components {
     switch (componentsStorageMode) {
       case LayerComponentsStorageMode.defaultComponentTree:

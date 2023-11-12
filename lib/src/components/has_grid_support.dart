@@ -460,4 +460,19 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
 
     return true;
   }
+
+  bool get canBeActive => boundingBox.canBeActive;
+}
+
+extension PositionComponentWithGridSupport on PositionComponent {
+  bool get canBeActive {
+    if (this is HasGridSupport) {
+      return (this as HasGridSupport).canBeActive;
+    }
+    final hitbox = children.query<ShapeHitbox>().firstOrNull;
+    if (hitbox == null) {
+      return false;
+    }
+    return hitbox.canBeActive;
+  }
 }
