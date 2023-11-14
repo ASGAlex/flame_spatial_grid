@@ -564,6 +564,9 @@ class DemoMapLoader extends TiledMapLoader {
 
   @override
   Map<String, TileBuilderFunction>? get globalObjectBuilder => null;
+
+  @override
+  Map<String, LayerBuilderFunction>? get layerBuilders => null;
 }
 //#endregion
 

@@ -22,9 +22,10 @@ class PolygonRectComponent extends ShapeComponent implements PolygonComponent {
   Rect _rect = Rect.zero;
 
   @override
-  final bool shrinkToBounds;
+  bool shrinkToBounds;
+
   @override
-  final bool manuallyPositioned;
+  bool manuallyPositioned;
 
   final _cachedGlobalVertices = ValueCache<List<Vector2>>();
 

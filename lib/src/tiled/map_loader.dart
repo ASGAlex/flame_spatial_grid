@@ -8,6 +8,11 @@ import 'package:meta/meta.dart';
 
 typedef TileBuilderFunction = Future<void> Function(TileBuilderContext context);
 
+typedef LayerBuilderFunction = Future<bool> Function(
+  LayerInfo layerInfo,
+  TileBuilderContext context,
+);
+
 typedef InitialPositionChecker = Vector2? Function(
   ObjectGroup layer,
   TiledObject object,
@@ -60,6 +65,8 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   /// called for every tile of corresponding "Class" at stage of map
   /// initialization and during new cells creation.
   Map<String, TileBuilderFunction>? get tileBuilders;
+
+  Map<String, LayerBuilderFunction>? get layerBuilders;
 
   /// Finds and process objects at any map's point. Useful for initialisation
   /// process, for example to find player's initial position on a map.
@@ -244,33 +251,81 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
         continue;
       } else {
         cell.tileBuilderContextProvider = tileBuilderContextProvider;
-        var processor = tileBuilders?[builderType];
-        if (processor != null) {
-          await processor(context);
-        } else {
-          final builderKeys = tileBuilders?.keys;
-          if (builderKeys != null && builderType != null) {
-            for (final searchSubstring in builderKeys) {
-              if (!searchSubstring.contains('*')) {
-                continue;
-              }
-              final search = searchSubstring.replaceFirst('*', '').trim();
-              if (search.matchAsPrefix(builderType) != null) {
-                processor = tileBuilders![searchSubstring];
-                break;
-              }
-            }
-          }
-          if (processor != null) {
-            await processor(context);
-          } else {
-            await notFoundBuilder?.call(context);
-          }
-        }
+        _layerBuilder(cell, builderType, context, rootComponent);
       }
 
       await cellPostBuilder?.call(context);
     }
+  }
+
+  Future<void> _layerBuilder(
+    Cell cell,
+    String? builderType,
+    TileBuilderContext context,
+    Component rootComponent,
+  ) async {
+    final layerInfo = context.layerInfo;
+    var layerProcessor = layerBuilders?[layerInfo.name];
+    var runTileBuilder = false;
+    if (layerProcessor != null) {
+      runTileBuilder = await layerProcessor(layerInfo, context);
+    } else {
+      final builderKeys = layerBuilders?.keys;
+      if (builderKeys != null) {
+        final searchSubstring = _matchWildcard(layerInfo.name, builderKeys);
+        if (searchSubstring != null) {
+          layerProcessor = layerBuilders![searchSubstring];
+        }
+      }
+      if (layerProcessor != null) {
+        runTileBuilder = await layerProcessor(layerInfo, context);
+      } else {
+        runTileBuilder = true;
+      }
+    }
+
+    if (runTileBuilder) {
+      await _tileBuilder(cell, builderType, context, rootComponent);
+    }
+  }
+
+  Future<void> _tileBuilder(
+    Cell cell,
+    String? builderType,
+    TileBuilderContext context,
+    Component rootComponent,
+  ) async {
+    /// INVOKE HERE
+    var processor = tileBuilders?[builderType];
+    if (processor != null) {
+      await processor(context);
+    } else {
+      final builderKeys = tileBuilders?.keys;
+      if (builderKeys != null && builderType != null) {
+        final searchSubstring = _matchWildcard(builderType, builderKeys);
+        if (searchSubstring != null) {
+          processor = tileBuilders![searchSubstring];
+        }
+      }
+      if (processor != null) {
+        await processor(context);
+      } else {
+        await notFoundBuilder?.call(context);
+      }
+    }
+  }
+
+  String? _matchWildcard(String builderType, Iterable<String> builderKeys) {
+    for (final searchSubstring in builderKeys) {
+      if (!searchSubstring.contains('*')) {
+        continue;
+      }
+      final search = searchSubstring.replaceFirst('*', '').trim();
+      if (search.matchAsPrefix(builderType) != null) {
+        return searchSubstring;
+      }
+    }
+    return null;
   }
 
   /// This tile builder merges all tiles into single image. Useful for
@@ -381,7 +436,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
     return layers;
   }
 
-  void _processTileType<T extends Layer>({
+  void _processTileType({
     required RenderableTiledMap tileMap,
     List<String>? layersToLoad,
     bool clear = true,

@@ -245,6 +245,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
     } else {
       isFastDistanceCheckAvailable = true;
     }
+    _onPositionChanged();
   }
 
   void storeBroadphaseCheckCache(ShapeHitbox item, bool canCollide) {
@@ -430,7 +431,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
   void renderDebugMode(Canvas canvas) {
     if (group == null) {
       canvas.drawRect(
-        Rect.fromLTWH(position.x, position.y, size.x, size.y),
+        Rect.fromLTWH(0, 0, size.x, size.y),
         Paint()
           ..color = const Color.fromRGBO(119, 0, 255, 1.0)
           ..style = PaintingStyle.stroke,

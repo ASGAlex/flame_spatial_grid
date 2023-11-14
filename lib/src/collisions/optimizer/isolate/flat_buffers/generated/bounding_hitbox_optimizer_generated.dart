@@ -12,12 +12,11 @@ import 'package:flat_buffers/flat_buffers.dart' as fb;
 import 'package:vector_math/vector_math_64.dart' as vector;
 
 class BoundingHitbox {
-  BoundingHitbox._(this._bc, this._bcOffset);
-
   factory BoundingHitbox(List<int> bytes) {
     final rootRef = fb.BufferContext.fromBytes(bytes);
     return reader.read(rootRef, 0);
   }
+  BoundingHitbox._(this._bc, this._bcOffset);
 
   static const fb.Reader<BoundingHitbox> reader = _BoundingHitboxReader();
 

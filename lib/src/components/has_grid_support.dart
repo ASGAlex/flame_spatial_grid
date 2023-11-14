@@ -226,7 +226,9 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   @override
   @mustCallSuper
   FutureOr<void>? onLoad() {
-    boundingBox.size.setFrom(size);
+    if (boundingBox.shouldFillParent) {
+      boundingBox.size.setFrom(size);
+    }
     add(boundingBox);
     position.addListener(_onPositionChanged);
     return super.onLoad();
@@ -272,6 +274,9 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
 
   @override
   void onChildrenChanged(Component child, ChildrenChangeType type) {
+    if (!boundingBox.shouldFillParent) {
+      return;
+    }
     if (type == ChildrenChangeType.added) {
       if (child != boundingBox && child is ShapeHitbox) {
         boundingBox.resizeToIncludeChildren(child);

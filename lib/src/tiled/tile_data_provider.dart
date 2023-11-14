@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -19,16 +20,13 @@ class TileDataProvider {
   Tileset tileset;
   TileCache? cache;
 
-  RectangleHitbox? getCollisionRect() {
+  Rect? getCollisionRect() {
     final group = tile.objectGroup;
     final type = group?.type;
     if (type == LayerType.objectGroup && group is ObjectGroup) {
       if (group.objects.isNotEmpty) {
         final obj = group.objects.first;
-        return RectangleHitbox(
-          size: Vector2(obj.width, obj.height),
-          position: Vector2(obj.x, obj.y),
-        );
+        return Rect.fromLTWH(obj.x, obj.y, obj.width, obj.height);
       }
     }
     return null;

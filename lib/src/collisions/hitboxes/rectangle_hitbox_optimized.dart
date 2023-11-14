@@ -7,8 +7,7 @@ import 'package:flutter/foundation.dart';
 class RectangleHitboxOptimized extends PolygonRectComponent
     with ShapeHitbox, PolygonRayIntersection<RectangleHitbox>
     implements RectangleHitbox {
-  @override
-  final bool shouldFillParent;
+  final bool _shouldFeelParentInitial;
 
   RectangleHitboxOptimized({
     super.position,
@@ -18,10 +17,23 @@ class RectangleHitboxOptimized extends PolygonRectComponent
     super.priority,
     bool isSolid = false,
     CollisionType collisionType = CollisionType.active,
-  })  : shouldFillParent = size == null && position == null,
+  })  : _shouldFeelParentInitial = size == null && position == null,
         super(sizeToVertices(size ?? Vector2.zero(), anchor)) {
     this.isSolid = isSolid;
     this.collisionType = collisionType;
+    shouldFillParent = _shouldFeelParentInitial;
+    size.addListener(() {
+      shrinkToBounds = false;
+      shouldFillParent = false;
+      refreshVertices(
+        newVertices: sizeToVertices(size, anchor),
+      );
+    });
+
+    position.addListener(() {
+      manuallyPositioned = true;
+      shouldFillParent = false;
+    });
   }
 
   @override
