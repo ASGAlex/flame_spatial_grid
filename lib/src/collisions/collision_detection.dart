@@ -152,9 +152,6 @@ class SpatialGridCollisionDetection
 
     final allHashes =
         Set.unmodifiable(unmodifiableAllPotentials.map((p) => p.hash));
-    final lastHashes = _lastPotentials.map(
-      (e) => e.hash,
-    );
     // Handles callbacks for an ended collision that the broadphase didn't
     // report as a potential collision anymore.
     for (final prospect in _lastPotentials) {
