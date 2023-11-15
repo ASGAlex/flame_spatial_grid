@@ -5,6 +5,13 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
 
+typedef CustomLayerBuilder = CellLayer Function(
+  PositionComponent component,
+  Cell cell,
+  String layerName,
+  LayerComponentsStorageMode componentsStorageMode,
+);
+
 class LayersRootComponent extends Component with UpdateOnDemand {}
 
 /// The class provides easy-to-use API layer to access game layer's
@@ -20,6 +27,8 @@ class LayersManager {
   HasSpatialGridFramework game;
 
   final layersRootComponent = <int, LayersRootComponent>{};
+
+  CustomLayerBuilder? customLayerBuilder;
 
   /// Adding manually created [CellLayer] into [layersRootComponent].
   /// Usually there is no need to use this function, try [addComponent] instead.
@@ -127,6 +136,19 @@ class LayersManager {
           layer = CellTrailLayer(
             cell,
             name: layerName,
+          );
+        }
+        break;
+      case MapLayerType.custom:
+        if (isNew) {
+          if (customLayerBuilder == null) {
+            throw 'Trying to build custom layer without builder being specified';
+          }
+          layer = customLayerBuilder!.call(
+            component,
+            cell,
+            layerName,
+            componentsStorageMode,
           );
         }
         break;

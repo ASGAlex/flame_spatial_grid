@@ -296,12 +296,17 @@ abstract class CellLayer extends PositionComponent
 
   Future<void>? _updateLayerFuture;
 
+  bool ignoreCache = false;
+  bool skipCollisionOptimization = false;
+
   Future<void> updateLayer([double dt = 0.001]) {
     if (isUpdateNeeded) {
       if (_updateLayerFuture != null) {
         return Future<void>.value();
       }
-      if (cacheKey.key != null && onCheckCache(cacheKey.key!)) {
+      if (ignoreCache) {
+        ignoreCache = false;
+      } else if (cacheKey.key != null && onCheckCache(cacheKey.key!)) {
         isUpdateNeeded = false;
         return Future<void>.value();
       }
@@ -316,7 +321,12 @@ abstract class CellLayer extends PositionComponent
             game.processLifecycleEvents();
             if (currentCell?.state == CellState.active) {
               if (optimizeCollisions) {
-                await collisionOptimizer.optimize();
+                if (skipCollisionOptimization) {
+                  skipCollisionOptimization = false;
+                } else {
+                  await collisionOptimizer.optimize();
+                  game.processLifecycleEvents();
+                }
               }
               if (renderMode != LayerRenderMode.component) {
                 compileToSingleLayer(components);

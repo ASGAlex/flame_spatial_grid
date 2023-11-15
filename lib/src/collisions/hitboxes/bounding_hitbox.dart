@@ -457,4 +457,18 @@ class BoundingHitbox extends RectangleHitboxOptimized
     }
     return super.intersections(other);
   }
+
+  @override
+  @mustCallSuper
+  void onCollisionStart(Set<Vector2> intersectionPoints, ShapeHitbox other) {
+    group?.onCollisionStart(intersectionPoints, other);
+    super.onCollisionStart(intersectionPoints, other);
+  }
+
+  @override
+  @mustCallSuper
+  void onCollisionEnd(ShapeHitbox other) {
+    group?.onCollisionEnd(other);
+    super.onCollisionEnd(other);
+  }
 }

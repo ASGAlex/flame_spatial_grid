@@ -31,7 +31,10 @@ enum MapLayerType {
   animated,
 
   /// [CellTrailLayer] class instance
-  trail
+  trail,
+
+  /// Use [LayersManager.customLayerBuilder] to build layer class
+  custom,
 }
 
 /// This is base class for describing a Tiled map. You going to create
@@ -143,6 +146,13 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
     }
   }
 
+  CellLayer customLayerBuilder(
+    PositionComponent component,
+    Cell cell,
+    String layerName,
+    LayerComponentsStorageMode componentsStorageMode,
+  );
+
   Future<Vector2?> searchInitialPosition(
     InitialPositionChecker checkFunction, [
     String? worldName,
@@ -245,6 +255,8 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
       return;
     }
 
+    game.layersManager.customLayerBuilder = customLayerBuilder;
+
     for (final context in contextList) {
       final builderType =
           context.tileDataProvider?.tile.type ?? context.tiledObject?.type;
@@ -252,7 +264,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
         continue;
       } else {
         cell.tileBuilderContextProvider = tileBuilderContextProvider;
-        _layerBuilder(cell, builderType, context, rootComponent);
+        await _layerBuilder(cell, builderType, context, rootComponent);
       }
 
       await cellPostBuilder?.call(context);
@@ -296,7 +308,6 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
     TileBuilderContext<C> context,
     Component rootComponent,
   ) async {
-    /// INVOKE HERE
     var processor = tileBuilders?[builderType];
     if (processor != null) {
       await processor(context);

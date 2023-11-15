@@ -126,8 +126,7 @@ class SpatialGridCollisionDetection
     items.forEach(remove);
   }
 
-  final HashSet<CollisionProspect<ShapeHitbox>> _lastPotentials =
-      HashSet<CollisionProspect<ShapeHitbox>>();
+  final _lastPotentials = HashSet<CollisionProspect<ShapeHitbox>>();
 
   @override
   void run() {
@@ -153,15 +152,26 @@ class SpatialGridCollisionDetection
 
     final allHashes =
         Set.unmodifiable(unmodifiableAllPotentials.map((p) => p.hash));
+    final lastHashes = _lastPotentials.map(
+      (e) => e.hash,
+    );
     // Handles callbacks for an ended collision that the broadphase didn't
     // report as a potential collision anymore.
     for (final prospect in _lastPotentials) {
       if (!allHashes.contains(prospect.hash) &&
-          prospect.a.collidingWith(prospect.b)) {
+          (prospect.a.collidingWith(prospect.b) ||
+              _isPotentialCollidingGroup(prospect.b, prospect.a))) {
         handleCollisionEnd(prospect.a, prospect.b);
       }
     }
     _updateLastPotentials(unmodifiableAllPotentials);
+  }
+
+  bool _isPotentialCollidingGroup(ShapeHitbox potential, ShapeHitbox active) {
+    if (potential is GroupHitbox && potential.collidingWith(active)) {
+      return true;
+    }
+    return false;
   }
 
   void _updateTransform(ShapeHitbox item) {

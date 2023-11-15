@@ -6,6 +6,7 @@ import 'package:dart_bloom_filter/dart_bloom_filter.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flame_spatial_grid/src/collisions/collision_prospect/prospect_pool.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
 import 'package:meta/meta.dart';
 
@@ -43,7 +44,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   final SpatialGrid spatialGrid;
 
-  final _prospectPool = ProspectPool<ShapeHitbox>();
+  final _prospectPool = ProspectPoolGrouped();
   var _prospectPoolIndex = 0;
   final _dummyHitbox = DummyHitbox();
   final _potentials = <int, CollisionProspect<ShapeHitbox>>{};

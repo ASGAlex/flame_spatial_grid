@@ -567,6 +567,16 @@ class DemoMapLoader extends TiledMapLoader {
 
   @override
   Map<String, LayerBuilderFunction>? get layerBuilders => null;
+
+  @override
+  CellLayer customLayerBuilder(
+    PositionComponent component,
+    Cell cell,
+    String layerName,
+    LayerComponentsStorageMode componentsStorageMode,
+  ) {
+    throw UnimplementedError();
+  }
 }
 //#endregion
 
