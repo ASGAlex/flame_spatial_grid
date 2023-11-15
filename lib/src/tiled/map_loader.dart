@@ -6,11 +6,12 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
 
-typedef TileBuilderFunction = Future<void> Function(TileBuilderContext context);
+typedef TileBuilderFunction<T> = Future<void> Function(
+    TileBuilderContext<T> context);
 
-typedef LayerBuilderFunction = Future<bool> Function(
+typedef LayerBuilderFunction<T> = Future<bool> Function(
   LayerInfo layerInfo,
-  TileBuilderContext context,
+  TileBuilderContext<T> context,
 );
 
 typedef InitialPositionChecker = Vector2? Function(
@@ -43,7 +44,7 @@ enum MapLayerType {
 /// ("Class"). If no builder had been found for type - the [notFoundBuilder]
 /// function will be called. Bu default it runs [genericTileBuilder] - useful
 /// to create map's backgrounds - but you always free to reimplement this.
-abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
+abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
   static List<TiledMapLoader> loadedMaps = [];
 
   /// File name in '/assets/tiles' directory, with extension
@@ -64,22 +65,22 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   /// for every "Type" ("Class") of map's tile. The builder function will be
   /// called for every tile of corresponding "Class" at stage of map
   /// initialization and during new cells creation.
-  Map<String, TileBuilderFunction>? get tileBuilders;
+  Map<String, TileBuilderFunction<C>>? get tileBuilders;
 
-  Map<String, LayerBuilderFunction>? get layerBuilders;
+  Map<String, LayerBuilderFunction<C>>? get layerBuilders;
 
   /// Finds and process objects at any map's point. Useful for initialisation
   /// process, for example to find player's initial position on a map.
-  Map<String, TileBuilderFunction>? get globalObjectBuilder;
+  Map<String, TileBuilderFunction<C>>? get globalObjectBuilder;
 
   /// A function called after tile was successfully built. It is useful if you
   /// need some post-processing for every tile of you map.
-  TileBuilderFunction? get cellPostBuilder => null;
+  TileBuilderFunction<C>? get cellPostBuilder => null;
 
   /// The function is called when no corresponded type (class) was found in
   /// [tileBuilders] storage. By default it builds flat image of map, something
   /// like [RenderableTiledMap] do, but already split by cells of grid.
-  TileBuilderFunction? get notFoundBuilder => genericTileBuilder;
+  TileBuilderFunction<C>? get notFoundBuilder => genericTileBuilder;
 
   /// This specifies the priority of [TiledComponent] you will receive after map
   /// initialization. Does not affect the Frameworks functionality, so might be
@@ -95,7 +96,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
 
   Component get rootComponent => game.rootComponent;
 
-  late final TileBuilderContextProvider<TiledMapLoader>
+  late final TileBuilderContextProvider<TiledMapLoader, C>
       tileBuilderContextProvider;
 
   /// By default flame_tiled loads just tilesets that are really used in the
@@ -181,7 +182,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   Future<TiledComponent> init(T game) async {
     _game ??= game;
     tileBuilderContextProvider =
-        TileBuilderContextProvider<TiledMapLoader>(parent: this);
+        TileBuilderContextProvider<TiledMapLoader, C>(parent: this);
 
     final renderableTiledMap = (await loadTiledComponent()).tileMap;
 
@@ -215,7 +216,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
                   game.spatialGrid.createNewCellAtPosition(position + size / 2);
               rect = cell.rect;
             }
-            final context = TileBuilderContext(
+            final context = TileBuilderContext<C>(
               tiledObject: object,
               absolutePosition: position,
               size: size,
@@ -261,7 +262,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   Future<void> _layerBuilder(
     Cell cell,
     String? builderType,
-    TileBuilderContext context,
+    TileBuilderContext<C> context,
     Component rootComponent,
   ) async {
     final layerInfo = context.layerInfo;
@@ -292,7 +293,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
   Future<void> _tileBuilder(
     Cell cell,
     String? builderType,
-    TileBuilderContext context,
+    TileBuilderContext<C> context,
     Component rootComponent,
   ) async {
     /// INVOKE HERE
@@ -493,7 +494,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
               rect = cell.rect;
             }
             tileBuilderContextProvider.addContext(
-              TileBuilderContext(
+              TileBuilderContext<C>(
                 tileDataProvider: tileDataProvider,
                 absolutePosition: absolutePosition,
                 size: size,
@@ -525,7 +526,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework> {
           }
 
           tileBuilderContextProvider.addContext(
-            TileBuilderContext(
+            TileBuilderContext<C>(
               tiledObject: object,
               absolutePosition: position,
               size: size,

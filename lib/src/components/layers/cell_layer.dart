@@ -73,6 +73,7 @@ abstract class CellLayer extends PositionComponent
     with
         HasGridSupport,
         UpdateOnDemand,
+        HasPaint,
         HasGameReference<HasSpatialGridFramework> {
   CellLayer(
     Cell cell, {

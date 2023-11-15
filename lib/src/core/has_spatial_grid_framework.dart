@@ -41,7 +41,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
   final tilesetManager = TilesetManager();
 
-  late final TileBuilderContextProvider<HasSpatialGridFramework>
+  late final TileBuilderContextProvider<HasSpatialGridFramework, dynamic>
       tileBuilderContextProvider;
 
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
@@ -207,7 +207,9 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
     this.processCellsLimitToPauseEngine = processCellsLimitToPauseEngine;
     tileBuilderContextProvider =
-        TileBuilderContextProvider<HasSpatialGridFramework>(parent: this);
+        TileBuilderContextProvider<HasSpatialGridFramework, dynamic>(
+      parent: this,
+    );
     if (maps != null) {
       this.maps = maps;
     }

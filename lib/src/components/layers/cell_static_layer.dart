@@ -19,16 +19,19 @@ class CellStaticLayer extends CellLayer {
   }) {
     paint.isAntiAlias = false;
     paint.filterQuality = FilterQuality.none;
+    _imagePaint.isAntiAlias = false;
+    _imagePaint.filterQuality = FilterQuality.none;
   }
 
   static final _compiledLayersCache = <int, ImageCacheEntry>{};
 
   final _layerCacheKey = LayerCacheKey();
 
+  final _imagePaint = Paint();
+
   @override
   LayerCacheKey get cacheKey => _layerCacheKey;
 
-  final paint = Paint();
   Picture? layerPicture;
   Image? layerImage;
 
@@ -58,12 +61,20 @@ class CellStaticLayer extends CellLayer {
         break;
       case LayerRenderMode.image:
         if (layerImage != null) {
-          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+          canvas.drawImage(
+            layerImage!,
+            correctionTopLeft.toOffset(),
+            _imagePaint,
+          );
         }
         break;
       case LayerRenderMode.auto:
         if (_renderAsImage && layerImage != null) {
-          canvas.drawImage(layerImage!, correctionTopLeft.toOffset(), paint);
+          canvas.drawImage(
+            layerImage!,
+            correctionTopLeft.toOffset(),
+            _imagePaint,
+          );
         } else if (layerPicture != null) {
           canvas.drawPicture(layerPicture!);
           if (_millisecondsBetweenImageUpdate == 0) {

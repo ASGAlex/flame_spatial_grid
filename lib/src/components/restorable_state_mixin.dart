@@ -4,7 +4,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 mixin RestorableStateMixin<T> on HasGridSupport {
   T? get userData;
 
-  TileBuilderContext? context;
+  TileBuilderContext<T>? context;
   TileCache? tileCache;
 
   @override
