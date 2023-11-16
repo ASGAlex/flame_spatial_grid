@@ -235,7 +235,7 @@ class Cell {
 
     _state = value;
     if (isCellBuildFinished) {
-      updateComponentsState();
+      updateComponentsState(oldValue);
     } else {
       if (!spatialGrid.cellsScheduledToBuild.contains(this)) {
         spatialGrid.cellsScheduledToBuild.add(this);
@@ -244,21 +244,24 @@ class Cell {
   }
 
   @internal
-  void updateComponentsState() {
+  void updateComponentsState([CellState? oldState]) {
     switch (_state) {
       case CellState.active:
-        _setCollisionType();
+        _setCollisionType(oldState: oldState);
         break;
       case CellState.inactive:
-        _setCollisionType();
+        _setCollisionType(oldState: oldState);
         break;
       case CellState.suspended:
-        _setCollisionType(CollisionType.inactive);
+        _setCollisionType(
+          collisionType: CollisionType.inactive,
+          oldState: oldState,
+        );
         break;
     }
   }
 
-  void _setCollisionType([CollisionType? collisionType]) {
+  void _setCollisionType({CollisionType? collisionType, CellState? oldState}) {
     final broadphase = spatialGrid.game?.collisionDetection.broadphase;
     if (broadphase == null) {
       return;
@@ -267,8 +270,25 @@ class Cell {
     if (hitboxes == null) {
       return;
     }
+
+    final processedComponents = <int>{};
     for (final hitbox in hitboxes) {
       setCollisionTypeForHitbox(hitbox, collisionType);
+      if (hitbox is BoundingHitbox && oldState != null) {
+        final parentComponent = hitbox.parentWithGridSupport;
+        if (parentComponent != null &&
+            !processedComponents.contains(parentComponent.hashCode)) {
+          processedComponents.add(parentComponent.hashCode);
+          if (_state == CellState.suspended &&
+              oldState != CellState.suspended) {
+            parentComponent.onSuspend();
+          } else if ((_state == CellState.active ||
+                  _state == CellState.inactive) &&
+              oldState == CellState.suspended) {
+            parentComponent.onResume(parentComponent.dtElapsedWhileSuspended);
+          }
+        }
+      }
     }
   }
 

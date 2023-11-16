@@ -969,6 +969,7 @@ class Bullet extends PositionComponent
   @override
   void onResume(double dtElapsedWhileSuspended) {
     lifetime -= dtElapsedWhileSuspended;
+    print('resumed! $dtElapsedWhileSuspended');
     if (lifetime <= 0) {
       removeFromParent();
     } else {
