@@ -67,14 +67,14 @@ all collisions are disabled.
 
   @override
   Future<void> onLoad() async {
-    pureTypeCheckWarmUpComponents = [
-      Player(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
-      Npc(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
-      Brick(position: Vector2.zero(), sprite: null),
-      Water(position: Vector2.zero(), animation: null),
-      Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
-      BoundingBoxGridGame(),
-    ];
+    // pureTypeCheckWarmUpComponents = [
+    //   Player(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
+    //   Npc(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
+    //   Brick(position: Vector2.zero(), sprite: null),
+    //   Water(position: Vector2.zero(), animation: null),
+    //   Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
+    //   BoundingBoxGridGame(),
+    // ];
     super.onLoad();
     player = world.player;
     camera.viewfinder.zoom = 5;

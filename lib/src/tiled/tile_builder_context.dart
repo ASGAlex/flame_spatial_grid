@@ -39,6 +39,8 @@ class TileBuilderContext<T> {
   /// Tile's most wanted information: the sprite or animation, collision rect
   final TileDataProvider? tileDataProvider;
 
+  String get tileTypeName => tileDataProvider?.tile.type ?? '';
+
   /// Tiled object's information, if object was processed instead a tile
   final TiledObject? tiledObject;
   int? priorityOverride;
