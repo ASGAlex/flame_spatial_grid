@@ -321,6 +321,8 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
     }
   }
 
+  void onInactive() {}
+
   /// Called instead of [updateTree] when component is suspended.
   /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension

@@ -286,6 +286,8 @@ class Cell {
                   _state == CellState.inactive) &&
               oldState == CellState.suspended) {
             parentComponent.onResume(parentComponent.dtElapsedWhileSuspended);
+          } else if (_state == CellState.inactive) {
+            parentComponent.onInactive();
           }
         }
       }
