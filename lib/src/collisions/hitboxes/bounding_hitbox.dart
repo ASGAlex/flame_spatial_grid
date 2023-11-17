@@ -145,21 +145,6 @@ class BoundingHitbox extends RectangleHitboxOptimized
     broadphaseMinimumDistanceSkip.clear();
   }
 
-  final Vector2 _absoluteScaledSizeCache = Vector2.zero();
-  double? _absoluteAngleCache;
-
-  bool cacheAbsoluteScaledSize = false;
-  bool cacheAbsoluteAngle = false;
-  bool groupAbsoluteCacheByType = false;
-
-  static final _absoluteScaledSizeCacheForType = <Type, Vector2>{};
-  static final _absoluteAngleCacheForType = <Type, double>{};
-
-  static void resetAbsoluteSizeAngleCache() {
-    _absoluteAngleCacheForType.clear();
-    _absoluteScaledSizeCacheForType.clear();
-  }
-
   @override
   Vector2 absolutePositionOf(Vector2 point) {
     if (_positionCached) {
@@ -177,58 +162,6 @@ class BoundingHitbox extends RectangleHitboxOptimized
       return _absolutePositionOfCache;
     }
   }
-
-  @override
-  Vector2 get absoluteScaledSize {
-    if (cacheAbsoluteScaledSize) {
-      if (_absoluteScaledSizeCache.isZero()) {
-        Vector2? cache;
-        var absoluteCacheNotFound = true;
-        if (groupAbsoluteCacheByType) {
-          cache = _absoluteScaledSizeCacheForType[runtimeType];
-          absoluteCacheNotFound = cache != null;
-        } else {
-          cache = super.absoluteScaledSize;
-        }
-        _absoluteScaledSizeCache.setFrom(cache ?? super.absoluteScaledSize);
-
-        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
-          _absoluteScaledSizeCacheForType[runtimeType] =
-              _absoluteScaledSizeCache.clone();
-        }
-      }
-      return _absoluteScaledSizeCache;
-    } else {
-      return super.absoluteScaledSize;
-    }
-  }
-
-  @override
-  double get absoluteAngle {
-    if (cacheAbsoluteAngle) {
-      if (_absoluteAngleCache == null) {
-        double? cache;
-        var absoluteCacheNotFound = true;
-        if (groupAbsoluteCacheByType) {
-          cache = _absoluteAngleCacheForType[runtimeType];
-          absoluteCacheNotFound = cache != null;
-        } else {
-          cache = super.absoluteAngle;
-        }
-        _absoluteAngleCache = cache ?? super.absoluteAngle;
-        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
-          _absoluteAngleCacheForType[runtimeType] = _absoluteAngleCache!;
-        }
-      }
-      return _absoluteAngleCache!;
-    } else {
-      return super.absoluteAngle;
-    }
-  }
-
-  void absoluteScaledSizeCacheReset() => _absoluteScaledSizeCache.setZero();
-
-  void absoluteAngleCacheReset() => _absoluteAngleCache = null;
 
   set aabbCenter(Vector2? value) {
     assert(value != null);
@@ -457,6 +390,17 @@ class BoundingHitbox extends RectangleHitboxOptimized
     }
     return super.intersections(other);
   }
+
+  @override
+  List<Vector2> globalVertices() => [
+        aabb.min,
+        Vector2(aabb.max.x, aabb.min.y),
+        aabb.max,
+        Vector2(aabb.min.x, aabb.max.y),
+      ];
+
+  @override
+  bool containsPoint(Vector2 point) => aabb.containsVector2(point);
 
   @override
   @mustCallSuper

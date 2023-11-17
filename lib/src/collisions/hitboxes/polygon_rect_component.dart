@@ -146,6 +146,99 @@ class PolygonRectComponent extends ShapeComponent implements PolygonComponent {
     }
   }
 
+  final Vector2 _absoluteScaleCache = Vector2.zero();
+  static final _absoluteScaleCacheForType = <Type, Vector2>{};
+
+  final Vector2 _absoluteScaledSizeCache = Vector2.zero();
+  bool cacheAbsoluteScaledSize = false;
+  static final _absoluteScaledSizeCacheForType = <Type, Vector2>{};
+
+  @override
+  Vector2 get absoluteScaledSize {
+    if (cacheAbsoluteScaledSize) {
+      if (_absoluteScaledSizeCache.isZero()) {
+        Vector2? cache;
+        var absoluteCacheNotFound = true;
+        if (groupAbsoluteCacheByType) {
+          cache = _absoluteScaledSizeCacheForType[runtimeType];
+          absoluteCacheNotFound = cache != null;
+        } else {
+          cache = super.absoluteScaledSize;
+        }
+        _absoluteScaledSizeCache.setFrom(cache ?? super.absoluteScaledSize);
+
+        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
+          _absoluteScaledSizeCacheForType[runtimeType] =
+              _absoluteScaledSizeCache.clone();
+        }
+      }
+      return _absoluteScaledSizeCache;
+    } else {
+      return super.absoluteScaledSize;
+    }
+  }
+
+  @override
+  Vector2 get absoluteScale {
+    if (cacheAbsoluteScaledSize) {
+      if (_absoluteScaleCache.isZero()) {
+        Vector2? cache;
+        var absoluteCacheNotFound = true;
+        if (groupAbsoluteCacheByType) {
+          cache = _absoluteScaleCacheForType[runtimeType];
+          absoluteCacheNotFound = cache != null;
+        } else {
+          cache = super.absoluteScale;
+        }
+        _absoluteScaleCache.setFrom(cache ?? super.absoluteScale);
+
+        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
+          _absoluteScaleCacheForType[runtimeType] = _absoluteScaleCache.clone();
+        }
+      }
+      return _absoluteScaleCache;
+    } else {
+      return super.absoluteScale;
+    }
+  }
+
+  void absoluteScaledSizeCacheReset() => _absoluteScaledSizeCache.setZero();
+
+  double? _absoluteAngleCache;
+  bool cacheAbsoluteAngle = false;
+
+  void absoluteAngleCacheReset() => _absoluteAngleCache = null;
+  static final _absoluteAngleCacheForType = <Type, double>{};
+  bool groupAbsoluteCacheByType = false;
+
+  static void resetAbsoluteSizeAngleCache() {
+    _absoluteAngleCacheForType.clear();
+    _absoluteScaledSizeCacheForType.clear();
+  }
+
+  @override
+  double get absoluteAngle {
+    if (cacheAbsoluteAngle) {
+      if (_absoluteAngleCache == null) {
+        double? cache;
+        var absoluteCacheNotFound = true;
+        if (groupAbsoluteCacheByType) {
+          cache = _absoluteAngleCacheForType[runtimeType];
+          absoluteCacheNotFound = cache != null;
+        } else {
+          cache = super.absoluteAngle;
+        }
+        _absoluteAngleCache = cache ?? super.absoluteAngle;
+        if (groupAbsoluteCacheByType && absoluteCacheNotFound) {
+          _absoluteAngleCacheForType[runtimeType] = _absoluteAngleCache!;
+        }
+      }
+      return _absoluteAngleCache!;
+    } else {
+      return super.absoluteAngle;
+    }
+  }
+
   /// gives back the shape vectors multiplied by the size and scale
   @override
   List<Vector2> globalVertices() {
@@ -226,17 +319,11 @@ class PolygonRectComponent extends ShapeComponent implements PolygonComponent {
     if (size.x == 0 || size.y == 0) {
       return false;
     }
-    for (var i = 0; i < _vertices.length; i++) {
-      final edge = getEdge(i, vertices: vertices);
-      final isOutside = (edge.to.x - edge.from.x) *
-                  (point.y - edge.from.y + _topLeft.y) -
-              (point.x - edge.from.x + _topLeft.x) * (edge.to.y - edge.from.y) >
-          0;
-      if (isOutside) {
-        return false;
-      }
-    }
-    return true;
+
+    final rect =
+        Rect.fromPoints(_vertices[0].toOffset(), _vertices[2].toOffset());
+
+    return rect.containsPoint(point);
   }
 
   /// Return all vertices as [LineSegment]s that intersect [rect], if [rect]

@@ -25,6 +25,11 @@ typedef ComponentExternalTypeCheck = bool Function(
   PositionComponent second,
 );
 
+enum RayTraceMode {
+  allHitboxes,
+  groupedHitboxes,
+}
+
 mixin DebuggerPause {}
 
 /// Performs Quad Tree broadphase check.
@@ -156,6 +161,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     }
     scheduledOperations.clear();
     if (activeCollisionsChanged) {
+      _raytraceHitboxesUpdated = false;
       _activeCollisionsUnmodifiable = activeCollisions.toList(growable: false);
       _activeChecked = List<List<bool>>.filled(
         _activeCollisionsUnmodifiable.length,
@@ -168,6 +174,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       _activeByCellUnmodifiable.clear();
     }
     if (passiveCollisionsChanged) {
+      _raytraceHitboxesUpdated = false;
       _passiveByCellUnmodifiable.clear();
     }
   }
@@ -822,8 +829,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   @override
   void add(ShapeHitbox item) => throw UnimplementedError();
 
+  bool _raytraceHitboxesUpdated = false;
   Rect? _activeCellRect;
-  final _raytraceHitboxes = <ShapeHitbox>[];
+  final _raytraceHitboxes = <ShapeHitbox>{};
+  RayTraceMode rayTraceMode = RayTraceMode.groupedHitboxes;
 
   @override
   List<ShapeHitbox> get items {
@@ -831,26 +840,41 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     if (activeCell == null) {
       return <ShapeHitbox>[];
     }
-    if (_activeCellRect == activeCell.rect) {
-      return _raytraceHitboxes;
+    if (_activeCellRect == activeCell.rect && _raytraceHitboxesUpdated) {
+      return _raytraceHitboxes.toList(growable: false);
     } else {
       _raytraceHitboxes.clear();
       _activeCellRect = activeCell.rect;
       final cells = spatialGrid.activeRadiusCells;
       for (final cell in cells) {
         final collisions = allCollisionsByCell[cell];
-        if (collisions != null) {
-          for (final hitbox in collisions) {
-            if (hitbox is GroupHitbox || hitbox.parent is CellLayer) {
+        if (collisions == null) {
+          continue;
+        }
+
+        for (final hitbox in collisions) {
+          if (hitbox.parent is CellLayer) {
+            continue;
+          }
+          if (rayTraceMode == RayTraceMode.allHitboxes) {
+            if (hitbox is GroupHitbox) {
               continue;
             }
-            _raytraceHitboxes.add(hitbox);
+          } else {
+            if (hitbox is BoundingHitbox &&
+                hitbox.optimized &&
+                hitbox.group != null) {
+              _raytraceHitboxes.add(hitbox.group!);
+              continue;
+            }
           }
+          _raytraceHitboxes.add(hitbox);
         }
       }
+      _raytraceHitboxesUpdated = true;
     }
 
-    return _raytraceHitboxes;
+    return _raytraceHitboxes.toList(growable: false);
   }
 
   void dispose() {

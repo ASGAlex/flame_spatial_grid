@@ -29,6 +29,10 @@ class SpatialGridCollisionDetection
   @internal
   double dt = 0;
 
+  set rayTraceMode(RayTraceMode value) {
+    broadphase.rayTraceMode = value;
+  }
+
   @override
   void add(ShapeHitbox item) {
     // ignore: invalid_use_of_internal_member
