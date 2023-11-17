@@ -648,6 +648,8 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     }
   }
 
+  bool get updateGameLogics => _gameInitializationFinished;
+
   /// Handles creating new cells and removing outdated.
   /// Also runs [SpriteAnimationGlobalController] to allow
   /// [CellStaticAnimationLayer] to work.
