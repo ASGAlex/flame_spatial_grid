@@ -151,7 +151,7 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
     Cell cell,
     String layerName,
     LayerComponentsStorageMode componentsStorageMode,
-  );
+  ) => throw 'No custom layer for component type ${component.runtimeType}';
 
   Future<Vector2?> searchInitialPosition(
     InitialPositionChecker checkFunction, [

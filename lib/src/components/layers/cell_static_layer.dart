@@ -124,9 +124,9 @@ class CellStaticLayer extends CellLayer {
   @override
   void compileToSingleLayer(Iterable<Component> components) {
     final renderingChildren = components.whereType<PositionComponent>();
-    if (renderingChildren.isEmpty) {
-      return;
-    }
+    // if (renderingChildren.isEmpty) {
+    //   return;
+    // }
 
     final cell = currentCell;
     if (cell == null) {

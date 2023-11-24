@@ -5,6 +5,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
+import 'package:flame/geometry.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/macro_object.dart';
 import 'package:flutter/foundation.dart';
@@ -321,6 +322,8 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
     }
   }
 
+  VoidCallback? onInactiveCallback;
+
   void onInactive() {}
 
   /// Called instead of [updateTree] when component is suspended.
@@ -332,11 +335,15 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   /// all undesired component's movements (for example) here
   void onSuspend() {}
 
+  VoidCallback? onSuspendCallback;
+
   /// Called when component state changes from "suspended" to active.
   /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension. Useful to calculate next animation step as if
   /// the component was never suspended.
   void onResume(double dtElapsedWhileSuspended) {}
+
+  Function(double dtElapsedWhileSuspended)? onResumeCallback;
 
   @override
   void renderTree(Canvas canvas) {
@@ -469,6 +476,91 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   }
 
   bool get canBeActive => boundingBox.canBeActive;
+
+  RaycastResult<ShapeHitbox>? raycast(
+    Ray2 ray, {
+    double? maxDistance,
+    List<ShapeHitbox>? ignoreHitboxes,
+    RaycastResult<ShapeHitbox>? out,
+  }) {
+    final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
+    for (final child in children.query<BoundingHitbox>()) {
+      allHitboxes.add(child);
+    }
+    return sgGame.collisionDetection.raycast(
+      ray,
+      maxDistance: maxDistance,
+      ignoreHitboxes: allHitboxes,
+      out: out,
+    );
+  }
+
+  RaycastResult<ShapeHitbox>? raycastToPoint(
+    Vector2 toPoint, {
+    double? maxDistance,
+    List<ShapeHitbox>? ignoreHitboxes,
+    RaycastResult<ShapeHitbox>? out,
+  }) {
+    final from = boundingBox.aabbCenter;
+    final direction = (toPoint - from)..normalize();
+    final ray = Ray2(origin: from, direction: direction);
+    return raycast(
+      ray,
+      maxDistance: maxDistance,
+      ignoreHitboxes: ignoreHitboxes,
+      out: out,
+    );
+  }
+
+  RaycastResult<ShapeHitbox>? raycastToComponentCenter(
+    HasGridSupport component, {
+    double? maxDistance,
+    List<ShapeHitbox>? ignoreHitboxes,
+    RaycastResult<ShapeHitbox>? out,
+  }) {
+    final centerPoint = component.boundingBox.aabbCenter;
+
+    final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
+    for (final child in component.children.query<BoundingHitbox>()) {
+      if (child == component.boundingBox) {
+        continue;
+      }
+      allHitboxes.add(child);
+    }
+    return raycastToPoint(
+      centerPoint,
+      ignoreHitboxes: allHitboxes,
+      maxDistance: maxDistance,
+      out: out,
+    );
+  }
+
+  List<RaycastResult<ShapeHitbox>?> raycastToComponentCorners(
+    HasGridSupport component, {
+    double? maxDistance,
+    List<ShapeHitbox>? ignoreHitboxes,
+  }) {
+    final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
+    for (final child in component.children.query<BoundingHitbox>()) {
+      if (child == component.boundingBox) {
+        continue;
+      }
+      allHitboxes.add(child);
+    }
+
+    final results = <RaycastResult<ShapeHitbox>?>[];
+    final vertices = component.boundingBox.aabb.toRect().toVertices();
+    for (final vertex in vertices) {
+      results.add(
+        raycastToPoint(
+          vertex,
+          ignoreHitboxes: allHitboxes,
+          maxDistance: maxDistance,
+        ),
+      );
+    }
+    return results;
+  }
 }
 
 extension PositionComponentWithGridSupport on PositionComponent {

@@ -282,12 +282,16 @@ class Cell {
           if (_state == CellState.suspended &&
               oldState != CellState.suspended) {
             parentComponent.onSuspend();
+            parentComponent.onSuspendCallback?.call();
           } else if ((_state == CellState.active ||
                   _state == CellState.inactive) &&
               oldState == CellState.suspended) {
             parentComponent.onResume(parentComponent.dtElapsedWhileSuspended);
+            parentComponent.onResumeCallback
+                ?.call(parentComponent.dtElapsedWhileSuspended);
           } else if (_state == CellState.inactive) {
             parentComponent.onInactive();
+            parentComponent.onInactiveCallback?.call();
           }
         }
       }
