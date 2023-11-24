@@ -415,7 +415,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
       /// 2. Checking types of components itself.
       if (canToCollide) {
-        if (potentialParent is! CellLayer) {
+        if (potentialParent is CellLayer) {
+          potentialType = potentialParent.primaryComponentType ?? potentialType;
+        } else {
           potentialType = potentialParent.runtimeType;
         }
         final activeItemParentType = activeParent.runtimeType;

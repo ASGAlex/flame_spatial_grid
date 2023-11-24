@@ -96,6 +96,7 @@ abstract class CellLayer extends PositionComponent
   final correctionDecorator = Transform2DDecorator();
 
   Type? primaryHitboxCollisionType;
+  Type? primaryComponentType;
 
   final LayerComponentsStorageMode componentsStorageMode;
 
@@ -191,6 +192,7 @@ abstract class CellLayer extends PositionComponent
         primaryHitboxCollisionType = component.runtimeType;
       }
     }
+    primaryComponentType ??= component.runtimeType;
     if (componentsStorageMode ==
         LayerComponentsStorageMode.defaultComponentTree) {
       super.add(component);
