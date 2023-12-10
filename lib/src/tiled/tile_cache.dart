@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:meta/meta.dart';
@@ -8,19 +10,22 @@ import 'package:tiled/tiled.dart';
 /// Also read about [TiledMapLoader.preloadTileSets]
 @immutable
 class TileCache {
-  const TileCache({
+  TileCache({
     this.sprite,
     this.spriteAnimation,
     required this.properties,
     required this.tile,
     required this.tileset,
-  });
+  }) : _collisionRect = tile.getCollisionRect();
 
   final Sprite? sprite;
   final SpriteAnimation? spriteAnimation;
   final CustomProperties properties;
   final Tile tile;
   final Tileset tileset;
+  final Rect? _collisionRect;
+
+  Rect? getCollisionRect() => _collisionRect;
 
   void dispose() {
     try {

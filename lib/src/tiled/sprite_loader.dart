@@ -9,27 +9,11 @@ extension SpriteLoader on Tile {
       throw 'Cant load sprite without image';
     }
 
-    var position = imageRect?.topLeft.toVector2();
-    var size = imageRect?.size.toVector2();
-    if ((position == null && size == null) || size == Vector2.zero()) {
-      final tileWidth = tileset.tileWidth;
-      final tileHeight = tileset.tileHeight;
-      if (tileWidth != null && tileHeight != null) {
-        final maxColumns = _maxColumns(tileset);
-        final row = ((localId + 0.9) ~/ maxColumns) + 1;
-        final column = (localId + 1) - ((row - 1) * maxColumns);
-        position = Vector2(
-          ((column - 1) * tileWidth).toDouble(),
-          ((row - 1) * tileHeight).toDouble(),
-        );
-        size = Vector2(tileWidth.toDouble(), tileHeight.toDouble());
-      }
-    }
+    final drawRect = tileset.computeDrawRect(this);
+    final position = Vector2(drawRect.left.toDouble(), drawRect.top.toDouble());
+    final size = Vector2(drawRect.width.toDouble(), drawRect.height.toDouble());
 
-    if (position != null && size != null) {
-      return Sprite.load(src, srcPosition: position, srcSize: size);
-    }
-    throw "Can't determine sprite image size";
+    return Sprite.load(src, srcPosition: position, srcSize: size);
   }
 
   Future<SpriteAnimation?> getSpriteAnimation(Tileset tileset) async {
@@ -63,14 +47,16 @@ extension SpriteLoader on Tile {
     });
   }
 
-  int _maxColumns(Tileset tileset) {
-    final maxWidth = tileset.image?.width;
-    final tileWidth = tileset.tileWidth;
-    if (maxWidth == null || tileWidth == null) {
-      throw 'No tile dimensions';
+  Rect? getCollisionRect() {
+    final group = objectGroup;
+    final type = group?.type;
+    if (type == LayerType.objectGroup && group is ObjectGroup) {
+      if (group.objects.isNotEmpty) {
+        final obj = group.objects.first;
+        return Rect.fromLTWH(obj.x, obj.y, obj.width, obj.height);
+      }
     }
-
-    return maxWidth ~/ tileWidth;
+    return null;
   }
 }
 

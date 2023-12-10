@@ -21,15 +21,11 @@ class TileDataProvider {
   TileCache? cache;
 
   Rect? getCollisionRect() {
-    final group = tile.objectGroup;
-    final type = group?.type;
-    if (type == LayerType.objectGroup && group is ObjectGroup) {
-      if (group.objects.isNotEmpty) {
-        final obj = group.objects.first;
-        return Rect.fromLTWH(obj.x, obj.y, obj.width, obj.height);
-      }
+    if (cache == null) {
+      return tile.getCollisionRect();
+    } else {
+      return cache!.getCollisionRect();
     }
-    return null;
   }
 
   Future<Sprite> getSprite() {
