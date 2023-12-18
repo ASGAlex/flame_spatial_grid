@@ -220,8 +220,8 @@ class CellTrailLayer extends CellStaticLayer {
 
     if (fadeOutConfig.isFadeOut) {
       _fadeOutDt += dt;
+      isUpdateNeeded = true;
       if (doFadeOut) {
-        isUpdateNeeded = true;
         updateLayer(dt);
       }
     }

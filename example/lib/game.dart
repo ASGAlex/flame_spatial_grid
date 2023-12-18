@@ -669,7 +669,10 @@ class Player extends SpriteComponent
   ) {
     final myCenter = boundingBox.aabbCenter;
     if (other is GameCollideable || other is CellLayer) {
-      if (other is GameCollideable) {
+      if (game.player == this) {
+        position.setFrom(positionNoCollision);
+        game.camera.updateTree(0.01);
+      } else if (other is GameCollideable) {
         final diffX = myCenter.x - other.boundingBox.aabbCenter.x;
         if (diffX < 0) {
           canMoveRight = false;

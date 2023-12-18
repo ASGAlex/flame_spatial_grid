@@ -689,10 +689,10 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         _collectDt(dt);
 
         tickersManager.update(dt);
-        collisionDetection.dt = dt;
-        collisionDetection.run();
 
         super.update(dt);
+        collisionDetection.dt = dt;
+        collisionDetection.run();
       }
     } else {
       final stopwatch = Stopwatch()..start();
@@ -934,6 +934,15 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       this,
     );
     progressManager.setProgress(100);
+    const dt = 0.001;
+    _loadWholeMap();
+    _buildNewCells();
+    _runScheduledLayerOperations();
+    _collectDt(dt);
+
+    tickersManager.update(dt);
+    collisionDetection.dt = dt;
+    collisionDetection.run();
 
     _gameInitializationFinished = true;
     onInitializationDone();
