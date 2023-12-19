@@ -46,7 +46,11 @@ import 'package:meta/meta.dart';
 /// all component's child components. So if you have an hitbox outside from
 /// component, keep in mind that [boundingBox] will contain it too!
 ///
-mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
+mixin HasGridSupport on PositionComponent
+    implements
+        MacroObjectInterface,
+        ScheduleAfterUpdateMixin,
+        ScheduleBeforeUpdateMixin {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
@@ -290,6 +294,11 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
   @override
   @mustCallSuper
   void onRemove() {
+    if (_permanent) {
+      scheduleAfterListPermanent.remove(this);
+      _actionScheduled = false;
+    }
+
     if (_isOutOfCellBounds && _previousOutOfBoundsCell != null) {
       _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
       _previousOutOfBoundsCell = null;
@@ -561,6 +570,77 @@ mixin HasGridSupport on PositionComponent implements MacroObjectInterface {
     }
     return results;
   }
+
+  @override
+  List<ScheduleAfterUpdateMixin> get scheduleAfterList =>
+      sgGame.scheduledAfterUpdate;
+
+  @override
+  List<ScheduleAfterUpdateMixin> get scheduleAfterListPermanent =>
+      sgGame.scheduledAfterUpdatePermanent;
+
+  @override
+  List<ScheduleBeforeUpdateMixin> get scheduleBeforeList =>
+      sgGame.scheduledBeforeUpdate;
+
+  @override
+  List<ScheduleBeforeUpdateMixin> get scheduleBeforeListPermanent =>
+      sgGame.scheduledBeforeUpdatePermanent;
+
+  bool _actionScheduled = false;
+  bool _permanent = false;
+
+  @override
+  void scheduleAfterUpdateAction({bool permanent = false}) {
+    if (!_actionScheduled) {
+      if (permanent) {
+        _permanent = true;
+        scheduleAfterListPermanent.add(this);
+      } else {
+        try {
+          scheduleAfterList.add(this);
+          _actionScheduled = true;
+        } catch (_) {}
+      }
+    }
+  }
+
+  @override
+  void scheduleBeforeUpdateAction({bool permanent = false}) {
+    if (!_actionScheduled) {
+      if (permanent) {
+        _permanent = true;
+        scheduleBeforeListPermanent.add(this);
+      } else {
+        try {
+          scheduleBeforeList.add(this);
+          _actionScheduled = true;
+        } catch (_) {}
+      }
+    }
+  }
+
+  @override
+  void runAfterUpdateAction(double dt) {
+    if (!_permanent) {
+      _actionScheduled = false;
+    }
+    onAfterUpdate(dt);
+  }
+
+  @override
+  void onAfterUpdate(double dt) {}
+
+  @override
+  void runBeforeUpdateAction(double dt) {
+    if (!_permanent) {
+      _actionScheduled = false;
+    }
+    onBeforeUpdate(dt);
+  }
+
+  @override
+  void onBeforeUpdate(double dt) {}
 }
 
 extension PositionComponentWithGridSupport on PositionComponent {

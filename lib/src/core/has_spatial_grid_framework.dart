@@ -44,6 +44,15 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   late final TileBuilderContextProvider<HasSpatialGridFramework, dynamic>
       tileBuilderContextProvider;
 
+  @internal
+  late final scheduledAfterUpdate = <ScheduleAfterUpdateMixin>[];
+  @internal
+  late final scheduledAfterUpdatePermanent = <ScheduleAfterUpdateMixin>[];
+  @internal
+  late final scheduledBeforeUpdate = <ScheduleBeforeUpdateMixin>[];
+  @internal
+  late final scheduledBeforeUpdatePermanent = <ScheduleBeforeUpdateMixin>[];
+
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
   /// to viewport size and zoom level.
   bool trackWindowSize = true;
@@ -690,9 +699,11 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
         tickersManager.update(dt);
 
+        onBeforeUpdateTick(dt);
         super.update(dt);
         collisionDetection.dt = dt;
         collisionDetection.run();
+        onAfterUpdateTick(dt);
       }
     } else {
       final stopwatch = Stopwatch()..start();
@@ -704,6 +715,33 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         }
       }
       stopwatch.stop();
+    }
+  }
+
+  @mustCallSuper
+  void onAfterUpdateTick(double dt) {
+    if (scheduledAfterUpdate.isNotEmpty) {
+      for (final component in scheduledAfterUpdate) {
+        component.runAfterUpdateAction(dt);
+      }
+      scheduledAfterUpdate.clear();
+    }
+
+    for (final component in scheduledAfterUpdatePermanent) {
+      component.runAfterUpdateAction(dt);
+    }
+  }
+
+  void onBeforeUpdateTick(double dt) {
+    if (scheduledBeforeUpdate.isNotEmpty) {
+      for (final component in scheduledBeforeUpdate) {
+        component.runBeforeUpdateAction(dt);
+      }
+      scheduledBeforeUpdate.clear();
+    }
+
+    for (final component in scheduledBeforeUpdatePermanent) {
+      component.runBeforeUpdateAction(dt);
     }
   }
 
