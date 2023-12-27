@@ -832,6 +832,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   void add(ShapeHitbox item) => throw UnimplementedError();
 
   bool _raytraceHitboxesUpdated = false;
+  bool get raytraceHitboxUpdated => _raytraceHitboxesUpdated;
   Rect? _activeCellRect;
   final _raytraceHitboxes = <ShapeHitbox>{};
   RayTraceMode rayTraceMode = RayTraceMode.groupedHitboxes;

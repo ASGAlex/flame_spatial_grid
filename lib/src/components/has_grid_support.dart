@@ -490,64 +490,100 @@ mixin HasGridSupport on PositionComponent
     Ray2 ray, {
     double? maxDistance,
     List<ShapeHitbox>? ignoreHitboxes,
+    List<Type>? ignoreHitboxesTypes,
+    List<Type>? allowOnlyHitboxesTypes,
+    Type? rayAsHitboxType,
     RaycastResult<ShapeHitbox>? out,
   }) {
     final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
-    for (final child in children.query<BoundingHitbox>()) {
-      allHitboxes.add(child);
-    }
+    children.query<BoundingHitbox>().forEach(allHitboxes.add);
     return sgGame.collisionDetection.raycast(
       ray,
       maxDistance: maxDistance,
       ignoreHitboxes: allHitboxes,
+      rayAsHitboxType: rayAsHitboxType,
+      allowOnlyHitboxesTypes: allowOnlyHitboxesTypes,
+      ignoreHitboxesTypes: ignoreHitboxesTypes,
       out: out,
     );
   }
 
   RaycastResult<ShapeHitbox>? raycastToPoint(
     Vector2 toPoint, {
+    Vector2? offset,
+    Vector2? offsetTarget,
     double? maxDistance,
+    Type? rayAsHitboxType,
     List<ShapeHitbox>? ignoreHitboxes,
+    List<Type>? ignoreHitboxesTypes,
+    List<Type>? allowOnlyHitboxesTypes,
     RaycastResult<ShapeHitbox>? out,
   }) {
-    final from = boundingBox.aabbCenter;
+    final from = boundingBox.aabbCenter.clone();
+    if (offset != null) {
+      from.add(offset);
+    }
+    if (offsetTarget != null) {
+      toPoint.add(offsetTarget);
+    }
     final direction = (toPoint - from)..normalize();
     final ray = Ray2(origin: from, direction: direction);
     return raycast(
       ray,
       maxDistance: maxDistance,
+      rayAsHitboxType: rayAsHitboxType,
       ignoreHitboxes: ignoreHitboxes,
+      allowOnlyHitboxesTypes: allowOnlyHitboxesTypes,
+      ignoreHitboxesTypes: ignoreHitboxesTypes,
       out: out,
     );
   }
 
   RaycastResult<ShapeHitbox>? raycastToComponentCenter(
     HasGridSupport component, {
+    Vector2? offset,
+    Vector2? offsetTarget,
     double? maxDistance,
+    Type? rayAsHitboxType,
     List<ShapeHitbox>? ignoreHitboxes,
+    List<Type>? ignoreHitboxesTypes,
+    List<Type>? allowOnlyHitboxesTypes,
     RaycastResult<ShapeHitbox>? out,
   }) {
     final centerPoint = component.boundingBox.aabbCenter;
 
-    final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
-    for (final child in component.children.query<BoundingHitbox>()) {
-      if (child == component.boundingBox) {
-        continue;
+    List<ShapeHitbox>? allHitboxes;
+    if (rayAsHitboxType == null) {
+      allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
+      for (final child in component.children.query<BoundingHitbox>()) {
+        if (child == component.boundingBox) {
+          continue;
+        }
+        allHitboxes.add(child);
       }
-      allHitboxes.add(child);
     }
     return raycastToPoint(
       centerPoint,
+      offset: offset,
+      offsetTarget: offsetTarget,
       ignoreHitboxes: allHitboxes,
       maxDistance: maxDistance,
+      rayAsHitboxType: rayAsHitboxType ?? boundingBox.runtimeType,
+      allowOnlyHitboxesTypes: allowOnlyHitboxesTypes,
+      ignoreHitboxesTypes: ignoreHitboxesTypes,
       out: out,
     );
   }
 
   List<RaycastResult<ShapeHitbox>?> raycastToComponentCorners(
     HasGridSupport component, {
+    Vector2? offset,
+    Vector2? offsetTarget,
     double? maxDistance,
+    Type? rayAsHitboxType,
     List<ShapeHitbox>? ignoreHitboxes,
+    List<Type>? ignoreHitboxesTypes,
+    List<Type>? allowOnlyHitboxesTypes,
   }) {
     final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
     for (final child in component.children.query<BoundingHitbox>()) {
@@ -563,7 +599,12 @@ mixin HasGridSupport on PositionComponent
       results.add(
         raycastToPoint(
           vertex,
+          offset: offset,
+          offsetTarget: offsetTarget,
+          rayAsHitboxType: rayAsHitboxType ?? boundingBox.runtimeType,
           ignoreHitboxes: allHitboxes,
+          allowOnlyHitboxesTypes: allowOnlyHitboxesTypes,
+          ignoreHitboxesTypes: ignoreHitboxesTypes,
           maxDistance: maxDistance,
         ),
       );

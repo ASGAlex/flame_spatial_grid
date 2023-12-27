@@ -81,7 +81,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   var _initializationStepStage = InitializationStepStage.none;
   final _lockedCells = <Cell>[];
 
-  bool doOnGameResizeForAllComponents = false;
+  bool doOnGameResizeForAllComponents = true;
 
   var pureTypeCheckWarmUpComponents = <PositionComponent>[];
 

@@ -1,7 +1,9 @@
 import 'dart:collection';
+import 'dart:math' as math;
 
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
+import 'package:flame/geometry.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/broadphase.dart';
 import 'package:flutter/foundation.dart';
@@ -274,6 +276,85 @@ class SpatialGridCollisionDetection
       broadphase.hasCollisionsLastTime.remove(hitboxA);
     }
     super.handleCollisionEnd(hitboxA, hitboxB);
+  }
+
+  @override
+  RaycastResult<ShapeHitbox>? raycast(
+    Ray2 ray, {
+    double? maxDistance,
+    List<ShapeHitbox>? ignoreHitboxes,
+    List<Type>? ignoreHitboxesTypes,
+    List<Type>? allowOnlyHitboxesTypes,
+    Type? rayAsHitboxType,
+    RaycastResult<ShapeHitbox>? out,
+  }) {
+    var finalResult = out?..reset();
+    _updateRayAabb(ray, maxDistance);
+    for (final item in items) {
+      if (rayAsHitboxType != null) {
+        final canCollide = broadphase.globalPureTypeCheck?.call(
+              rayAsHitboxType,
+              item.runtimeType,
+            ) ??
+            true;
+        if (!canCollide) {
+          continue;
+        }
+      } else {
+        if (ignoreHitboxesTypes?.contains(item.runtimeType) ?? false) {
+          continue;
+        }
+        if (!(allowOnlyHitboxesTypes?.contains(item.runtimeType) ?? true)) {
+          continue;
+        }
+      }
+      if (ignoreHitboxes?.contains(item) ?? false) {
+        continue;
+      }
+      if (!item.aabb.intersectsWithAabb2(_temporaryRayAabb)) {
+        continue;
+      }
+      final currentResult =
+          item.rayIntersection(ray, out: _temporaryRaycastResult);
+      final possiblyFirstResult = !(finalResult?.isActive ?? false);
+      if (currentResult != null &&
+          (possiblyFirstResult ||
+              currentResult.distance! < finalResult!.distance!) &&
+          currentResult.distance! <= (maxDistance ?? double.infinity)) {
+        if (finalResult == null) {
+          finalResult = currentResult.clone();
+        } else {
+          finalResult.setFrom(currentResult);
+        }
+      }
+    }
+    return (finalResult?.isActive ?? false) ? finalResult : null;
+  }
+
+  static Ray2? _cachedRay;
+  static final _temporaryRayAabb = Aabb2();
+  static final _temporaryRaycastResult = RaycastResult<ShapeHitbox>();
+
+  void _updateRayAabb(Ray2 ray, double? maxDistance) {
+    if(ray != _cachedRay) {
+      _cachedRay = ray;
+      final x1 = ray.origin.x;
+      final y1 = ray.origin.y;
+      double x2;
+      double y2;
+
+      if (maxDistance != null) {
+        x2 = ray.origin.x + ray.direction.x * maxDistance;
+        y2 = ray.origin.y + ray.direction.y * maxDistance;
+      } else {
+        x2 = ray.direction.x > 0 ? double.infinity : double.negativeInfinity;
+        y2 = ray.direction.y > 0 ? double.infinity : double.negativeInfinity;
+      }
+
+      _temporaryRayAabb
+        ..min.setValues(math.min(x1, x2), math.min(y1, y2))
+        ..max.setValues(math.max(x1, x2), math.max(y1, y2));
+    }
   }
 
   void dispose() {
