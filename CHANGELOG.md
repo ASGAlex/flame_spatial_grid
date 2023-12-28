@@ -1,3 +1,10 @@
+# 0.9.0
+
+* Support Flame 1.12.0 and upper 
+* Multithreading for  collision optimisation (including web)
+* Raycasting speed optimized
+* 2x faster collision detection for active collisions 
+
 # 0.8.4
 
 * Flame 1.9.0 support
