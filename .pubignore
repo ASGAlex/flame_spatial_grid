@@ -5,3 +5,4 @@ example/web
 *.iml
 .idea/
 tags
+flatc.exe

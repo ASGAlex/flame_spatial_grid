@@ -1,3 +1,4 @@
+// ignore_for_file: implementation_imports
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/src/geometry/polygon_ray_intersection.dart';

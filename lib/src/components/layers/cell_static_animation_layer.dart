@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/image_composition.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
+import 'package:flutter/foundation.dart';
 
 class StaticAnimationLayerCacheEntry {
   StaticAnimationLayerCacheEntry(this.animationComponent);
@@ -44,7 +45,7 @@ class CellStaticAnimationLayer extends CellLayer {
     final animation = animatedChildren.first.animation;
     final ticker = animation?.createTicker();
     if (animation == null || ticker == null) {
-      return null;
+      return;
     }
 
     animationComponent?.playing = false;
@@ -131,7 +132,9 @@ class CellStaticAnimationLayer extends CellLayer {
     }
     animationComponent = cache.animationComponent;
     cache.usageCount++;
-    print('$name: ${cache.usageCount}');
+    if (kDebugMode) {
+      print('$name: ${cache.usageCount}');
+    }
 
     return true;
   }

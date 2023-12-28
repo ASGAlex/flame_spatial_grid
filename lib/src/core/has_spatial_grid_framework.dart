@@ -83,7 +83,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
   bool doOnGameResizeForAllComponents = true;
 
-  var pureTypeCheckWarmUpComponents = <PositionComponent>[];
+  List<PositionComponent> pureTypeCheckWarmUpComponents = <PositionComponent>[];
 
   /// Initializes the framework. This function *MUST* be called with [await]
   /// keyword to ensure that framework had been initialized correctly and all

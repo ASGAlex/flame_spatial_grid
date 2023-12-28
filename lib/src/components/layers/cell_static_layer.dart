@@ -130,7 +130,7 @@ class CellStaticLayer extends CellLayer {
 
     final cell = currentCell;
     if (cell == null) {
-      return null;
+      return;
     }
 
     _millisecondsBetweenImageUpdate = 0;

@@ -231,6 +231,7 @@ mixin HasGridSupport on PositionComponent
   @override
   @mustCallSuper
   FutureOr<void>? onLoad() {
+    // ignore: invalid_use_of_protected_member
     if (boundingBox.shouldFillParent) {
       boundingBox.size.setFrom(size);
     }
@@ -279,6 +280,7 @@ mixin HasGridSupport on PositionComponent
 
   @override
   void onChildrenChanged(Component child, ChildrenChangeType type) {
+    // ignore: invalid_use_of_protected_member
     if (!boundingBox.shouldFillParent) {
       return;
     }
@@ -380,7 +382,9 @@ mixin HasGridSupport on PositionComponent
         cachedCenters[boundingBox] = boundingBox.aabb.center;
     var current = currentCell;
     if (kDebugMode && current == null) {
-      print('better to set currentCell manually. Component: $runtimeType');
+      if (kDebugMode) {
+        print('better to set currentCell manually. Component: $runtimeType');
+      }
     }
 
     List<Cell?>? previousCellNeighbours;

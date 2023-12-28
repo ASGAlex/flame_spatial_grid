@@ -1,3 +1,4 @@
+// ignore_for_file: must_call_super
 import 'dart:ui';
 
 import 'package:flame/collisions.dart';

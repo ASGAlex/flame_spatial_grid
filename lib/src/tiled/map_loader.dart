@@ -7,7 +7,8 @@ import 'package:flame_tiled/flame_tiled.dart';
 import 'package:meta/meta.dart';
 
 typedef TileBuilderFunction<T> = Future<void> Function(
-    TileBuilderContext<T> context);
+  TileBuilderContext<T> context,
+);
 
 typedef LayerBuilderFunction<T> = Future<bool> Function(
   LayerInfo layerInfo,
@@ -151,7 +152,8 @@ abstract class TiledMapLoader<T extends HasSpatialGridFramework, C> {
     Cell cell,
     String layerName,
     LayerComponentsStorageMode componentsStorageMode,
-  ) => throw 'No custom layer for component type ${component.runtimeType}';
+  ) =>
+      throw 'No custom layer for component type ${component.runtimeType}';
 
   Future<Vector2?> searchInitialPosition(
     InitialPositionChecker checkFunction, [

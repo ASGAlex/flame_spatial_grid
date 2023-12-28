@@ -8,6 +8,7 @@ import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_prospect/prospect_pool.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
+import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
@@ -84,6 +85,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   final _checkByTypeCache = <int, bool>{};
   BloomFilter<int>? _checkByTypeCacheBloomTrue;
+  //ignore: use_late_for_private_fields_and_variables
   BloomFilter<int>? _checkByTypeCacheBloomFalse;
 
   @internal
@@ -328,8 +330,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             alreadyChecked[potential.broadphaseActiveIndex]
                 [activeItem.broadphaseActiveIndex] = true;
           }
-        } on RangeError catch (e) {
-          print('Invalid index on active check!');
+        } on RangeError catch (_) {
+          if (kDebugMode) {
+            print('Invalid index on active check!');
+          }
         }
       }
       if (excludePureTypeCheck) {

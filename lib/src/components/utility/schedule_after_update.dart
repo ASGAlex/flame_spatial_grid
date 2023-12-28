@@ -1,5 +1,5 @@
 import 'package:flame/components.dart';
-import 'package:flutter/foundation.dart';
+import 'package:meta/meta.dart';
 
 mixin ScheduleAfterUpdateMixin on Component {
   bool _actionScheduled = false;
@@ -23,7 +23,7 @@ mixin ScheduleAfterUpdateMixin on Component {
     }
   }
 
-  @protected
+  @internal
   void runAfterUpdateAction(double dt) {
     if (!_permanent) {
       _actionScheduled = false;

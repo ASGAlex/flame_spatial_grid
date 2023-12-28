@@ -292,7 +292,9 @@ all collisions are disabled.
   @override
   Future update(double dt) async {
     if (!kIsWeb && isRenderingSlow) {
-      print('Rendering slow: $medianDt');
+      if (kDebugMode) {
+        print('Rendering slow: $medianDt');
+      }
     }
     // final sw = Stopwatch()..start();
     super.update(dt);
@@ -972,7 +974,9 @@ class Bullet extends PositionComponent
   @override
   void onResume(double dtElapsedWhileSuspended) {
     lifetime -= dtElapsedWhileSuspended;
-    print('resumed! $dtElapsedWhileSuspended');
+    if (kDebugMode) {
+      print('resumed! $dtElapsedWhileSuspended');
+    }
     if (lifetime <= 0) {
       removeFromParent();
     } else {
@@ -1156,7 +1160,9 @@ class TouchEventsHandler extends Component
         continue;
       }
       if (component is CellStaticLayer) {
-        print('123');
+        if (kDebugMode) {
+          print('123');
+        }
       }
       //
       // final optimized = game.collisionDetection.broadphase

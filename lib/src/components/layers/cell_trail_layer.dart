@@ -74,7 +74,7 @@ class CellTrailLayer extends CellStaticLayer {
 
     if (noTrail && nonRenewableComponents.isEmpty) {
       isUpdateNeeded = false;
-      return null;
+      return;
     }
     if (_imageRenderInProgress) {
       return;

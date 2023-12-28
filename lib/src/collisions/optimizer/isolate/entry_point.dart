@@ -122,7 +122,8 @@ Uint8List findOverlappingRectsIsolated(
   }
 
   final responseBuilder = fb.OverlappedSearchResponseObjectBuilder(
-      optimizedCollisions: optimizedCollisions);
+    optimizedCollisions: optimizedCollisions,
+  );
   return responseBuilder.toBytes();
 }
 

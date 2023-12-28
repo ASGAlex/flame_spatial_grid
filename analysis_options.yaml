@@ -10,11 +10,12 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
-  strong-mode:
-    # implicit-casts: false
-    # implicit-dynamic: false
   exclude:
     - "**/*.g.dart"
+    - "lib/src/collisions/optimizer/isolate/flat_buffers/generated/*.dart"
+    - "lib/src/collisions/optimizer/isolate/geometry_universal.dart"
+    - "lib/src/collisions/optimizer/isolate/spatial_grid_optimizer_worker.dart"
+    - "lib/src/components/macro_object.dart"
 
 
 linter:
@@ -37,7 +38,6 @@ linter:
     - annotate_overrides
     - avoid_bool_literals_in_conditional_expressions
     - avoid_double_and_int_checks
-    - avoid_catches_without_on_clauses
     - avoid_dynamic_calls
     - avoid_empty_else
     - avoid_equals_and_hash_code_on_mutable_classes
@@ -81,12 +81,11 @@ linter:
     - flutter_style_todos
     - hash_and_equals
     - implementation_imports
-    - iterable_contains_unrelated_type
+    - collection_methods_unrelated_type
     - join_return_with_assignment
     - library_names
     - library_prefixes
     - lines_longer_than_80_chars
-    - list_remove_unrelated_type
     - literal_only_boolean_expressions
     - missing_whitespace_between_adjacent_strings
     - no_adjacent_strings_in_list
