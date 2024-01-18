@@ -85,6 +85,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   final _checkByTypeCache = <int, bool>{};
   BloomFilter<int>? _checkByTypeCacheBloomTrue;
+
   //ignore: use_late_for_private_fields_and_variables
   BloomFilter<int>? _checkByTypeCacheBloomFalse;
 
@@ -435,8 +436,12 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             final cache = _checkByTypeCache[key];
 
             if (cache == null) {
-              canToCollide =
-                  _pureTypeCheckComponent(activeParent, potentialParent);
+              canToCollide = _pureTypeCheckComponent(
+                activeParent,
+                activeItemParentType,
+                potentialParent,
+                potentialType,
+              );
               _checkByTypeCache[key] = canToCollide;
             } else {
               canToCollide = cache;
@@ -513,11 +518,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   bool _pureTypeCheckComponent(
     PositionComponent active,
+    Type activeType,
     PositionComponent potential,
+    Type potentialType,
   ) {
     final canToCollide = _globalTypeCheck(
-      active.runtimeType,
-      potential.runtimeType,
+      activeType,
+      potentialType,
       potential.canBeActive,
     );
 
@@ -547,7 +554,12 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
               _pureTypeCheckHitbox(active, potential, potential.runtimeType);
         }
         if (canToCollide) {
-          canToCollide = _pureTypeCheckComponent(active, potential);
+          canToCollide = _pureTypeCheckComponent(
+            active,
+            active.runtimeType,
+            potential,
+            potential.runtimeType,
+          );
         }
         //store result here
         final key =
@@ -836,6 +848,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   void add(ShapeHitbox item) => throw UnimplementedError();
 
   bool _raytraceHitboxesUpdated = false;
+
   bool get raytraceHitboxUpdated => _raytraceHitboxesUpdated;
   Rect? _activeCellRect;
   final _raytraceHitboxes = <ShapeHitbox>{};
