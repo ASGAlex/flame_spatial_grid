@@ -1,3 +1,9 @@
+# 0.9.1
+
+* Minimum Flame version is 1.14.0
+* Bug fix with collision cache for objects that are grouped into layer
+* onActivate callback cor component, when it's cell is moved from inactive state into active
+
 # 0.9.0
 
 * Support Flame 1.12.0 and upper 
