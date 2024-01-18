@@ -337,6 +337,10 @@ mixin HasGridSupport on PositionComponent
 
   void onInactive() {}
 
+  VoidCallback? onActiveCallback;
+
+  void onActivate() {}
+
   /// Called instead of [updateTree] when component is suspended.
   /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension

@@ -292,6 +292,10 @@ class Cell {
           } else if (_state == CellState.inactive) {
             parentComponent.onInactive();
             parentComponent.onInactiveCallback?.call();
+          } else if (_state == CellState.active &&
+              oldState == CellState.inactive) {
+            parentComponent.onActivate();
+            parentComponent.onActiveCallback?.call();
           }
         }
       }
