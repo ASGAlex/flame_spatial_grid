@@ -1,4 +1,4 @@
-# 0.9.1
+# 0.9.2
 
 * Flame 1.16.0 support
 * onCurrentCellChanged callback for HasGridSupport mixin
