@@ -282,6 +282,7 @@ class SpatialGridCollisionDetection
   RaycastResult<ShapeHitbox>? raycast(
     Ray2 ray, {
     double? maxDistance,
+    bool Function(ShapeHitbox candidate)? hitboxFilter,
     List<ShapeHitbox>? ignoreHitboxes,
     List<Type>? ignoreHitboxesTypes,
     List<Type>? allowOnlyHitboxesTypes,
@@ -311,6 +312,11 @@ class SpatialGridCollisionDetection
       if (ignoreHitboxes?.contains(item) ?? false) {
         continue;
       }
+      if (hitboxFilter != null) {
+        if (!hitboxFilter(item)) {
+          continue;
+        }
+      }
       if (!item.aabb.intersectsWithAabb2(_temporaryRayAabb)) {
         continue;
       }
@@ -336,7 +342,7 @@ class SpatialGridCollisionDetection
   static final _temporaryRaycastResult = RaycastResult<ShapeHitbox>();
 
   void _updateRayAabb(Ray2 ray, double? maxDistance) {
-    if(ray != _cachedRay) {
+    if (ray != _cachedRay) {
       _cachedRay = ray;
       final x1 = ray.origin.x;
       final y1 = ray.origin.y;

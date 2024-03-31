@@ -97,6 +97,10 @@ mixin HasGridSupport on PositionComponent
   /// Component's current cell. If null - something definitely went wrong!
   Cell? get currentCell => _currentCell;
 
+  void Function(Cell? previousCell)? onCurrentCellChangedCallback;
+
+  void onCurrentCellChanged(Cell? previousCell) {}
+
   set currentCell(Cell? value) {
     final previousCell = _currentCell;
     if (previousCell == value) {
@@ -123,6 +127,8 @@ mixin HasGridSupport on PositionComponent
     }
 
     _updateComponentHitboxes(previousCell, newCellState);
+    onCurrentCellChanged(previousCell);
+    onCurrentCellChangedCallback?.call(previousCell);
   }
 
   void _updateComponentHitboxes([Cell? previousCell, CellState? newCellState]) {
@@ -569,6 +575,8 @@ mixin HasGridSupport on PositionComponent
         }
         allHitboxes.add(child);
       }
+    } else {
+      allHitboxes = ignoreHitboxes;
     }
     return raycastToPoint(
       centerPoint,

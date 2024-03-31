@@ -191,7 +191,7 @@ all collisions are disabled.
 
   @override
   KeyEventResult onKeyEvent(
-    RawKeyEvent event,
+    KeyEvent event,
     Set<LogicalKeyboardKey> keysPressed,
   ) {
     final playerDisplacement = Vector2.zero();
