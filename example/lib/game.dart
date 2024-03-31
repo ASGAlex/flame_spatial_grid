@@ -106,7 +106,7 @@ all collisions are disabled.
       cleanupCellsPerUpdate = 2;
     }
     await initializeSpatialGrid(
-      debug: false,
+      debug: true,
       unloadRadius: unloadRadius,
       preloadRadius: preloadRadius,
       processCellsLimitToPauseEngine: processCellsLimitToPauseEngine,
@@ -157,6 +157,7 @@ all collisions are disabled.
   bool teleportMode = true;
   bool trailsEnabled = true;
   bool isAIEnabled = true;
+  bool _drawOutOfBoundsCounter = false;
 
   final fadeOutConfig = FadeOutConfig(
     fadeOutTimeout: const Duration(seconds: 5),
@@ -236,6 +237,15 @@ all collisions are disabled.
           world.add(raycastComponent);
         } else {
           raycast.first.removeFromParent();
+        }
+      }
+      if (key == LogicalKeyboardKey.keyB) {
+        _drawOutOfBoundsCounter = !_drawOutOfBoundsCounter;
+        if (isSpatialGridDebugEnabled) {
+          final debugComponent = rootComponent.children
+              .query<SpatialGridDebugComponent>()
+              .firstOrNull;
+          debugComponent?.drawOutOfBoundsCounter = _drawOutOfBoundsCounter;
         }
       }
       if (key == LogicalKeyboardKey.keyT) {
@@ -318,7 +328,7 @@ all collisions are disabled.
     Component rootComponent,
     Iterable<Rect> mapRects,
   ) async {
-    // return;
+    return;
 
     if (mapRects.isNotEmpty || nomapFinished) {
       return;
@@ -446,7 +456,7 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
     bullets.priority = 100;
     add(bullets);
     add(actors);
-    spawnNpcTeam();
+    // spawnNpcTeam();
   }
 
   void spawnNpcTeam([bool aiEnabled = false, Offset offset = Offset.zero]) {

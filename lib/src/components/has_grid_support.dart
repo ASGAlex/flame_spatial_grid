@@ -460,31 +460,20 @@ mixin HasGridSupport on PositionComponent
         _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
       }
       _previousOutOfBoundsCell = null;
-      // _decreaseOutOfBoundsCounter(current);
     }
   }
 
   void _increaseOutOfBoundsCounter(Cell centralCell) {
-    final cellNeighbours = centralCell.neighboursAndMe;
-    for (final cell in cellNeighbours) {
-      cell?.outOfBoundsCounter++;
-    }
+    centralCell.outOfBoundsCounter++;
   }
 
   void _decreaseOutOfBoundsCounter(Cell centralCell) {
-    final cellNeighbours = centralCell.neighboursAndMe;
-    for (final cell in cellNeighbours) {
-      var outOfBoundsCounter = cell?.outOfBoundsCounter;
-      if (outOfBoundsCounter != null) {
-        outOfBoundsCounter--;
-        cell!.outOfBoundsCounter = outOfBoundsCounter;
-        if (outOfBoundsCounter < 0) {
-          if (kDebugMode) {
-            print('outOfBoundsCounter should not be below zero!');
-          }
-          cell.outOfBoundsCounter = 0;
-        }
+    centralCell.outOfBoundsCounter--;
+    if (centralCell.outOfBoundsCounter < 0) {
+      if (kDebugMode) {
+        print('outOfBoundsCounter should not be below zero!');
       }
+      centralCell.outOfBoundsCounter = 0;
     }
   }
 
