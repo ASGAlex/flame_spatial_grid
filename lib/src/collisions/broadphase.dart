@@ -629,8 +629,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       minDistanceY =
           activeItem.minCollisionDistanceY + potential.minCollisionDistanceY;
 
-      final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
-      final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+      final diffX = activeItemCenter.x - potentialCenter.x;
+      final diffY = activeItemCenter.y - potentialCenter.y;
+
+      final distanceX = diffX < 0 ? -diffX : diffX;
+      final distanceY = diffY < 0 ? -diffY : diffY;
 
       final component = activeItem.parentWithGridSupport;
       final other = potential.parentWithGridSupport;
@@ -693,8 +696,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           return false;
         }
       } else {
-        final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
-        final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+        final diffX = activeItemCenter.x - potentialCenter.x;
+        final diffY = activeItemCenter.y - potentialCenter.y;
+
+        final distanceX = diffX < 0 ? -diffX : diffX;
+        final distanceY = diffY < 0 ? -diffY : diffY;
 
         if (activeItem is BoundingHitbox) {
           minDistanceX = activeItem.minCollisionDistanceX;
@@ -727,8 +733,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     Vector2 activeItemCenter,
     Vector2 potentialCenter,
   ) {
-    final distanceX = (activeItemCenter.x - potentialCenter.x).abs();
-    final distanceY = (activeItemCenter.y - potentialCenter.y).abs();
+    final diffX = activeItemCenter.x - potentialCenter.x;
+    final diffY = activeItemCenter.y - potentialCenter.y;
+
+    final distanceX = diffX < 0 ? -diffX : diffX;
+    final distanceY = diffY < 0 ? -diffY : diffY;
 
     if (distanceX < fastDistanceCheckMinX &&
         distanceY < fastDistanceCheckMinY) {
