@@ -806,7 +806,7 @@ class PlayerStep extends PositionComponent with HasPaint {
   }
 }
 
-class Npc extends Player with DebuggerPause {
+class Npc extends Player {
   Npc({required super.position, required super.size, required super.priority}) {
     final matrix = [
       -0.5,

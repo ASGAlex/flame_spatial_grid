@@ -392,9 +392,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     BoundingHitbox activeItem,
     ShapeHitbox potential,
   ) {
-    if (activeItem.parent is DebuggerPause) {
-      //print('123');
-    }
     final activeItemCenter = activeItem.aabbCenter;
     final potentialCenter = potential.aabbCenter;
     var minDistanceX = 0.0;

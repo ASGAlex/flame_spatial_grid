@@ -20,6 +20,4 @@ enum RayTraceMode {
   groupedHitboxes,
 }
 
-mixin DebuggerPause {}
-
 class DummyHitbox extends BoundingHitbox {}
