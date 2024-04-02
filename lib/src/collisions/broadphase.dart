@@ -125,6 +125,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         groupBox = tuple.b as GroupHitbox;
         componentHitbox = tuple.a;
       }
+      if (componentHitbox is! BoundingHitbox) {
+        continue;
+      }
 
       final cell = groupBox.parentWithGridSupport?.currentCell;
       if (cell == null) {
@@ -156,43 +159,40 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
           activeItem.isRemoving ||
-          activeItem.parent == null) {
+          activeItem.parent == null ||
+          activeItem is! BoundingHitbox) {
         continue;
       }
 
-      if (activeItem is BoundingHitbox) {
-        if (activeItem.collisionCheckFrequency != -1) {
-          if (!hasCollisionsLastTime.contains(activeItem)) {
-            if (activeItem.collisionCheckCounter <
-                activeItem.collisionCheckFrequency) {
-              activeItem.collisionCheckCounter += dt;
-              continue;
-            } else {
-              activeItem.collisionCheckCounter = 0;
-            }
+      if (activeItem.collisionCheckFrequency != -1) {
+        if (!hasCollisionsLastTime.contains(activeItem)) {
+          if (activeItem.collisionCheckCounter <
+              activeItem.collisionCheckFrequency) {
+            activeItem.collisionCheckCounter += dt;
+            continue;
+          } else {
+            activeItem.collisionCheckCounter = 0;
           }
         }
       }
 
-      var cellsToCheck = <Cell?>[];
       final currentCell = withGridSupport.currentCell;
       if (currentCell == null) {
         continue;
       }
 
       if (currentCell.hasOutOfBoundsComponents) {
-        cellsToCheck = currentCell.neighboursAndMe;
-      } else {
-        cellsToCheck = List<Cell>.filled(1, currentCell);
-      }
+        for (final cell in currentCell.neighboursAndMe) {
+          if (cell == null) {
+            continue;
+          }
 
-      for (final cell in cellsToCheck) {
-        if (cell == null) {
-          continue;
+          _compareCellItems(activeItem, cell, isPotentialActive: false);
+          _compareCellItems(activeItem, cell, isPotentialActive: true);
         }
-
-        _compareCellItems(activeItem, cell, isPotentialActive: false);
-        _compareCellItems(activeItem, cell, isPotentialActive: true);
+      } else {
+        _compareCellItems(activeItem, currentCell, isPotentialActive: false);
+        _compareCellItems(activeItem, currentCell, isPotentialActive: true);
       }
     }
 
@@ -200,7 +200,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   }
 
   void _compareCellItems(
-    ShapeHitbox activeItem,
+    BoundingHitbox activeItem,
     Cell cell, {
     required bool isPotentialActive,
   }) {
@@ -234,7 +234,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   }
 
   void _compareItemWithPotentials(
-    ShapeHitbox activeItem,
+    BoundingHitbox activeItem,
     List<ShapeHitbox> potentials, [
     List<List<bool>>? alreadyChecked,
     bool excludePureTypeCheck = false,
@@ -298,24 +298,27 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
 
       _prospectPoolIndex++;
-      final CollisionProspect<ShapeHitbox> prospect;
       if (_prospectPool.length <= _prospectPoolIndex) {
         _prospectPool.expand(_dummyHitbox);
       }
-      prospect = _prospectPool[_prospectPoolIndex]..set(activeItem, potential);
+      final prospect = _prospectPool[_prospectPoolIndex]
+        ..set(
+          activeItem,
+          potential,
+        );
       _potentials[prospect.hash] = prospect;
     }
   }
 
   bool _canPairToCollide(
-    ShapeHitbox activeItem,
+    BoundingHitbox activeItem,
     PositionComponent activeParent,
     ShapeHitbox potentialItem,
     PositionComponent potentialParent,
   ) {
     var canToCollide = true;
 
-    if (activeItem is BoundingHitbox && potentialItem is BoundingHitbox) {
+    if (potentialItem is BoundingHitbox) {
       canToCollide = comparator.componentInternalTypeCheck(
         activeItem,
         potentialItem,
@@ -386,7 +389,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   }
 
   bool _minimumDistanceCheck(
-    ShapeHitbox activeItem,
+    BoundingHitbox activeItem,
     ShapeHitbox potential,
   ) {
     if (activeItem.parent is DebuggerPause) {
@@ -397,19 +400,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     var minDistanceX = 0.0;
     var minDistanceY = 0.0;
 
-    var activeFastDistanceCheckAvailable = true;
     var potentialFastDistanceCheckAvailable = true;
-    if (activeItem is BoundingHitbox) {
-      activeFastDistanceCheckAvailable =
-          activeItem.isFastDistanceCheckAvailable;
-    }
     if (potential is BoundingHitbox) {
       potentialFastDistanceCheckAvailable =
           potential.isFastDistanceCheckAvailable;
     }
 
-    if (activeItem is BoundingHitbox &&
-        potential is BoundingHitbox &&
+    if (potential is BoundingHitbox &&
         activeItem.isDistanceCallbackEnabled &&
         potential.isDistanceCallbackEnabled) {
       minDistanceX =
@@ -435,9 +432,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
       return false;
     } else {
-      if (activeItem is BoundingHitbox &&
-          _doSkipDistance(activeItem) &&
-          _doSkipDistance(potential)) {
+      if (_doSkipDistance(activeItem) && _doSkipDistance(potential)) {
         var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
         if (skipTimes != null && skipTimes != 0) {
           skipTimes--;
@@ -446,18 +441,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         }
       }
 
-      if (activeFastDistanceCheckAvailable &&
+      if (activeItem.isFastDistanceCheckAvailable &&
           potentialFastDistanceCheckAvailable) {
         final (canCollideFast, distanceX, distanceY) =
             _fastDistanceCheck(activeItemCenter, potentialCenter);
         if (canCollideFast) {
-          if (activeItem is BoundingHitbox) {
-            minDistanceX = activeItem.minCollisionDistanceX;
-            minDistanceY = activeItem.minCollisionDistanceY;
-          } else {
-            minDistanceX = activeItem.size.x / 2;
-            minDistanceY = activeItem.size.y / 2;
-          }
+          minDistanceX = activeItem.minCollisionDistanceX;
+          minDistanceY = activeItem.minCollisionDistanceY;
 
           if (potential is BoundingHitbox) {
             minDistanceX += potential.minCollisionDistanceX;
@@ -471,9 +461,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           }
           return false;
         } else {
-          if (activeItem is BoundingHitbox &&
-              _doSkipDistance(activeItem) &&
-              _doSkipDistance(potential)) {
+          if (_doSkipDistance(activeItem) && _doSkipDistance(potential)) {
             final parentSpeed = activeItem.parentSpeedGetter?.call();
             if (parentSpeed != null && parentSpeed > 0) {
               final skipTimes =
@@ -490,13 +478,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         final distanceX = diffX < 0 ? -diffX : diffX;
         final distanceY = diffY < 0 ? -diffY : diffY;
 
-        if (activeItem is BoundingHitbox) {
-          minDistanceX = activeItem.minCollisionDistanceX;
-          minDistanceY = activeItem.minCollisionDistanceY;
-        } else {
-          minDistanceX = activeItem.size.x / 2;
-          minDistanceY = activeItem.size.y / 2;
-        }
+        minDistanceX = activeItem.minCollisionDistanceX;
+        minDistanceY = activeItem.minCollisionDistanceY;
 
         if (potential is BoundingHitbox) {
           minDistanceX += potential.minCollisionDistanceX;
@@ -522,28 +505,25 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     Vector2 potentialCenter,
   ) {
     final diffX = activeItemCenter.x - potentialCenter.x;
-    final diffY = activeItemCenter.y - potentialCenter.y;
-
     final distanceX = diffX < 0 ? -diffX : diffX;
-    final distanceY = diffY < 0 ? -diffY : diffY;
-
-    if (distanceX < fastDistanceCheckMinX &&
-        distanceY < fastDistanceCheckMinY) {
-      return (true, distanceX, distanceY);
+    if (distanceX < fastDistanceCheckMinX) {
+      final diffY = activeItemCenter.y - potentialCenter.y;
+      final distanceY = diffY < 0 ? -diffY : diffY;
+      if (distanceY < fastDistanceCheckMinY) {
+        return (true, distanceX, distanceY);
+      }
     }
+
     return (false, 0, 0);
   }
 
-  bool _runExternalBroadphaseCheck(ShapeHitbox active, ShapeHitbox potential) {
+  bool _runExternalBroadphaseCheck(
+      BoundingHitbox active, ShapeHitbox potential) {
     if (active is GroupHitbox || potential is GroupHitbox) {
       return true;
     }
     final canToCollide = extendedTypeCheck(active, potential);
-    if (active is BoundingHitbox) {
-      active.storeBroadphaseCheckCache(potential, canToCollide);
-    } else {
-      active.storeBroadphaseCheckCache(potential, canToCollide);
-    }
+    active.storeBroadphaseCheckCache(potential, canToCollide);
 
     return canToCollide;
   }
