@@ -106,7 +106,7 @@ all collisions are disabled.
       cleanupCellsPerUpdate = 2;
     }
     await initializeSpatialGrid(
-      debug: true,
+      debug: false,
       unloadRadius: unloadRadius,
       preloadRadius: preloadRadius,
       processCellsLimitToPauseEngine: processCellsLimitToPauseEngine,
@@ -328,7 +328,7 @@ all collisions are disabled.
     Component rootComponent,
     Iterable<Rect> mapRects,
   ) async {
-    return;
+    // return;
 
     if (mapRects.isNotEmpty || nomapFinished) {
       return;
@@ -456,7 +456,7 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
     bullets.priority = 100;
     add(bullets);
     add(actors);
-    // spawnNpcTeam();
+    spawnNpcTeam();
   }
 
   void spawnNpcTeam([bool aiEnabled = false, Offset offset = Offset.zero]) {
