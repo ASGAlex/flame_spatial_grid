@@ -7,6 +7,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/hitboxes/rectangle_hitbox_optimized.dart';
 import 'package:flame_spatial_grid/src/components/macro_object.dart';
+import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
 import 'package:meta/meta.dart';
 
 part 'rectangle_hitbox_extensions.dart';
@@ -32,7 +33,7 @@ typedef BoundingHitboxFactory = BoundingHitbox Function();
 /// provides same functionality for pure Flame hitboxes
 class BoundingHitbox extends RectangleHitboxOptimized
     with HasGameReference<HasSpatialGridFramework>
-    implements MacroObjectInterface {
+    implements MacroObjectInterface, PureTypeCheckInterface {
   BoundingHitbox({
     super.position,
     super.size,
@@ -352,12 +353,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
     size.setFrom(newRect.size.toVector2());
   }
 
-  /// Perform type check between:
-  /// 1. Active hitbox and passive hitbox
-  /// 2. Active hitbox and passive [hitboxParent]
-  /// 2. OR between active hitbox and [CellLayer.primaryHitboxCollisionType] (to
-  ///    improve performance by skipping check of every individual component
-  ///    inside the [CellLayer])
+  @override
   bool pureTypeCheck(Type other) => true;
 
   @override

@@ -8,6 +8,7 @@ import 'package:flame/game.dart';
 import 'package:flame/geometry.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/macro_object.dart';
+import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -50,7 +51,8 @@ mixin HasGridSupport on PositionComponent
     implements
         MacroObjectInterface,
         ScheduleAfterUpdateMixin,
-        ScheduleBeforeUpdateMixin {
+        ScheduleBeforeUpdateMixin,
+        PureTypeCheckInterface {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
@@ -477,15 +479,8 @@ mixin HasGridSupport on PositionComponent
     }
   }
 
-  bool pureTypeCheck(PositionComponent other) {
-    final myParent = parent;
-    final otherParent = other.parent;
-    if (myParent is HasGridSupport && otherParent is PositionComponent) {
-      return myParent.pureTypeCheck(otherParent);
-    }
-
-    return true;
-  }
+  @override
+  bool pureTypeCheck(Type other) => true;
 
   bool get canBeActive => boundingBox.canBeActive;
 

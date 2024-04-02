@@ -138,6 +138,17 @@ abstract class CellLayer extends PositionComponent
   @internal
   void compileToSingleLayer(Iterable<Component> components);
 
+  @override
+  bool pureTypeCheck(Type other) {
+    final comparator = sgGame.collisionDetection.broadphase.comparator;
+    if (primaryComponentType != null) {
+      return comparator.globalTypeCheck(primaryComponentType!, other);
+    } else if (kDebugMode) {
+      print('Possible collision with CellLayer with no components');
+    }
+    return false;
+  }
+
   final String name;
 
   Size get layerCalculatedSize {

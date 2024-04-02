@@ -266,7 +266,7 @@ class Cell {
     if (broadphase == null) {
       return;
     }
-    final hitboxes = broadphase.allCollisionsByCell[this];
+    final hitboxes = broadphase.collisionsCache.allCollisionsByCell[this];
     if (hitboxes == null) {
       return;
     }
@@ -377,8 +377,8 @@ class Cell {
 
     final broadphase = game.collisionDetection.broadphase;
     broadphase.optimizedCollisionsByGroupBox.remove(this)?.clear();
-    broadphase.activeCollisionsByCell.remove(this)?.clear();
-    broadphase.passiveCollisionsByCell.remove(this)?.clear();
+    broadphase.collisionsCache.activeCollisionsByCell.remove(this)?.clear();
+    broadphase.collisionsCache.passiveCollisionsByCell.remove(this)?.clear();
     _cachedRects.clear();
   }
 

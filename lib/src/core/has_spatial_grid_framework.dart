@@ -480,6 +480,8 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     _clearStaticVariables();
   }
 
+  /// Provides components type check to filter components at
+  /// broadphase during collision detection.
   bool pureTypeCheck(Type activeItemType, Type potentialItemType) => true;
 
   /// Because Framework implements it's own collision detection broadphase,

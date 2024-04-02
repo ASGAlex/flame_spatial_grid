@@ -8,30 +8,15 @@ import 'package:flame/components.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_prospect/prospect_pool.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
+import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
-typedef ExternalMinDistanceCheckSpatialGrid = bool Function(
-  ShapeHitbox activeItem,
-  ShapeHitbox potential,
-);
-
-typedef PureTypeCheck = bool Function(
-  Type activeItemType,
-  Type potentialItemType,
-);
-
-typedef ComponentExternalTypeCheck = bool Function(
-  PositionComponent first,
-  PositionComponent second,
-);
-
-enum RayTraceMode {
-  allHitboxes,
-  groupedHitboxes,
-}
-
-mixin DebuggerPause {}
+part 'broadphase/bloom_filter_provider.dart';
+part 'broadphase/collisions_cache.dart';
+part 'broadphase/comparator.dart';
+part 'broadphase/schedule_hitbox_operation.dart';
+part 'broadphase/typedef.dart';
 
 /// Performs Quad Tree broadphase check.
 ///
@@ -41,8 +26,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   SpatialGridBroadphase({
     required this.spatialGrid,
     required this.extendedTypeCheck,
-    this.globalPureTypeCheck,
+    required PureTypeCheck globalPureTypeCheck,
   }) {
+    comparator._globalPureTypeCheck = globalPureTypeCheck;
+    comparator._bloomFilter = _bloomFilterProvider;
     dispose();
     fastDistanceCheckMinX = spatialGrid.cellSize.width / 3;
     fastDistanceCheckMinY = spatialGrid.cellSize.height / 3;
@@ -55,20 +42,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   final _dummyHitbox = DummyHitbox();
   final _potentials = <int, CollisionProspect<ShapeHitbox>>{};
 
-  @protected
-  final activeCollisions = <ShapeHitbox>{};
   var _activeCollisionsUnmodifiable = <ShapeHitbox>[];
   var _activeChecked = <List<bool>>[];
   var _activeCheckedRecreated = false;
 
   @internal
-  final allCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
+  final collisionsCache = CollisionsCache();
 
   @internal
-  final passiveCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
+  final comparator = Comparator();
 
-  @internal
-  final activeCollisionsByCell = <Cell, HashSet<ShapeHitbox>>{};
+  final _bloomFilterProvider = BloomFilterProvider();
 
   @internal
   final optimizedCollisionsByGroupBox =
@@ -80,14 +64,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   final hasCollisionsLastTime = HashSet<ShapeHitbox>();
 
   ExternalBroadphaseCheck extendedTypeCheck;
-
-  PureTypeCheck? globalPureTypeCheck;
-
-  final _checkByTypeCache = <int, bool>{};
-  BloomFilter<int>? _checkByTypeCacheBloomTrue;
-
-  //ignore: use_late_for_private_fields_and_variables
-  BloomFilter<int>? _checkByTypeCacheBloomFalse;
 
   @internal
   static final broadphaseCheckCache =
@@ -104,68 +80,13 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   @override
   void update() {
-    var activeCollisionsChanged = false;
-    var passiveCollisionsChanged = false;
-    for (final operation in scheduledOperations) {
-      if (operation.add) {
-        final cell = operation.cell;
-        if (operation.all) {
-          var list = allCollisionsByCell[cell];
-          list ??= allCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-          list.add(operation.hitbox);
-        } else {
-          if (operation.active) {
-            activeCollisions.add(operation.hitbox);
-            var list = activeCollisionsByCell[cell];
-            list ??= activeCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-            list.add(operation.hitbox);
-            activeCollisionsChanged = true;
-          } else {
-            var list = passiveCollisionsByCell[cell];
-            list ??= passiveCollisionsByCell[cell] = HashSet<ShapeHitbox>();
-            list.add(operation.hitbox);
-            passiveCollisionsChanged = true;
-          }
-        }
-      } else {
-        final cell = operation.cell;
-        if (operation.all) {
-          final cellCollisions = allCollisionsByCell[cell];
-          if (cellCollisions != null) {
-            cellCollisions.remove(operation.hitbox);
-            if (cellCollisions.isEmpty) {
-              allCollisionsByCell.remove(cell);
-            }
-          }
-        } else {
-          if (operation.active) {
-            activeCollisions.remove(operation.hitbox);
-            operation.hitbox.broadphaseActiveIndex = -1;
-            activeCollisionsChanged = true;
-            final cellCollisions = activeCollisionsByCell[cell];
-            if (cellCollisions != null) {
-              cellCollisions.remove(operation.hitbox);
-              if (cellCollisions.isEmpty) {
-                activeCollisionsByCell.remove(cell);
-              }
-            }
-          } else {
-            final cellCollisions = passiveCollisionsByCell[cell];
-            if (cellCollisions != null) {
-              cellCollisions.remove(operation.hitbox);
-              if (cellCollisions.isEmpty) {
-                passiveCollisionsByCell.remove(cell);
-              }
-              passiveCollisionsChanged = true;
-            }
-          }
-        }
-      }
-    }
+    collisionsCache.preUpdate();
+    scheduledOperations.forEach(collisionsCache.processOperation);
     scheduledOperations.clear();
-    if (activeCollisionsChanged) {
+    if (collisionsCache.activeCollisionsChanged) {
       _raytraceHitboxesUpdated = false;
-      _activeCollisionsUnmodifiable = activeCollisions.toList(growable: false);
+      _activeCollisionsUnmodifiable =
+          collisionsCache.activeCollisions.toList(growable: false);
       _activeChecked = List<List<bool>>.filled(
         _activeCollisionsUnmodifiable.length,
         List<bool>.filled(_activeCollisionsUnmodifiable.length, false),
@@ -174,11 +95,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       for (var i = 0; i < _activeCollisionsUnmodifiable.length; i++) {
         _activeCollisionsUnmodifiable[i].broadphaseActiveIndex = i;
       }
-      _activeByCellUnmodifiable.clear();
+      collisionsCache.activeUnmodifiableCacheClear();
     }
-    if (passiveCollisionsChanged) {
+    if (collisionsCache.passiveCollisionsChanged) {
       _raytraceHitboxesUpdated = false;
-      _passiveByCellUnmodifiable.clear();
+      collisionsCache.passiveUnmodifiableCacheClear();
     }
   }
 
@@ -219,9 +140,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
     return _potentials.values;
   }
-
-  final _passiveByCellUnmodifiable = <Cell, List<ShapeHitbox>?>{};
-  final _activeByCellUnmodifiable = <Cell, List<ShapeHitbox>?>{};
 
   @override
   Iterable<CollisionProspect<ShapeHitbox>> query() {
@@ -272,34 +190,47 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         if (cell == null) {
           continue;
         }
-        var items = _passiveByCellUnmodifiable[cell];
-        if (items == null) {
-          items = passiveCollisionsByCell[cell]?.toList(growable: false);
-          _passiveByCellUnmodifiable[cell] = items;
-        }
-        if (items != null && items.isNotEmpty) {
-          _compareItemWithPotentials(
-            activeItem,
-            items,
-          );
-        }
 
-        var itemsActive = _activeByCellUnmodifiable[cell];
-        if (itemsActive == null) {
-          itemsActive = activeCollisionsByCell[cell]?.toList(growable: false);
-          _activeByCellUnmodifiable[cell] = itemsActive;
-        }
-        if (itemsActive != null && itemsActive.isNotEmpty) {
-          _compareItemWithPotentials(
-            activeItem,
-            itemsActive,
-            _activeChecked,
-          );
-        }
+        _compareCellItems(activeItem, cell, isPotentialActive: false);
+        _compareCellItems(activeItem, cell, isPotentialActive: true);
       }
     }
 
     return _potentials.values;
+  }
+
+  void _compareCellItems(
+    ShapeHitbox activeItem,
+    Cell cell, {
+    required bool isPotentialActive,
+  }) {
+    final itemsActiveByType = isPotentialActive
+        ? collisionsCache.activeCollisionsByCell[cell]
+        : collisionsCache.passiveCollisionsByCell[cell];
+    if (itemsActiveByType != null) {
+      for (final entry in itemsActiveByType.entries) {
+        final type = entry.key;
+        final canToCollide = comparator.globalTypeCheck(
+          activeItem.runtimeType,
+          type,
+          potentialCanBeActive: isPotentialActive,
+        );
+        if (canToCollide) {
+          final unmodifiableList = collisionsCache.unmodifiableCacheStore(
+            cell,
+            type,
+            entry.value,
+            isActive: isPotentialActive,
+          );
+
+          _compareItemWithPotentials(
+            activeItem,
+            unmodifiableList,
+            isPotentialActive ? _activeChecked : null,
+          );
+        }
+      }
+    }
   }
 
   void _compareItemWithPotentials(
@@ -376,11 +307,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     }
   }
 
-  var _key1 = 0;
-  var _canToCollide1 = true;
-  var _key2 = 0;
-  var _canToCollide2 = true;
-
   bool _canPairToCollide(
     ShapeHitbox activeItem,
     PositionComponent activeParent,
@@ -389,68 +315,32 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   ) {
     var canToCollide = true;
 
-    if (activeItem is BoundingHitbox) {
-      /// 1. Checking types of hitboxes only (also checking type cache);
-      ///    Also checking GroupHitbox elements type (component!);
-      var potentialType = potentialItem.runtimeType;
-      if (potentialParent is CellLayer) {
-        potentialType =
-            potentialParent.primaryHitboxCollisionType ?? potentialType;
-      }
-      var key = activeItem.runtimeType.hashCode & potentialType.hashCode;
-      if (key == _key1) {
-        canToCollide = _canToCollide1;
-      } else {
-        _key1 = key;
-        final bloomCheck = _bloomCacheCheck(key);
-        if (bloomCheck == null) {
-          final cache = _checkByTypeCache[key];
-          if (cache == null) {
-            canToCollide =
-                _pureTypeCheckHitbox(activeItem, potentialItem, potentialType);
-            _checkByTypeCache[key] = canToCollide;
-          } else {
-            canToCollide = cache;
-          }
-          _canToCollide1 = canToCollide;
-        } else {
-          _canToCollide1 = canToCollide = bloomCheck;
-        }
-      }
+    if (activeItem is BoundingHitbox && potentialItem is BoundingHitbox) {
+      canToCollide = comparator.componentInternalTypeCheck(
+        activeItem,
+        potentialItem,
+      );
 
-      /// 2. Checking types of components itself.
-      if (canToCollide) {
+      if (canToCollide &&
+          activeParent is PureTypeCheckInterface &&
+          potentialParent is PureTypeCheckInterface) {
         if (potentialParent is CellLayer) {
-          potentialType = potentialParent.primaryComponentType ?? potentialType;
-        } else {
-          potentialType = potentialParent.runtimeType;
-        }
-        final activeItemParentType = activeParent.runtimeType;
-        key = activeItemParentType.hashCode & potentialType.hashCode;
-        if (key == _key2) {
-          canToCollide = _canToCollide2;
-        } else {
-          _key2 = key;
-          final bloomCheck = _bloomCacheCheck(key);
-          if (bloomCheck == null) {
-            final cache = _checkByTypeCache[key];
-
-            if (cache == null) {
-              canToCollide = _pureTypeCheckComponent(
-                activeParent,
-                activeItemParentType,
-                potentialParent,
-                potentialType,
-              );
-              _checkByTypeCache[key] = canToCollide;
-            } else {
-              canToCollide = cache;
+          if (potentialParent.primaryComponentType == null) {
+            if (kDebugMode) {
+              print('Possible collision with CellLayer with no components');
             }
-            _canToCollide2 = canToCollide;
+            canToCollide = false;
           } else {
-            canToCollide = bloomCheck;
-            _canToCollide2 = canToCollide;
+            canToCollide = comparator.globalTypeCheck(
+              activeParent.runtimeType,
+              potentialParent.primaryComponentType!,
+            );
           }
+        } else {
+          canToCollide = comparator.componentFullTypeCheck(
+            activeParent as PureTypeCheckInterface,
+            potentialParent as PureTypeCheckInterface,
+          );
         }
       }
 
@@ -471,77 +361,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     return canToCollide;
   }
 
-  bool _globalTypeCheck(
-    Type activeType,
-    Type potentialType,
-    bool potentialCanBeActive,
-  ) {
-    if (globalPureTypeCheck == null) {
-      return true;
-    }
-
-    final canCollide = globalPureTypeCheck!.call(
-      activeType,
-      potentialType,
-    );
-    if (potentialCanBeActive) {
-      return canCollide &&
-          globalPureTypeCheck!.call(
-            potentialType,
-            activeType,
-          );
-    }
-    return canCollide;
-  }
-
-  bool _pureTypeCheckHitbox(
-    BoundingHitbox active,
-    ShapeHitbox potential,
-    Type potentialType,
-  ) {
-    final canToCollide = _globalTypeCheck(
-      active.runtimeType,
-      potentialType,
-      potential.canBeActive,
-    );
-
-    if (canToCollide) {
-      final activeCanCollide = active.pureTypeCheck(potentialType);
-      var potentialCanCollide = true;
-      if (potential is BoundingHitbox) {
-        potentialCanCollide = potential.pureTypeCheck(active.runtimeType);
-      }
-      return activeCanCollide && potentialCanCollide;
-    }
-    return canToCollide;
-  }
-
-  bool _pureTypeCheckComponent(
-    PositionComponent active,
-    Type activeType,
-    PositionComponent potential,
-    Type potentialType,
-  ) {
-    final canToCollide = _globalTypeCheck(
-      activeType,
-      potentialType,
-      potential.canBeActive,
-    );
-
-    if (canToCollide) {
-      var activeCanCollide = true;
-      if (active is HasGridSupport) {
-        activeCanCollide = active.pureTypeCheck(potential);
-      }
-      var potentialCanCollide = true;
-      if (potential is HasGridSupport) {
-        potentialCanCollide = potential.pureTypeCheck(active);
-      }
-      return activeCanCollide && potentialCanCollide;
-    }
-    return canToCollide;
-  }
-
   void pureTypeCheckWarmUp(List<PositionComponent> components) {
     final result = <int, bool>{};
     for (var i = 0; i < components.length; i++) {
@@ -549,16 +368,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       for (var j = 0; j < components.length; j++) {
         final potential = components[j];
         var canToCollide = true;
-        if (active is BoundingHitbox && potential is ShapeHitbox) {
-          canToCollide =
-              _pureTypeCheckHitbox(active, potential, potential.runtimeType);
-        }
-        if (canToCollide) {
-          canToCollide = _pureTypeCheckComponent(
-            active,
-            active.runtimeType,
-            potential,
-            potential.runtimeType,
+        if (active is PureTypeCheckInterface &&
+            potential is PureTypeCheckInterface) {
+          canToCollide = comparator.componentFullTypeCheck(
+            active as PureTypeCheckInterface,
+            potential as PureTypeCheckInterface,
           );
         }
         //store result here
@@ -568,33 +382,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
     }
 
-    _checkByTypeCacheBloomTrue = BloomFilter<int>(result.length, 0.01);
-    _checkByTypeCacheBloomFalse = BloomFilter<int>(result.length, 0.01);
-    for (final item in result.entries) {
-      if (item.value) {
-        _checkByTypeCacheBloomTrue!.add(item: item.key);
-      } else {
-        _checkByTypeCacheBloomFalse!.add(item: item.key);
-      }
-    }
-  }
-
-  bool? _bloomCacheCheck(int key) {
-    if (_checkByTypeCacheBloomTrue == null) {
-      return null;
-    }
-
-    final collide = _checkByTypeCacheBloomTrue!.contains(item: key);
-    if (collide) {
-      final noCollide = _checkByTypeCacheBloomFalse!.contains(item: key);
-      if (!noCollide) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
+    _bloomFilterProvider.init(result);
   }
 
   bool _minimumDistanceCheck(
@@ -876,7 +664,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       _activeCellRect = activeCell.rect;
       final cells = spatialGrid.activeRadiusCells;
       for (final cell in cells) {
-        final collisions = allCollisionsByCell[cell];
+        final collisions = collisionsCache.allCollisionsByCell[cell];
         if (collisions == null) {
           continue;
         }
@@ -908,75 +696,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   void dispose() {
     scheduledOperations.clear();
-    activeCollisions.clear();
     broadphaseCheckCache.clear();
-    _checkByTypeCache.clear();
+    comparator.clear();
     hasCollisionsLastTime.clear();
-    passiveCollisionsByCell.clear();
-    activeCollisionsByCell.clear();
-    allCollisionsByCell.clear();
     optimizedCollisionsByGroupBox.clear();
+    collisionsCache.clear();
   }
 }
-
-@internal
-@immutable
-class ScheduledHitboxOperation {
-  const ScheduledHitboxOperation({
-    required this.add,
-    required this.active,
-    required this.hitbox,
-    required this.cell,
-    required this.all,
-  });
-
-  const ScheduledHitboxOperation.addActive({
-    required this.hitbox,
-    required this.cell,
-  })  : add = true,
-        active = true,
-        all = false;
-
-  const ScheduledHitboxOperation.addPassive({
-    required this.hitbox,
-    required this.cell,
-  })  : add = true,
-        active = false,
-        all = false;
-
-  const ScheduledHitboxOperation.removeActive({
-    required this.hitbox,
-    required this.cell,
-  })  : add = false,
-        active = true,
-        all = false;
-
-  const ScheduledHitboxOperation.removePassive({
-    required this.hitbox,
-    required this.cell,
-  })  : add = false,
-        active = false,
-        all = false;
-
-  const ScheduledHitboxOperation.addToAll({
-    required this.hitbox,
-    required this.cell,
-  })  : add = true,
-        active = false,
-        all = true;
-
-  const ScheduledHitboxOperation.removeFromAll({
-    required this.hitbox,
-    required this.cell,
-  })  : add = false,
-        active = false,
-        all = true;
-
-  final bool add;
-  final bool active;
-  final bool all;
-  final ShapeHitbox hitbox;
-  final Cell cell;
-}
-
-class DummyHitbox extends BoundingHitbox {}

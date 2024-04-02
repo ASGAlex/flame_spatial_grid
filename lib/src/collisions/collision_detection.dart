@@ -293,11 +293,8 @@ class SpatialGridCollisionDetection
     _updateRayAabb(ray, maxDistance);
     for (final item in items) {
       if (rayAsHitboxType != null) {
-        final canCollide = broadphase.globalPureTypeCheck?.call(
-              rayAsHitboxType,
-              item.runtimeType,
-            ) ??
-            true;
+        final canCollide = broadphase.comparator
+            .globalTypeCheck(rayAsHitboxType, item.runtimeType);
         if (!canCollide) {
           continue;
         }
