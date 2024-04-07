@@ -297,17 +297,21 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         continue;
       }
 
-      _prospectPoolIndex++;
-      if (_prospectPool.length <= _prospectPoolIndex) {
-        _prospectPool.expand(_dummyHitbox);
-      }
-      final prospect = _prospectPool[_prospectPoolIndex]
-        ..set(
-          activeItem,
-          potential,
-        );
-      _potentials[prospect.hash] = prospect;
+      _markCanCollide(activeItem, potential);
     }
+  }
+
+  void _markCanCollide(ShapeHitbox activeItem, ShapeHitbox potential) {
+    _prospectPoolIndex++;
+    if (_prospectPool.length <= _prospectPoolIndex) {
+      _prospectPool.expand(_dummyHitbox);
+    }
+    final prospect = _prospectPool[_prospectPoolIndex]
+      ..set(
+        activeItem,
+        potential,
+      );
+    _potentials[prospect.hash] = prospect;
   }
 
   bool _canPairToCollide(
