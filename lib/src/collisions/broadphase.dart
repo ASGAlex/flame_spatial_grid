@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:dart_bloom_filter/dart_bloom_filter.dart';
@@ -396,39 +397,32 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     BoundingHitbox activeItem,
     ShapeHitbox potential,
   ) {
-    final activeItemCenter = activeItem.aabbCenter;
-    final potentialCenter = potential.aabbCenter;
-    var minDistanceX = 0.0;
-    var minDistanceY = 0.0;
+    final activeItemCenter = activeItem.aabbCenterStorage;
+    final potentialCenter = potential.aabbCenterStorage;
 
-    var potentialFastDistanceCheckAvailable = true;
+    final bool potentialFastDistanceCheckAvailable;
     if (potential is BoundingHitbox) {
       potentialFastDistanceCheckAvailable =
           potential.isFastDistanceCheckAvailable;
+    } else {
+      potentialFastDistanceCheckAvailable = true;
     }
 
     if (potential is BoundingHitbox &&
         activeItem.isDistanceCallbackEnabled &&
         potential.isDistanceCallbackEnabled) {
-      minDistanceX =
-          activeItem.minCollisionDistanceX + potential.minCollisionDistanceX;
-      minDistanceY =
-          activeItem.minCollisionDistanceY + potential.minCollisionDistanceY;
-
-      final diffX = activeItemCenter.x - potentialCenter.x;
-      final diffY = activeItemCenter.y - potentialCenter.y;
-
-      final distanceX = diffX < 0 ? -diffX : diffX;
-      final distanceY = diffY < 0 ? -diffY : diffY;
+      final minDistance = activeItem.minCollisionDistanceStorage +
+          potential.minCollisionDistanceStorage;
+      final distance = (activeItemCenter - potentialCenter).abs();
 
       final component = activeItem.parentWithGridSupport;
       final other = potential.parentWithGridSupport;
       if (component != null && other != null) {
-        component.onCalculateDistance(other, distanceX, distanceY);
-        other.onCalculateDistance(component, distanceX, distanceY);
+        component.onCalculateDistance(other, distance);
+        other.onCalculateDistance(component, distance);
       }
 
-      if (distanceX < minDistanceX && distanceY < minDistanceY) {
+      if (distance.x < minDistance.x && distance.y < minDistance.y) {
         return true;
       }
       return false;
@@ -444,20 +438,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
       if (activeItem.isFastDistanceCheckAvailable &&
           potentialFastDistanceCheckAvailable) {
-        final (canCollideFast, distanceX, distanceY) =
+        final (canCollideFast, distance) =
             _fastDistanceCheck(activeItemCenter, potentialCenter);
         if (canCollideFast) {
-          minDistanceX = activeItem.minCollisionDistanceX;
-          minDistanceY = activeItem.minCollisionDistanceY;
+          var minDistance = activeItem.minCollisionDistanceStorage;
 
           if (potential is BoundingHitbox) {
-            minDistanceX += potential.minCollisionDistanceX;
-            minDistanceY += potential.minCollisionDistanceY;
+            minDistance += potential.minCollisionDistanceStorage;
           } else {
-            minDistanceX += potential.size.x / 2;
-            minDistanceY += potential.size.y / 2;
+            minDistance += (potential.size / 2).toFloat64x2();
           }
-          if (distanceX < minDistanceX && distanceY < minDistanceY) {
+          if (distance.x < minDistance.x && distance.y < minDistance.y) {
             return true;
           }
           return false;
@@ -466,30 +457,23 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             final parentSpeed = activeItem.parentSpeedGetter?.call();
             if (parentSpeed != null && parentSpeed > 0) {
               final skipTimes =
-                  min(distanceX / parentSpeed, distanceY / parentSpeed).floor();
+                  min(distance.x / parentSpeed, distance.y / parentSpeed)
+                      .floor();
               activeItem.broadphaseMinimumDistanceSkip[potential] = skipTimes;
             }
           }
           return false;
         }
       } else {
-        final diffX = activeItemCenter.x - potentialCenter.x;
-        final diffY = activeItemCenter.y - potentialCenter.y;
-
-        final distanceX = diffX < 0 ? -diffX : diffX;
-        final distanceY = diffY < 0 ? -diffY : diffY;
-
-        minDistanceX = activeItem.minCollisionDistanceX;
-        minDistanceY = activeItem.minCollisionDistanceY;
+        final distance = (activeItemCenter - potentialCenter).abs();
+        var minDistance = activeItem.minCollisionDistanceStorage;
 
         if (potential is BoundingHitbox) {
-          minDistanceX += potential.minCollisionDistanceX;
-          minDistanceY += potential.minCollisionDistanceY;
+          minDistance += potential.minCollisionDistanceStorage;
         } else {
-          minDistanceX += potential.size.x / 2;
-          minDistanceY += potential.size.y / 2;
+          minDistance += (potential.size / 2).toFloat64x2();
         }
-        if (distanceX < minDistanceX && distanceY < minDistanceY) {
+        if (distance.x < minDistance.x && distance.y < minDistance.y) {
           return true;
         }
         return false;
@@ -501,21 +485,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       (item is BoundingHitbox && item.collisionCheckFrequency <= 0) ||
       item is! BoundingHitbox;
 
-  (bool, double, double) _fastDistanceCheck(
-    Vector2 activeItemCenter,
-    Vector2 potentialCenter,
+  (bool, Float64x2) _fastDistanceCheck(
+    Float64x2 activeItemCenter,
+    Float64x2 potentialCenter,
   ) {
-    final diffX = activeItemCenter.x - potentialCenter.x;
-    final distanceX = diffX < 0 ? -diffX : diffX;
-    if (distanceX < fastDistanceCheckMinX) {
-      final diffY = activeItemCenter.y - potentialCenter.y;
-      final distanceY = diffY < 0 ? -diffY : diffY;
-      if (distanceY < fastDistanceCheckMinY) {
-        return (true, distanceX, distanceY);
-      }
+    final distance = (activeItemCenter - potentialCenter).abs();
+    if (distance.x < fastDistanceCheckMinX &&
+        distance.y < fastDistanceCheckMinY) {
+      return (true, distance);
     }
 
-    return (false, 0, 0);
+    return (false, Float64x2.zero());
   }
 
   bool _runExternalBroadphaseCheck(
@@ -682,5 +662,11 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     hasCollisionsLastTime.clear();
     optimizedCollisionsByGroupBox.clear();
     collisionsCache.clear();
+  }
+}
+
+extension Vector2Fast on Vector2 {
+  Float64x2 toFloat64x2() {
+    return Float64x2(x, y);
   }
 }

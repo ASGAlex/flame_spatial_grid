@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:typed_data';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
@@ -282,8 +283,7 @@ mixin HasGridSupport on PositionComponent
 
   void onCalculateDistance(
     Component other,
-    double distanceX,
-    double distanceY,
+    Float64x2 distance,
   ) {}
 
   @override

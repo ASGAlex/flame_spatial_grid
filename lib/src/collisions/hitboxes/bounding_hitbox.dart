@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flame/collisions.dart';
@@ -46,6 +47,7 @@ class BoundingHitbox extends RectangleHitboxOptimized
   bool fastCollisionForRects = false;
   bool _aabbCenterNotSet = true;
   final Vector2 _aabbCenter = Vector2.zero();
+  var _aabbCenterStorage = Float64x2.zero();
 
   bool doExtendedTypeCheck = true;
   final _broadphaseCheckCacheTrue = HashSet<int>();
@@ -79,9 +81,17 @@ class BoundingHitbox extends RectangleHitboxOptimized
   Vector2 get aabbCenter {
     if (_aabbCenterNotSet) {
       _aabbCenterNotSet = false;
-      _aabbCenter.setFrom(aabb.center);
+      aabbCenter = aabb.center;
     }
     return _aabbCenter;
+  }
+
+  Float64x2 get aabbCenterStorage {
+    if (_aabbCenterNotSet) {
+      _aabbCenterNotSet = false;
+      aabbCenter = aabb.center;
+    }
+    return _aabbCenterStorage;
   }
 
   double collisionCheckFrequency = -1;
@@ -89,11 +99,13 @@ class BoundingHitbox extends RectangleHitboxOptimized
   @internal
   double collisionCheckCounter = 0;
 
-  @internal
-  double minCollisionDistanceX = 0.0;
+  set minCollisionDistance(Vector2 distance) {
+    _minCollisionDistance = Float64x2(distance.x, distance.y);
+  }
 
-  @internal
-  double minCollisionDistanceY = 0.0;
+  var _minCollisionDistance = Float64x2.zero();
+
+  Float64x2 get minCollisionDistanceStorage => _minCollisionDistance;
 
   @internal
   bool isFastDistanceCheckAvailable = false;
@@ -167,11 +179,11 @@ class BoundingHitbox extends RectangleHitboxOptimized
   set aabbCenter(Vector2? value) {
     assert(value != null);
     _aabbCenter.setFrom(value!);
+    _aabbCenterStorage = Float64x2(value.x, value.y);
   }
 
   void _precalculateCollisionVariables() {
-    minCollisionDistanceX = size.x / 2;
-    minCollisionDistanceY = size.y / 2;
+    minCollisionDistance = size / 2;
     final broadphase = game.collisionDetection.broadphase;
     if (size.x >= broadphase.fastDistanceCheckMinX ||
         size.y >= broadphase.fastDistanceCheckMinY) {

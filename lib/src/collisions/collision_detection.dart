@@ -180,9 +180,7 @@ class SpatialGridCollisionDetection
   void _updateTransform(ShapeHitbox item) {
     if (item is BoundingHitbox) {
       item.aabbCenter = item.aabb.center;
-      final distances = (item.aabb.max - item.aabb.min) / 2;
-      item.minCollisionDistanceX = distances.x;
-      item.minCollisionDistanceY = distances.y;
+      item.minCollisionDistance = (item.aabb.max - item.aabb.min) / 2;
     } else {
       HasGridSupport.cachedCenters.remove(item);
       item.aabbCenter;

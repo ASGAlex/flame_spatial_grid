@@ -14,6 +14,19 @@ extension SpatialGridShapeHitbox on ShapeHitbox {
     return cache!;
   }
 
+  Float64x2 get aabbCenterStorage {
+    final hitbox = this;
+    if (hitbox is BoundingHitbox) {
+      return hitbox.aabbCenterStorage;
+    }
+    var cache = HasGridSupport.cachedCenters[this];
+    if (cache == null) {
+      HasGridSupport.cachedCenters[this] = aabb.center;
+      cache = HasGridSupport.cachedCenters[this];
+    }
+    return Float64x2(cache!.x, cache.y);
+  }
+
   bool get doExtendedTypeCheck => true;
 
   @internal
