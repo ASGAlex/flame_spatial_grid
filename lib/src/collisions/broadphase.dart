@@ -291,6 +291,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           _activeItemParent,
           potential,
           potentialParent,
+          alreadyChecked != null,
         );
 
         if (!canToCollide) {
@@ -328,6 +329,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     PositionComponent activeParent,
     ShapeHitbox potentialItem,
     PositionComponent potentialParent,
+    bool potentialCanBeActive,
   ) {
     var canToCollide = true;
 
@@ -357,6 +359,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           canToCollide = comparator.componentFullTypeCheck(
             activeParent as PureTypeCheckInterface,
             potentialParent as PureTypeCheckInterface,
+            potentialCanBeActive: potentialCanBeActive,
           );
         }
       }

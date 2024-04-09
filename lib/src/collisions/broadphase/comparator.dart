@@ -8,12 +8,13 @@ class Comparator {
 
   bool componentFullTypeCheck(
     PureTypeCheckInterface active,
-    PureTypeCheckInterface potential,
-  ) {
+    PureTypeCheckInterface potential, {
+    bool potentialCanBeActive = false,
+  }) {
     final canToCollide = globalTypeCheck(
       active.runtimeType,
       potential.runtimeType,
-      potentialCanBeActive: true,
+      potentialCanBeActive: potentialCanBeActive,
     );
 
     if (canToCollide) {
