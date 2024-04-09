@@ -23,17 +23,17 @@ class BloomFilterProvider {
       return null;
     }
 
-    final collide = _checkByTypeCacheBloomTrue!.contains(item: key);
-    if (collide) {
-      final noCollide = _checkByTypeCacheBloomFalse!.contains(item: key);
-      if (!noCollide) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
+    return _checkByTypeCacheBloomTrue!.contains(item: key);
+    // if (collide) {
+    //   final noCollide = _checkByTypeCacheBloomFalse!.contains(item: key);
+    //   if (!noCollide) {
+    //     return true;
+    //   } else {
+    //     return false;
+    //   }
+    // } else {
+    //   return false;
+    // }
   }
 
   int generateKey(Type type1, Type type2) => type1.hashCode & type2.hashCode;

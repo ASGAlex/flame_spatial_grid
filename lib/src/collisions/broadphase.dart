@@ -10,6 +10,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/collisions/collision_prospect/prospect_pool.dart';
 import 'package:flame_spatial_grid/src/collisions/optimizer/optimized_collisions_list.dart';
 import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
+import 'package:flame_spatial_grid/src/core/vector2_simd.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -46,6 +47,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   var _activeCollisionsUnmodifiable = <ShapeHitbox>[];
   var _activeChecked = <List<bool>>[];
   var _activeCheckedRecreated = false;
+
+  late Type _activeItemRuntimeType;
+  late PositionComponent _activeItemParent;
+  bool? _isActiveSkip;
 
   @internal
   final collisionsCache = CollisionsCache();
@@ -182,6 +187,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         continue;
       }
 
+      _activeItemRuntimeType = activeItem.runtimeType;
+      _activeItemParent = activeItem.hitboxParent;
+      _isActiveSkip = null;
+
       if (currentCell.hasOutOfBoundsComponents) {
         for (final cell in currentCell.neighboursAndMe) {
           if (cell == null) {
@@ -212,7 +221,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       for (final entry in itemsActiveByType.entries) {
         final type = entry.key;
         final canToCollide = comparator.globalTypeCheck(
-          activeItem.runtimeType,
+          _activeItemRuntimeType,
           type,
           potentialCanBeActive: isPotentialActive,
         );
@@ -240,7 +249,6 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     List<List<bool>>? alreadyChecked,
     bool excludePureTypeCheck = false,
   ]) {
-    final activeParent = activeItem.hitboxParent;
     final potentialsLength = potentials.length;
     for (var i = 0; i < potentialsLength; i++) {
       final potential = potentials[i];
@@ -250,7 +258,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       final potentialParent = potential.hitboxParent;
       if (!activeItem.allowSiblingCollision &&
           !potential.allowSiblingCollision &&
-          potentialParent == activeParent) {
+          potentialParent == _activeItemParent) {
         continue;
       }
       if (alreadyChecked != null && potential.broadphaseActiveIndex != -1) {
@@ -280,7 +288,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       } else {
         final canToCollide = _canPairToCollide(
           activeItem,
-          activeParent,
+          _activeItemParent,
           potential,
           potentialParent,
         );
@@ -325,6 +333,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
     if (potentialItem is BoundingHitbox) {
       canToCollide = comparator.componentInternalTypeCheck(
+        _activeItemRuntimeType,
         activeItem,
         potentialItem,
       );
@@ -427,7 +436,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
       return false;
     } else {
-      if (_doSkipDistance(activeItem) && _doSkipDistance(potential)) {
+      if (_doSkipDistanceActive(activeItem) && _doSkipDistance(potential)) {
         var skipTimes = activeItem.broadphaseMinimumDistanceSkip[potential];
         if (skipTimes != null && skipTimes != 0) {
           skipTimes--;
@@ -453,7 +462,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           }
           return false;
         } else {
-          if (_doSkipDistance(activeItem) && _doSkipDistance(potential)) {
+          if (_doSkipDistanceActive(activeItem) && _doSkipDistance(potential)) {
             final parentSpeed = activeItem.parentSpeedGetter?.call();
             if (parentSpeed != null && parentSpeed > 0) {
               final skipTimes =
@@ -484,6 +493,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   bool _doSkipDistance(ShapeHitbox item) =>
       (item is BoundingHitbox && item.collisionCheckFrequency <= 0) ||
       item is! BoundingHitbox;
+
+  bool _doSkipDistanceActive(ShapeHitbox item) => _isActiveSkip ??=
+      (item is BoundingHitbox && item.collisionCheckFrequency <= 0) ||
+          item is! BoundingHitbox;
 
   (bool, Float64x2) _fastDistanceCheck(
     Float64x2 activeItemCenter,
@@ -662,11 +675,5 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     hasCollisionsLastTime.clear();
     optimizedCollisionsByGroupBox.clear();
     collisionsCache.clear();
-  }
-}
-
-extension Vector2Fast on Vector2 {
-  Float64x2 toFloat64x2() {
-    return Float64x2(x, y);
   }
 }
