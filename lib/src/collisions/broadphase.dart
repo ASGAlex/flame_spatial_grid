@@ -393,6 +393,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           canToCollide = comparator.componentFullTypeCheck(
             active as PureTypeCheckInterface,
             potential as PureTypeCheckInterface,
+            potentialCanBeActive: true,
           );
         }
         //store result here
