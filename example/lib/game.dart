@@ -328,7 +328,7 @@ all collisions are disabled.
     Component rootComponent,
     Iterable<Rect> mapRects,
   ) async {
-    // return;
+    return;
 
     if (mapRects.isNotEmpty || nomapFinished) {
       return;
@@ -644,7 +644,6 @@ class Player extends SpriteComponent
       createTrail(3);
       vector.setZero();
     }
-    super.update(dt);
   }
 
   void createTrail(int value) {
@@ -978,7 +977,6 @@ class Bullet extends PositionComponent
       final d = displacement * dt;
       position = Vector2(position.x + d.x, position.y + d.y);
     }
-    super.update(dt);
   }
 
   @override

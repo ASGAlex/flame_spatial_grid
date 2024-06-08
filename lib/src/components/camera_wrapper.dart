@@ -49,6 +49,9 @@ class SpatialGridCameraWrapper extends PositionComponent
   }
 
   @override
+  void update(double dt) {}
+
+  @override
   void onRemove() {
     // ignore: invalid_use_of_internal_member
     cameraComponent.viewfinder.transform.offset

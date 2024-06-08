@@ -78,7 +78,8 @@ mixin HasGridSupport on PositionComponent
   bool toggleCollisionOnSuspendChange = true;
 
   bool noVisibleChildren = false;
-  bool noChildrenToUpdate = false;
+  bool noChildrenToUpdate = true;
+  bool noUpdate = false;
   bool checkOutOfCellBounds = true;
   bool needResize = false;
 
@@ -246,7 +247,31 @@ mixin HasGridSupport on PositionComponent
     }
     add(boundingBox);
     position.addListener(_onPositionChanged);
-    return super.onLoad();
+    final result = super.onLoad();
+    noUpdate = false;
+    try {
+      update(0);
+    } on UnimplementedError catch (_) {
+      noUpdate = true;
+    }
+    return result;
+  }
+
+  @override
+  void onMount() {
+    if (parent is HasGridSupport && !noUpdate) {
+      final _parent = parent! as HasGridSupport;
+      if (_parent.noChildrenToUpdate) {
+        final ancestors = _parent.ancestors(includeSelf: true);
+        for (final component in ancestors) {
+          if (component is! HasGridSupport) {
+            continue;
+          }
+          _parent.noChildrenToUpdate = false;
+        }
+      }
+    }
+    super.onMount();
   }
 
   void _onPositionChanged() {
@@ -325,6 +350,9 @@ mixin HasGridSupport on PositionComponent
   }
 
   @override
+  void update(double dt) => throw UnimplementedError();
+
+  @override
   void updateTree(double dt) {
     if (_currentCell?.isRemoving == true) {
       removeFromParent();
@@ -334,7 +362,9 @@ mixin HasGridSupport on PositionComponent
       updateSuspendedTree(dtElapsedWhileSuspended);
     } else {
       if (noChildrenToUpdate) {
-        update(dt);
+        if (!noUpdate) {
+          update(dt);
+        }
       } else {
         super.updateTree(dt);
       }
