@@ -3,9 +3,10 @@ import 'dart:typed_data';
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/flat_buffers/flat_buffers_optimizer.dart'
     as fb;
 import 'package:flame_spatial_grid/src/collisions/optimizer/isolate/geometry_universal.dart';
+import 'package:isolate_manager/isolate_manager.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-@pragma('vm:entry-point')
+@IsolateManagerWorker('spatial_grid_optimizer_worker')
 Uint8List findOverlappingRectsIsolated(
   Uint8List parameters,
 ) {
