@@ -11,15 +11,16 @@ class Comparator {
     PureTypeCheckInterface potential, {
     bool potentialCanBeActive = false,
   }) {
+    final aType = active.runtimeType;
+    final pType = potential.runtimeType;
     final canToCollide = globalTypeCheck(
-      active.runtimeType,
-      potential.runtimeType,
+      aType,
+      pType,
       potentialCanBeActive: potentialCanBeActive,
     );
 
     if (canToCollide) {
-      return active.pureTypeCheck(potential.runtimeType) &&
-          potential.pureTypeCheck(active.runtimeType);
+      return active.pureTypeCheck(pType) && potential.pureTypeCheck(aType);
     }
     return false;
   }
