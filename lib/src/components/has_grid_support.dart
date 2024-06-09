@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame/geometry.dart';
@@ -66,6 +67,9 @@ mixin HasGridSupport on PositionComponent
   @internal
   static final shapeHitboxIndex = HashMap<ShapeHitbox, int>();
 
+  static final componentsWithLogic = <HasGridSupport>[];
+  static bool componentsWithLogicChanged = true;
+
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
   /// system, so "boundingBox.collisionType" become [CollisionType.inactive].
@@ -80,6 +84,7 @@ mixin HasGridSupport on PositionComponent
   bool noVisibleChildren = false;
   bool noChildrenToUpdate = true;
   bool noUpdate = false;
+  bool noLogic = false;
   bool checkOutOfCellBounds = true;
   bool needResize = false;
 
@@ -248,21 +253,36 @@ mixin HasGridSupport on PositionComponent
     add(boundingBox);
     position.addListener(_onPositionChanged);
     final result = super.onLoad();
+
     noUpdate = false;
     try {
       update(0);
     } on UnimplementedError catch (_) {
       noUpdate = true;
     }
+
+    noLogic = false;
+    try {
+      logic(0);
+    } on UnimplementedError catch (_) {
+      noLogic = true;
+    }
+
     return result;
   }
 
+  int _logicPriority = 0;
+
+  int get logicPriority => _logicPriority;
+
   @override
   void onMount() {
+    _logicPriority = 0;
     if (parent is HasGridSupport && !noUpdate) {
       final _parent = parent! as HasGridSupport;
       if (_parent.noChildrenToUpdate) {
         final ancestors = _parent.ancestors(includeSelf: true);
+        _logicPriority = ancestors.length;
         for (final component in ancestors) {
           if (component is! HasGridSupport) {
             continue;
@@ -271,6 +291,13 @@ mixin HasGridSupport on PositionComponent
         }
       }
     }
+
+    if (!noLogic && _logicPriority == 0) {
+      _logicPriority = parent!.ancestors(includeSelf: true).length;
+      componentsWithLogic.add(this);
+      componentsWithLogicChanged = true;
+    }
+
     super.onMount();
   }
 
@@ -313,15 +340,24 @@ mixin HasGridSupport on PositionComponent
 
   @override
   void onChildrenChanged(Component child, ChildrenChangeType type) {
-    // ignore: invalid_use_of_protected_member
-    if (!boundingBox.shouldFillParent) {
-      return;
-    }
     if (type == ChildrenChangeType.added) {
       if (child != boundingBox && child is ShapeHitbox) {
         boundingBox.resizeToIncludeChildren(child);
+      } else if (child is Effect) {
+        final _parent = child.parent! as HasGridSupport;
+        if (_parent.noChildrenToUpdate) {
+          final ancestors = _parent.ancestors(includeSelf: true);
+          _logicPriority = ancestors.length;
+          for (final component in ancestors) {
+            if (component is! HasGridSupport) {
+              continue;
+            }
+            _parent.noChildrenToUpdate = false;
+          }
+        }
       }
-    } else {
+      // ignore: invalid_use_of_protected_member
+    } else if (boundingBox.shouldFillParent) {
       boundingBox.resizeToIncludeChildren();
     }
   }
@@ -347,10 +383,15 @@ mixin HasGridSupport on PositionComponent
       currentCell = null;
     }
     position.removeListener(_onPositionChanged);
+    if (!noLogic) {
+      componentsWithLogic.remove(this);
+    }
   }
 
   @override
   void update(double dt) => throw UnimplementedError();
+
+  void logic(double dt) => throw UnimplementedError();
 
   @override
   void updateTree(double dt) {
@@ -366,7 +407,12 @@ mixin HasGridSupport on PositionComponent
           update(dt);
         }
       } else {
-        super.updateTree(dt);
+        if (!noUpdate) {
+          update(dt);
+        }
+        for (final c in children) {
+          c.updateTree(dt);
+        }
       }
     }
   }
@@ -644,25 +690,25 @@ mixin HasGridSupport on PositionComponent
 
   @override
   List<ScheduleAfterUpdateMixin> get scheduleAfterList =>
-      sgGame.scheduledAfterUpdate;
+      sgGame.scheduledAfterLogic;
 
   @override
   List<ScheduleAfterUpdateMixin> get scheduleAfterListPermanent =>
-      sgGame.scheduledAfterUpdatePermanent;
+      sgGame.scheduledAfterLogicPermanent;
 
   @override
   List<ScheduleBeforeUpdateMixin> get scheduleBeforeList =>
-      sgGame.scheduledBeforeUpdate;
+      sgGame.scheduledBeforeLogic;
 
   @override
   List<ScheduleBeforeUpdateMixin> get scheduleBeforeListPermanent =>
-      sgGame.scheduledBeforeUpdatePermanent;
+      sgGame.scheduledBeforeLogicPermanent;
 
   bool _actionScheduled = false;
   bool _permanent = false;
 
   @override
-  void scheduleAfterUpdateAction({bool permanent = false}) {
+  void scheduleAfterLogicAction({bool permanent = false}) {
     if (!_actionScheduled) {
       if (permanent) {
         _permanent = true;
@@ -677,7 +723,7 @@ mixin HasGridSupport on PositionComponent
   }
 
   @override
-  void scheduleBeforeUpdateAction({bool permanent = false}) {
+  void scheduleBeforeLogicAction({bool permanent = false}) {
     if (!_actionScheduled) {
       if (permanent) {
         _permanent = true;
@@ -692,26 +738,26 @@ mixin HasGridSupport on PositionComponent
   }
 
   @override
-  void runAfterUpdateAction(double dt) {
+  void runAfterLogicAction(double dt) {
     if (!_permanent) {
       _actionScheduled = false;
     }
-    onAfterUpdate(dt);
+    onAfterLogic(dt);
   }
 
   @override
-  void onAfterUpdate(double dt) {}
+  void onAfterLogic(double dt) {}
 
   @override
-  void runBeforeUpdateAction(double dt) {
+  void runBeforeLogicAction(double dt) {
     if (!_permanent) {
       _actionScheduled = false;
     }
-    onBeforeUpdate(dt);
+    onBeforeLogic(dt);
   }
 
   @override
-  void onBeforeUpdate(double dt) {}
+  void onBeforeLogic(double dt) {}
 }
 
 extension PositionComponentWithGridSupport on PositionComponent {

@@ -45,13 +45,13 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       tileBuilderContextProvider;
 
   @internal
-  late final scheduledAfterUpdate = <ScheduleAfterUpdateMixin>[];
+  late final scheduledAfterLogic = <ScheduleAfterUpdateMixin>[];
   @internal
-  late final scheduledAfterUpdatePermanent = <ScheduleAfterUpdateMixin>[];
+  late final scheduledAfterLogicPermanent = <ScheduleAfterUpdateMixin>[];
   @internal
-  late final scheduledBeforeUpdate = <ScheduleBeforeUpdateMixin>[];
+  late final scheduledBeforeLogic = <ScheduleBeforeUpdateMixin>[];
   @internal
-  late final scheduledBeforeUpdatePermanent = <ScheduleBeforeUpdateMixin>[];
+  late final scheduledBeforeLogicPermanent = <ScheduleBeforeUpdateMixin>[];
 
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
   /// to viewport size and zoom level.
@@ -73,6 +73,8 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   double _suspendedCellLifetime = -1;
   Duration suspendCellPrecision = const Duration(minutes: 1);
   double _precisionDtCounter = 0;
+  double logicUpdateInterval = 0.03;
+  double _logicUpdateDt = 0.0;
   double cleanupCellsPerUpdate = 1;
 
   int collisionOptimizerGroupLimit = 25;
@@ -185,6 +187,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     int scheduledLayerOperationLimit = 2,
     double buildCellsPerUpdate = 1,
     double cleanupCellsPerUpdate = 2,
+    double logicUpdateInterval = 0.09,
     bool trackWindowSize = true,
     HasGridSupport? trackedComponent,
     Vector2? initialPosition,
@@ -211,6 +214,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     this.suspendedCellLifetime = suspendedCellLifetime;
     this.suspendCellPrecision = suspendCellPrecision;
     this.cleanupCellsPerUpdate = cleanupCellsPerUpdate;
+    this.logicUpdateInterval = logicUpdateInterval;
     this.worldLoader = worldLoader;
     this.trackWindowSize = trackWindowSize;
     collisionOptimizerGroupLimit = collisionOptimizerDefaultGroupLimit;
@@ -698,14 +702,27 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
         _buildNewCells();
         _runScheduledLayerOperations();
         _collectDt(dt);
+        _logicUpdateDt += dt;
 
         tickersManager.update(dt);
 
-        onBeforeUpdateTick(dt);
         super.update(dt);
+        if (_logicUpdateDt >= logicUpdateInterval) {
+          if (HasGridSupport.componentsWithLogicChanged) {
+            HasGridSupport.componentsWithLogic.sort(
+              (a, b) {
+                if (a.logicPriority == b.logicPriority) {
+                  return 0;
+                }
+                return a.logicPriority > b.logicPriority ? 1 : -1;
+              },
+            );
+          }
+          logic(_logicUpdateDt);
+          _logicUpdateDt = 0;
+        }
         collisionDetection.dt = dt;
         collisionDetection.run();
-        onAfterUpdateTick(dt);
       }
     } else {
       final stopwatch = Stopwatch()..start();
@@ -720,30 +737,38 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     }
   }
 
+  void logic(double dt) {
+    onBeforeLogicTick(dt);
+    for (final component in HasGridSupport.componentsWithLogic) {
+      component.logic(dt);
+    }
+    onAfterLogicTick(dt);
+  }
+
   @mustCallSuper
-  void onAfterUpdateTick(double dt) {
-    if (scheduledAfterUpdate.isNotEmpty) {
-      for (final component in scheduledAfterUpdate) {
-        component.runAfterUpdateAction(dt);
+  void onAfterLogicTick(double dt) {
+    if (scheduledAfterLogic.isNotEmpty) {
+      for (final component in scheduledAfterLogic) {
+        component.runAfterLogicAction(dt);
       }
-      scheduledAfterUpdate.clear();
+      scheduledAfterLogic.clear();
     }
 
-    for (final component in scheduledAfterUpdatePermanent) {
-      component.runAfterUpdateAction(dt);
+    for (final component in scheduledAfterLogicPermanent) {
+      component.runAfterLogicAction(dt);
     }
   }
 
-  void onBeforeUpdateTick(double dt) {
-    if (scheduledBeforeUpdate.isNotEmpty) {
-      for (final component in scheduledBeforeUpdate) {
-        component.runBeforeUpdateAction(dt);
+  void onBeforeLogicTick(double dt) {
+    if (scheduledBeforeLogic.isNotEmpty) {
+      for (final component in scheduledBeforeLogic) {
+        component.runBeforeLogicAction(dt);
       }
-      scheduledBeforeUpdate.clear();
+      scheduledBeforeLogic.clear();
     }
 
-    for (final component in scheduledBeforeUpdatePermanent) {
-      component.runBeforeUpdateAction(dt);
+    for (final component in scheduledBeforeLogicPermanent) {
+      component.runBeforeLogicAction(dt);
     }
   }
 

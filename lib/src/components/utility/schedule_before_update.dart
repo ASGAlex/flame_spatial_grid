@@ -9,7 +9,7 @@ mixin ScheduleBeforeUpdateMixin on Component {
 
   List<ScheduleBeforeUpdateMixin> get scheduleBeforeListPermanent;
 
-  void scheduleBeforeUpdateAction({bool permanent = false}) {
+  void scheduleBeforeLogicAction({bool permanent = false}) {
     if (!_actionScheduled) {
       if (permanent) {
         _permanent = true;
@@ -24,14 +24,14 @@ mixin ScheduleBeforeUpdateMixin on Component {
   }
 
   @internal
-  void runBeforeUpdateAction(double dt) {
+  void runBeforeLogicAction(double dt) {
     if (!_permanent) {
       _actionScheduled = false;
     }
-    onBeforeUpdate(dt);
+    onBeforeLogic(dt);
   }
 
-  void onBeforeUpdate(double dt) {}
+  void onBeforeLogic(double dt) {}
 
   @override
   void onRemove() {

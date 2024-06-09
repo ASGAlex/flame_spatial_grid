@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
@@ -69,10 +70,10 @@ all collisions are disabled.
   Future<void> onLoad() async {
     pureTypeCheckWarmUpComponents = [
       Player(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
+      Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
       Npc(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
       Brick(position: Vector2.zero(), sprite: null),
       Water(position: Vector2.zero(), animation: null),
-      Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
       BoundingBoxGridGame(),
     ];
     super.onLoad();
@@ -628,6 +629,7 @@ class Player extends SpriteComponent
   final positionNoCollision = Vector2.zero();
 
   final vector = Vector2.zero();
+  final Vector2 targetPosition = Vector2(0, 0);
   bool manuallyControlled = true;
 
   void move(Vector2 diff) {
@@ -635,14 +637,19 @@ class Player extends SpriteComponent
   }
 
   @override
-  void update(double dt) {
+  void logic(double dt) {
     if (manuallyControlled && !vector.isZero()) {
-      if (activeCollisions.isEmpty) {
-        positionNoCollision.setFrom(position);
-      }
-      position.setFrom(position + vector);
+      targetPosition.setFrom(position + vector);
       createTrail(3);
       vector.setZero();
+      add(MoveToEffect(targetPosition, EffectController(duration: dt)));
+    }
+  }
+
+  @override
+  void update(double dt) {
+    if (activeCollisions.isEmpty) {
+      positionNoCollision.setFrom(position);
     }
   }
 
@@ -703,6 +710,11 @@ class Player extends SpriteComponent
         final vector = positionNoCollision - position;
         position.setFrom(positionNoCollision);
         positionNoCollision.add(vector);
+      }
+      final effect = children.query<MoveToEffect>().firstOrNull;
+      if (effect != null) {
+        effect.pause();
+        effect.removeFromParent();
       }
     }
     super.onCollision(intersectionPoints, other);
@@ -846,11 +858,8 @@ class Npc extends Player {
   double _lastDtSpeed = 0;
 
   @override
-  void update(double dt) {
+  void logic(double dt) {
     dtElapsed++;
-    if (activeCollisions.isEmpty) {
-      positionNoCollision.setFrom(position);
-    }
     if (dtElapsed >= dtMax) {
       vector.setZero();
       dtElapsed = 0;
@@ -868,10 +877,11 @@ class Npc extends Player {
     _lastDtSpeed = longest;
 
     if (!vector.isZero()) {
-      position.add(newStep);
+      targetPosition.setFrom(position);
+      targetPosition.add(newStep);
       createTrail(6);
+      add(MoveToEffect(targetPosition, EffectController(duration: dt)));
     }
-    super.update(dt);
   }
 
   void _createNewVector() {
@@ -962,6 +972,7 @@ class Bullet extends PositionComponent
   double lifetime = 20.0;
   final Vector2 displacement;
   final bool killWater;
+  late Vector2 targetPos;
 
   @override
   void render(Canvas canvas) {
@@ -969,13 +980,14 @@ class Bullet extends PositionComponent
   }
 
   @override
-  void update(double dt) {
+  void logic(double dt) {
     lifetime -= dt;
     if (lifetime <= 0) {
       removeFromParent();
     } else {
       final d = displacement * dt;
-      position = Vector2(position.x + d.x, position.y + d.y);
+      targetPos = Vector2(position.x + d.x, position.y + d.y);
+      add(MoveToEffect(targetPos, EffectController(duration: dt)));
     }
   }
 
@@ -989,7 +1001,8 @@ class Bullet extends PositionComponent
       removeFromParent();
     } else {
       final d = displacement * dtElapsedWhileSuspended;
-      position = Vector2(position.x + d.x, position.y + d.y);
+      targetPos = Vector2(position.x + d.x, position.y + d.y);
+      add(MoveToEffect(targetPos, EffectController(duration: 1)));
     }
   }
 
