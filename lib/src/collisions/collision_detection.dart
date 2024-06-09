@@ -136,16 +136,23 @@ class SpatialGridCollisionDetection
 
   @override
   void run() {
-    broadphase.dt = dt;
-    broadphase.update();
-    if (_trackedComponentScheduledUpdate != null) {
-      _updateTransform(_trackedComponentScheduledUpdate!);
-      _trackedComponentScheduledUpdate = null;
+    if (!broadphase.queryRunning) {
+      broadphase.dt = dt;
+      broadphase.update();
+      if (_trackedComponentScheduledUpdate != null) {
+        _updateTransform(_trackedComponentScheduledUpdate!);
+        _trackedComponentScheduledUpdate = null;
+      }
+      _scheduledUpdateAfterTransform.forEach(_updateTransform);
+      _scheduledUpdateAfterTransform.clear();
     }
-    _scheduledUpdateAfterTransform.forEach(_updateTransform);
-    _scheduledUpdateAfterTransform.clear();
 
-    final allPotentials = broadphase.query().toList();
+    final allPotentialsIterable = broadphase.query();
+    if (broadphase.queryRunning) {
+      print('running!');
+      return;
+    }
+    final allPotentials = allPotentialsIterable.toList();
     final repeatBroadphaseForItems = _runForPotentials(allPotentials);
     if (repeatBroadphaseForItems.isNotEmpty &&
         repeatBroadphaseForItems[0] != null) {

@@ -150,18 +150,30 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     return _potentials.values;
   }
 
+  bool queryRunning = false;
+  ShapeHitbox? lastActiveItem;
+
   @override
   Iterable<CollisionProspect<ShapeHitbox>> query() {
-    _potentials.clear();
-    _prospectPoolIndex = 0;
-    if (_activeCheckedRecreated) {
-      _activeCheckedRecreated = false;
-    } else {
-      for (final list in _activeChecked) {
-        list.fillRange(0, list.length, false);
+    if (!queryRunning) {
+      _potentials.clear();
+
+      _prospectPoolIndex = 0;
+      if (_activeCheckedRecreated) {
+        _activeCheckedRecreated = false;
+      } else {
+        for (final list in _activeChecked) {
+          list.fillRange(0, list.length, false);
+        }
       }
+      queryRunning = true;
     }
+    final sw = Stopwatch();
+    sw.start();
     for (final activeItem in _activeCollisionsUnmodifiable) {
+      if (lastActiveItem != null && activeItem != lastActiveItem) {
+        continue;
+      }
       final withGridSupport = activeItem.parentWithGridSupport;
       if (withGridSupport == null ||
           activeItem.isRemoving ||
@@ -204,8 +216,14 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         _compareCellItems(activeItem, currentCell, isPotentialActive: false);
         _compareCellItems(activeItem, currentCell, isPotentialActive: true);
       }
+      if (sw.elapsedMilliseconds >= 8) {
+        lastActiveItem = activeItem;
+        return _potentials.values;
+      }
     }
-
+    sw.stop();
+    lastActiveItem = null;
+    queryRunning = false;
     return _potentials.values;
   }
 
