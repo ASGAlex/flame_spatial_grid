@@ -13,15 +13,18 @@ class CollisionsCache {
   @internal
   final activeCollisionsByCell = <Cell, Map<Type, HashSet<ShapeHitbox>>>{};
 
-  final _passiveByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
-  final _activeByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
+  @internal
+  final passiveByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
+
+  @internal
+  final activeByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
 
   void activeUnmodifiableCacheClear() {
-    _activeCollisionsChanged.forEach(_activeByCellUnmodifiable.remove);
+    _activeCollisionsChanged.forEach(activeByCellUnmodifiable.remove);
   }
 
   void passiveUnmodifiableCacheClear() {
-    _passiveCollisionsChanged.forEach(_passiveByCellUnmodifiable.remove);
+    _passiveCollisionsChanged.forEach(passiveByCellUnmodifiable.remove);
   }
 
   final _activeCollisionsChanged = <Cell>{};
@@ -120,7 +123,7 @@ class CollisionsCache {
     required bool isActive,
   }) {
     final storage =
-        isActive ? _activeByCellUnmodifiable : _passiveByCellUnmodifiable;
+        isActive ? activeByCellUnmodifiable : passiveByCellUnmodifiable;
     var list = storage[cell]?[type];
     if (list == null) {
       list = data.toList(growable: false);

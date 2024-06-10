@@ -27,7 +27,7 @@ class SpatialGridCollisionDetection
 
   final _listenerCollisionType = <ShapeHitbox, VoidCallback>{};
   ShapeHitbox? _trackedComponentScheduledUpdate;
-  final _scheduledUpdateAfterTransform = <ShapeHitbox>{};
+  final _scheduledUpdateAfterTransform = <ShapeHitbox>[];
   final SpatialGrid spatialGrid;
 
   @internal

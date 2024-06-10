@@ -235,11 +235,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     Cell cell, {
     required bool isPotentialActive,
   }) {
-    final itemsActiveByType = isPotentialActive
-        ? collisionsCache.activeCollisionsByCell[cell]
-        : collisionsCache.passiveCollisionsByCell[cell];
-    if (itemsActiveByType != null) {
-      for (final entry in itemsActiveByType.entries) {
+    late final Map? potentials;
+    late final Map? cache;
+    if (isPotentialActive) {
+      cache = collisionsCache.activeByCellUnmodifiable[cell];
+      potentials = cache ?? collisionsCache.activeCollisionsByCell[cell];
+    } else {
+      cache = collisionsCache.passiveByCellUnmodifiable[cell];
+      potentials = cache ?? collisionsCache.passiveCollisionsByCell[cell];
+    }
+    if (potentials != null) {
+      for (final entry in potentials.entries) {
         final type = entry.key;
         final canToCollide = comparator.globalTypeCheck(
           _activeItemRuntimeType,
@@ -247,12 +253,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
           potentialCanBeActive: isPotentialActive,
         );
         if (canToCollide) {
-          final unmodifiableList = collisionsCache.unmodifiableCacheStore(
-            cell,
-            type,
-            entry.value,
-            isActive: isPotentialActive,
-          );
+          late final List<ShapeHitbox> unmodifiableList;
+          if (cache == null) {
+            unmodifiableList = collisionsCache.unmodifiableCacheStore(
+              cell,
+              type,
+              entry.value,
+              isActive: isPotentialActive,
+            );
+          } else {
+            unmodifiableList = entry.value;
+          }
 
           _compareItemWithPotentials(
             activeItem,
