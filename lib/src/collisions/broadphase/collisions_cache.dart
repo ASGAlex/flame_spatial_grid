@@ -16,20 +16,24 @@ class CollisionsCache {
   final _passiveByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
   final _activeByCellUnmodifiable = <Cell, Map<Type, List<ShapeHitbox>?>>{};
 
-  void activeUnmodifiableCacheClear() => _activeByCellUnmodifiable.clear();
+  void activeUnmodifiableCacheClear() {
+    _activeCollisionsChanged.forEach(_activeByCellUnmodifiable.remove);
+  }
 
-  void passiveUnmodifiableCacheClear() => _passiveByCellUnmodifiable.clear();
+  void passiveUnmodifiableCacheClear() {
+    _passiveCollisionsChanged.forEach(_passiveByCellUnmodifiable.remove);
+  }
 
-  bool _activeCollisionsChanged = false;
-  bool _passiveCollisionsChanged = false;
+  final _activeCollisionsChanged = <Cell>{};
+  final _passiveCollisionsChanged = <Cell>{};
 
-  bool get activeCollisionsChanged => _activeCollisionsChanged;
+  bool get activeCollisionsChanged => _activeCollisionsChanged.isNotEmpty;
 
-  bool get passiveCollisionsChanged => _passiveCollisionsChanged;
+  bool get passiveCollisionsChanged => _passiveCollisionsChanged.isNotEmpty;
 
   void preUpdate() {
-    _activeCollisionsChanged = false;
-    _passiveCollisionsChanged = false;
+    _activeCollisionsChanged.clear();
+    _passiveCollisionsChanged.clear();
   }
 
   void processOperation(ScheduledHitboxOperation operation) {
@@ -43,10 +47,10 @@ class CollisionsCache {
         if (operation.active) {
           activeCollisions.add(operation.hitbox);
           _addOperation(operation, activeCollisionsByCell);
-          _activeCollisionsChanged = true;
+          _activeCollisionsChanged.add(cell);
         } else {
           _addOperation(operation, passiveCollisionsByCell);
-          _passiveCollisionsChanged = true;
+          _passiveCollisionsChanged.add(cell);
         }
       }
     } else {
@@ -64,10 +68,10 @@ class CollisionsCache {
           activeCollisions.remove(operation.hitbox);
           operation.hitbox.broadphaseActiveIndex = -1;
           _removeOperation(operation, activeCollisionsByCell);
-          _activeCollisionsChanged = true;
+          _activeCollisionsChanged.add(cell);
         } else {
           _removeOperation(operation, passiveCollisionsByCell);
-          _passiveCollisionsChanged = true;
+          _passiveCollisionsChanged.add(cell);
         }
       }
     }

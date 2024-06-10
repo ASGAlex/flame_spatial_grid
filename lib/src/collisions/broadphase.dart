@@ -171,8 +171,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       }
       queryRunning = true;
     }
-    final sw = Stopwatch();
-    sw.start();
+    // final sw = Stopwatch();
+    // sw.start();
     for (final activeItem in _activeCollisionsUnmodifiable) {
       if (lastActiveItem != null && activeItem != lastActiveItem) {
         continue;
@@ -219,12 +219,12 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         _compareCellItems(activeItem, currentCell, isPotentialActive: false);
         _compareCellItems(activeItem, currentCell, isPotentialActive: true);
       }
-      if (sw.elapsedMilliseconds >= 8) {
-        lastActiveItem = activeItem;
-        return _potentials.values;
-      }
+      // if (sw.elapsedMilliseconds >= 8) {
+      //   lastActiveItem = activeItem;
+      //   return _potentials.values;
+      // }
     }
-    sw.stop();
+    // sw.stop();
     lastActiveItem = null;
     queryRunning = false;
     return _potentials.values;
