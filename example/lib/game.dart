@@ -69,12 +69,14 @@ all collisions are disabled.
   @override
   Future<void> onLoad() async {
     pureTypeCheckWarmUpComponents = [
-      Player(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
-      Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
-      Npc(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
-      Brick(position: Vector2.zero(), sprite: null),
-      Water(position: Vector2.zero(), animation: null),
+      // Player(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
+      // Bullet(position: Vector2.zero(), displacement: Vector2.zero()),
+      // Npc(position: Vector2.zero(), size: Vector2.zero(), priority: 0),
+      // Brick(position: Vector2.zero(), sprite: null),
+      // Water(position: Vector2.zero(), animation: null),
+      BoundingBoxBullet(),
       BoundingBoxGridGame(),
+      BoundingBoxPlayer(),
     ];
     super.onLoad();
     player = world.player;
@@ -329,7 +331,7 @@ all collisions are disabled.
     Component rootComponent,
     Iterable<Rect> mapRects,
   ) async {
-    return;
+    // return;
 
     if (mapRects.isNotEmpty || nomapFinished) {
       return;
@@ -429,8 +431,9 @@ all collisions are disabled.
 
   @override
   bool pureTypeCheck(Type activeItemType, Type potentialItemType) {
-    if (activeItemType == Bullet) {
-      if (potentialItemType == Bullet || potentialItemType == Player) {
+    if (activeItemType == BoundingBoxBullet) {
+      if (potentialItemType == BoundingBoxBullet ||
+          potentialItemType == BoundingBoxPlayer) {
         return false;
       }
     }
@@ -460,7 +463,11 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
     spawnNpcTeam();
   }
 
-  void spawnNpcTeam([bool aiEnabled = false, Offset offset = Offset.zero]) {
+  void spawnNpcTeam([
+    bool aiEnabled = false,
+    Offset offset = Offset.zero,
+    bool recursion = true,
+  ]) {
     // return;
     for (var i = 1; i <= 80; i++) {
       final x = i <= 40 ? 10.0 * i : 10.0 * (i - 40);
@@ -477,6 +484,10 @@ class MyWorld extends World with HasGameRef<SpatialGridExample> {
       actors.add(npc);
       npcList.add(npc);
       npcCount++;
+    }
+
+    if (recursion) {
+      spawnNpcTeam(aiEnabled, offset.translate(0, 90), false);
     }
   }
 
@@ -622,7 +633,7 @@ class Player extends SpriteComponent
   }
 
   @override
-  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxPlayer.new;
 
   static const stepSize = 2.0;
   double stepDone = 0;
@@ -849,6 +860,9 @@ class Npc extends Player {
     boundingBox.parentSpeedGetter = () => _lastDtSpeed;
   }
 
+  @override
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+
   final speed = 20;
 
   double dtElapsed = 0;
@@ -967,7 +981,7 @@ class Bullet extends PositionComponent
   }
 
   @override
-  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxGridGame.new;
+  BoundingHitboxFactory get boundingHitboxFactory => BoundingBoxBullet.new;
 
   double lifetime = 20.0;
   final Vector2 displacement;
@@ -1131,6 +1145,10 @@ class SpatialGridDebugCameraWrapper extends SpatialGridCameraWrapper {
     } catch (e) {}
   }
 }
+
+class BoundingBoxBullet extends BoundingBoxGridGame {}
+
+class BoundingBoxPlayer extends BoundingBoxGridGame {}
 
 class BoundingBoxGridGame extends BoundingHitbox {
   @override

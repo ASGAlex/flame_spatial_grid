@@ -15,11 +15,13 @@ class SpatialGridCollisionDetection
     required ExternalBroadphaseCheck onComponentExtendedTypeCheck,
     required PureTypeCheck pureTypeCheck,
     required this.spatialGrid,
+    bool doComponentTypeCheck = false,
   }) : super(
           broadphase: SpatialGridBroadphase(
             spatialGrid: spatialGrid,
             extendedTypeCheck: onComponentExtendedTypeCheck,
             globalPureTypeCheck: pureTypeCheck,
+            doComponentTypeCheck: doComponentTypeCheck,
           ),
         );
 
@@ -149,7 +151,6 @@ class SpatialGridCollisionDetection
 
     final allPotentialsIterable = broadphase.query();
     if (broadphase.queryRunning) {
-      print('running!');
       return;
     }
     final allPotentials = allPotentialsIterable.toList();

@@ -25,17 +25,6 @@ class Comparator {
     return false;
   }
 
-  /// Returns if two components can to collide via
-  /// class member check function.
-  bool componentInternalTypeCheck(
-    Type activeType,
-    PureTypeCheckInterface active,
-    PureTypeCheckInterface potential,
-  ) {
-    return active.pureTypeCheck(potential.runtimeType) &&
-        potential.pureTypeCheck(activeType);
-  }
-
   bool globalTypeCheck(
     Type active,
     Type potential, {

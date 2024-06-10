@@ -153,6 +153,7 @@ class LayersManager {
         }
         break;
     }
+    layer.spatialGrid = game.spatialGrid;
 
     if (absolutePosition) {
       component.position

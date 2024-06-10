@@ -197,6 +197,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
     List<TiledMapLoader>? maps,
     WorldLoader? worldLoader,
     bool lazyLoad = true,
+    bool doComponentTypeCheck = false,
     int collisionOptimizerDefaultGroupLimit = 25,
   }) async {
     showLoadingComponent();
@@ -272,6 +273,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
       spatialGrid: spatialGrid,
       onComponentExtendedTypeCheck: onComponentTypeCheck,
       pureTypeCheck: pureTypeCheck,
+      doComponentTypeCheck: doComponentTypeCheck,
     );
 
     if (trackedComponent is SpatialGridCameraWrapper) {

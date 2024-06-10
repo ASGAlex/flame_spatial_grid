@@ -29,6 +29,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     required this.spatialGrid,
     required this.extendedTypeCheck,
     required PureTypeCheck globalPureTypeCheck,
+    this.doComponentTypeCheck = false,
   }) {
     comparator._globalPureTypeCheck = globalPureTypeCheck;
     comparator._bloomFilter = _bloomFilterProvider;
@@ -57,6 +58,8 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   @internal
   final comparator = Comparator();
+
+  bool doComponentTypeCheck;
 
   final _bloomFilterProvider = BloomFilterProvider();
 
@@ -350,44 +353,33 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     bool potentialCanBeActive,
   ) {
     var canToCollide = true;
-
-    if (potentialItem is BoundingHitbox) {
-      canToCollide = comparator.componentInternalTypeCheck(
-        _activeItemRuntimeType,
-        activeItem,
-        potentialItem,
-      );
-
-      if (canToCollide &&
-          activeParent is PureTypeCheckInterface &&
-          potentialParent is PureTypeCheckInterface) {
-        if (potentialParent is CellLayer) {
-          if (potentialParent.primaryComponentType == null) {
-            if (kDebugMode) {
-              print('Possible collision with CellLayer with no components');
-            }
-            canToCollide = false;
-          } else {
-            canToCollide = comparator.globalTypeCheck(
-              activeParent.runtimeType,
-              potentialParent.primaryComponentType!,
-            );
+    if (potentialItem is BoundingHitbox &&
+        activeParent is PureTypeCheckInterface &&
+        potentialParent is PureTypeCheckInterface) {
+      if (potentialParent is CellLayer) {
+        if (potentialParent.primaryComponentType == null) {
+          if (kDebugMode) {
+            print('Possible collision with CellLayer with no components');
           }
+          canToCollide = false;
         } else {
-          canToCollide = comparator.componentFullTypeCheck(
-            activeParent as PureTypeCheckInterface,
-            potentialParent as PureTypeCheckInterface,
-            potentialCanBeActive: potentialCanBeActive,
+          canToCollide = comparator.globalTypeCheck(
+            doComponentTypeCheck
+                ? activeParent.runtimeType
+                : activeItem.runtimeType,
+            potentialParent.primaryComponentType!,
           );
         }
+      } else if (doComponentTypeCheck) {
+        canToCollide = comparator.componentFullTypeCheck(
+          activeParent as PureTypeCheckInterface,
+          potentialParent as PureTypeCheckInterface,
+          potentialCanBeActive: potentialCanBeActive,
+        );
       }
+    }
 
-      /// 3. Run extended type check for components - as for ordinary hitbox
-      if (canToCollide && activeItem.doExtendedTypeCheck) {
-        canToCollide = activeItem.getBroadphaseCheckCache(potentialItem) ??
-            _runExternalBroadphaseCheck(activeItem, potentialItem);
-      }
-    } else if (activeItem.doExtendedTypeCheck) {
+    if (activeItem.doExtendedTypeCheck) {
       /// This is default extended type check for hitbox. It invokes into
       /// hitbox, then propagating to hitboxParent, then propagating to
       /// parents recursively until end of components tree. This cycle stops

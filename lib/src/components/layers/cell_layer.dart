@@ -203,7 +203,12 @@ abstract class CellLayer extends PositionComponent
         primaryHitboxCollisionType = component.runtimeType;
       }
     }
-    primaryComponentType ??= component.runtimeType;
+
+    final doComponentTypeCheck =
+        sgGame.collisionDetection.broadphase.doComponentTypeCheck;
+    primaryComponentType ??= (doComponentTypeCheck
+        ? component.runtimeType
+        : primaryHitboxCollisionType);
     if (componentsStorageMode ==
         LayerComponentsStorageMode.defaultComponentTree) {
       super.add(component);
