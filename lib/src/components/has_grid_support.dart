@@ -466,8 +466,7 @@ mixin HasGridSupport on PositionComponent
     if (spatialGrid == null) {
       return;
     }
-    final componentCenter = boundingBox.aabbCenter =
-        cachedCenters[boundingBox] = boundingBox.aabb.center;
+    final componentCenter = boundingBox.aabbCenter = boundingBox.aabb.center;
     var current = currentCell;
     if (kDebugMode && current == null) {
       if (kDebugMode) {
