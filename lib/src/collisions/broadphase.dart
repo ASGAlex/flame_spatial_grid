@@ -15,9 +15,13 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 part 'broadphase/bloom_filter_provider.dart';
+
 part 'broadphase/collisions_cache.dart';
+
 part 'broadphase/comparator.dart';
+
 part 'broadphase/schedule_hitbox_operation.dart';
+
 part 'broadphase/typedef.dart';
 
 /// Performs Quad Tree broadphase check.
@@ -245,24 +249,26 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
       potentials = cache ?? collisionsCache.passiveCollisionsByCell[cell];
     }
     if (potentials != null) {
-      for (final entry in potentials.entries) {
-        final type = entry.key;
+      final keys = potentials.keys;
+      for (final type in keys) {
         final canToCollide = comparator.globalTypeCheck(
           _activeItemRuntimeType,
           type,
           potentialCanBeActive: isPotentialActive,
         );
+
         if (canToCollide) {
+          final hitboxes = potentials[type];
           late final List<ShapeHitbox> unmodifiableList;
           if (cache == null) {
             unmodifiableList = collisionsCache.unmodifiableCacheStore(
               cell,
               type,
-              entry.value,
+              hitboxes,
               isActive: isPotentialActive,
             );
           } else {
-            unmodifiableList = entry.value;
+            unmodifiableList = hitboxes;
           }
 
           _compareItemWithPotentials(
@@ -537,7 +543,9 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
   }
 
   bool _runExternalBroadphaseCheck(
-      BoundingHitbox active, ShapeHitbox potential) {
+    BoundingHitbox active,
+    ShapeHitbox potential,
+  ) {
     if (active is GroupHitbox || potential is GroupHitbox) {
       return true;
     }
