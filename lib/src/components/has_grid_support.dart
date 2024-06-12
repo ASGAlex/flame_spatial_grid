@@ -11,6 +11,8 @@ import 'package:flame/geometry.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/macro_object.dart';
 import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
+import 'package:flame_spatial_grid/src/components/utility/scheduler/action_provider.dart';
+import 'package:flame_spatial_grid/src/components/utility/scheduler/scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -50,11 +52,7 @@ import 'package:meta/meta.dart';
 /// component, keep in mind that [boundingBox] will contain it too!
 ///
 mixin HasGridSupport on PositionComponent
-    implements
-        MacroObjectInterface,
-        ScheduleAfterUpdateMixin,
-        ScheduleBeforeUpdateMixin,
-        PureTypeCheckInterface {
+    implements MacroObjectInterface, PureTypeCheckInterface {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
@@ -69,6 +67,8 @@ mixin HasGridSupport on PositionComponent
 
   static final componentsWithLogic = <HasGridSupport>[];
   static bool componentsWithLogicChanged = true;
+
+  late final ScheduledActionProvider scheduledActionProvider;
 
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
@@ -297,7 +297,10 @@ mixin HasGridSupport on PositionComponent
       componentsWithLogic.add(this);
       componentsWithLogicChanged = true;
     }
-
+    scheduledActionProvider = ScheduledActionProvider(
+      scheduler: sgGame.scheduler,
+      actionFunction: onScheduledAction,
+    );
     super.onMount();
   }
 
@@ -365,11 +368,7 @@ mixin HasGridSupport on PositionComponent
   @override
   @mustCallSuper
   void onRemove() {
-    if (_permanent) {
-      scheduleAfterListPermanent.remove(this);
-      _actionScheduled = false;
-    }
-
+    scheduledActionProvider.onDisposeActionProvider();
     if (_isOutOfCellBounds && _previousOutOfBoundsCell != null) {
       _decreaseOutOfBoundsCounter(_previousOutOfBoundsCell!);
       _previousOutOfBoundsCell = null;
@@ -687,76 +686,11 @@ mixin HasGridSupport on PositionComponent
     return results;
   }
 
-  @override
-  List<ScheduleAfterUpdateMixin> get scheduleAfterList =>
-      sgGame.scheduledAfterLogic;
-
-  @override
-  List<ScheduleAfterUpdateMixin> get scheduleAfterListPermanent =>
-      sgGame.scheduledAfterLogicPermanent;
-
-  @override
-  List<ScheduleBeforeUpdateMixin> get scheduleBeforeList =>
-      sgGame.scheduledBeforeLogic;
-
-  @override
-  List<ScheduleBeforeUpdateMixin> get scheduleBeforeListPermanent =>
-      sgGame.scheduledBeforeLogicPermanent;
-
-  bool _actionScheduled = false;
-  bool _permanent = false;
-
-  @override
-  void scheduleAfterLogicAction({bool permanent = false}) {
-    if (!_actionScheduled) {
-      if (permanent) {
-        _permanent = true;
-        scheduleAfterListPermanent.add(this);
-      } else {
-        try {
-          scheduleAfterList.add(this);
-          _actionScheduled = true;
-        } catch (_) {}
-      }
-    }
-  }
-
-  @override
-  void scheduleBeforeLogicAction({bool permanent = false}) {
-    if (!_actionScheduled) {
-      if (permanent) {
-        _permanent = true;
-        scheduleBeforeListPermanent.add(this);
-      } else {
-        try {
-          scheduleBeforeList.add(this);
-          _actionScheduled = true;
-        } catch (_) {}
-      }
-    }
-  }
-
-  @override
-  void runAfterLogicAction(double dt) {
-    if (!_permanent) {
-      _actionScheduled = false;
-    }
-    onAfterLogic(dt);
-  }
-
-  @override
-  void onAfterLogic(double dt) {}
-
-  @override
-  void runBeforeLogicAction(double dt) {
-    if (!_permanent) {
-      _actionScheduled = false;
-    }
-    onBeforeLogic(dt);
-  }
-
-  @override
-  void onBeforeLogic(double dt) {}
+  void onScheduledAction(
+    double dt,
+    ScheduledActionType type,
+    bool permanent,
+  ) {}
 }
 
 extension PositionComponentWithGridSupport on PositionComponent {

@@ -5,6 +5,7 @@ import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/layers/scheduled_layer_operation.dart';
+import 'package:flame_spatial_grid/src/components/utility/scheduler/scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -44,14 +45,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   late final TileBuilderContextProvider<HasSpatialGridFramework, dynamic>
       tileBuilderContextProvider;
 
-  @internal
-  late final scheduledAfterLogic = <ScheduleAfterUpdateMixin>[];
-  @internal
-  late final scheduledAfterLogicPermanent = <ScheduleAfterUpdateMixin>[];
-  @internal
-  late final scheduledBeforeLogic = <ScheduleBeforeUpdateMixin>[];
-  @internal
-  late final scheduledBeforeLogicPermanent = <ScheduleBeforeUpdateMixin>[];
+  final scheduler = ActionScheduler();
 
   /// Enables or disables automatic [spatialGrid.activeRadius] control according
   /// to viewport size and zoom level.
@@ -708,7 +702,10 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
         tickersManager.update(dt);
 
+        scheduler.runActions(dt, ScheduledActionType.beforeUpdate);
         super.update(dt);
+        scheduler.runActions(dt, ScheduledActionType.afterUpdate);
+
         if (_logicUpdateDt >= logicUpdateInterval) {
           if (HasGridSupport.componentsWithLogicChanged) {
             HasGridSupport.componentsWithLogic.sort(
@@ -740,38 +737,11 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
   }
 
   void logic(double dt) {
-    onBeforeLogicTick(dt);
+    scheduler.runActions(dt, ScheduledActionType.beforeLogic);
     for (final component in HasGridSupport.componentsWithLogic) {
       component.logic(dt);
     }
-    onAfterLogicTick(dt);
-  }
-
-  @mustCallSuper
-  void onAfterLogicTick(double dt) {
-    if (scheduledAfterLogic.isNotEmpty) {
-      for (final component in scheduledAfterLogic) {
-        component.runAfterLogicAction(dt);
-      }
-      scheduledAfterLogic.clear();
-    }
-
-    for (final component in scheduledAfterLogicPermanent) {
-      component.runAfterLogicAction(dt);
-    }
-  }
-
-  void onBeforeLogicTick(double dt) {
-    if (scheduledBeforeLogic.isNotEmpty) {
-      for (final component in scheduledBeforeLogic) {
-        component.runBeforeLogicAction(dt);
-      }
-      scheduledBeforeLogic.clear();
-    }
-
-    for (final component in scheduledBeforeLogicPermanent) {
-      component.runBeforeLogicAction(dt);
-    }
+    scheduler.runActions(dt, ScheduledActionType.afterLogic);
   }
 
   final _dtList = List<double>.filled(10, -1);
