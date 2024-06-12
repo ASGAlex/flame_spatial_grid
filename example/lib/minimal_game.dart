@@ -8,7 +8,7 @@ import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flutter/material.dart' hide Image, Draggable;
 
-class MinimalGame extends FlameGame with HasSpatialGridFramework {
+class MinimalGame extends FlameGameEx with HasSpatialGridFramework {
   MinimalGame();
 
   @override

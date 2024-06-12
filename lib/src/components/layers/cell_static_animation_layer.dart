@@ -140,6 +140,7 @@ class CellStaticAnimationLayer extends CellLayer {
   }
 
   static void clearCache() => _compiledLayersCache.clear();
+
 }
 
 extension _VariableStepTimes on SpriteAnimation {

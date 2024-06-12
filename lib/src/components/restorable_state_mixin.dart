@@ -29,7 +29,7 @@ mixin RestorableStateMixin<T> on HasGridSupport {
         contextProvider: cell.spatialGrid.game!.tileBuilderContextProvider,
         layerInfo: LayerInfo('game', 0),
       );
-      sgGame.tileBuilderContextProvider.addContext(context!);
+      game.tileBuilderContextProvider.addContext(context!);
     }
   }
 

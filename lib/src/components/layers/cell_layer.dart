@@ -73,8 +73,7 @@ abstract class CellLayer extends PositionComponent
     with
         HasGridSupport,
         UpdateOnDemand,
-        HasPaint,
-        HasGameReference<HasSpatialGridFramework> {
+        HasPaint {
   CellLayer(
     Cell cell, {
     this.name = '',
@@ -140,7 +139,7 @@ abstract class CellLayer extends PositionComponent
 
   @override
   bool pureTypeCheck(Type other) {
-    final comparator = sgGame.collisionDetection.broadphase.comparator;
+    final comparator = game.collisionDetection.broadphase.comparator;
     if (primaryComponentType != null) {
       return comparator.globalTypeCheck(primaryComponentType!, other);
     } else if (kDebugMode) {
@@ -205,7 +204,7 @@ abstract class CellLayer extends PositionComponent
     }
 
     final doComponentTypeCheck =
-        sgGame.collisionDetection.broadphase.doComponentTypeCheck;
+        game.collisionDetection.broadphase.doComponentTypeCheck;
     primaryComponentType ??= (doComponentTypeCheck
         ? component.runtimeType
         : primaryHitboxCollisionType);

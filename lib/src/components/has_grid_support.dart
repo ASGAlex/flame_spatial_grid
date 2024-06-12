@@ -51,8 +51,12 @@ import 'package:meta/meta.dart';
 /// all component's child components. So if you have an hitbox outside from
 /// component, keep in mind that [boundingBox] will contain it too!
 ///
-mixin HasGridSupport on PositionComponent
-    implements MacroObjectInterface, PureTypeCheckInterface {
+mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
+    implements
+        MacroObjectInterface,
+        PureTypeCheckInterface,
+        HasGameReference,
+        WithActionProviderMixin {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
 
@@ -68,7 +72,30 @@ mixin HasGridSupport on PositionComponent
   static final componentsWithLogic = <HasGridSupport>[];
   static bool componentsWithLogicChanged = true;
 
+  @override
   late final ScheduledActionProvider scheduledActionProvider;
+
+  G? _game;
+
+  @override
+  G get game => _game ??= _findGameAndCheck();
+
+  @override
+  set game(FlameGame? value) => _game = value as G?;
+
+  @override
+  G? findGame() => _game ?? super.findGame() as G?;
+
+  G _findGameAndCheck() {
+    final game = findGame();
+    assert(
+    game != null,
+    'Could not find Game instance: the component is detached from the '
+        'component tree',
+    );
+    return game!;
+  }
+
 
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
@@ -192,20 +219,6 @@ mixin HasGridSupport on PositionComponent
 
   SpatialGrid? spatialGrid;
 
-  HasSpatialGridFramework get sgGame {
-    Game? game = spatialGrid?.game;
-    if (game == null) {
-      game = findGame();
-      if (game is HasSpatialGridFramework) {
-        spatialGrid = game.spatialGrid;
-      } else {
-        throw 'Spatial grid did not initialized correctly';
-      }
-      game = spatialGrid?.game;
-    }
-    return game! as HasSpatialGridFramework;
-  }
-
   /// If this component is that component which all spatial grid system keeps
   /// in center of grid?
   bool get isTracked => this == spatialGrid?.trackedComponent;
@@ -259,6 +272,8 @@ mixin HasGridSupport on PositionComponent
       update(0);
     } on UnimplementedError catch (_) {
       noUpdate = true;
+    } catch(error) {
+      //suppress errors
     }
 
     noLogic = false;
@@ -266,6 +281,8 @@ mixin HasGridSupport on PositionComponent
       logic(0);
     } on UnimplementedError catch (_) {
       noLogic = true;
+    } catch(error) {
+      //suppress errors
     }
 
     return result;
@@ -298,7 +315,7 @@ mixin HasGridSupport on PositionComponent
       componentsWithLogicChanged = true;
     }
     scheduledActionProvider = ScheduledActionProvider(
-      scheduler: sgGame.scheduler,
+      scheduler: game.scheduler,
       actionFunction: onScheduledAction,
     );
     super.onMount();
@@ -330,7 +347,7 @@ mixin HasGridSupport on PositionComponent
 
   @override
   void onGameResize(Vector2 size) {
-    if (sgGame.doOnGameResizeForAllComponents || needResize) {
+    if (game.doOnGameResizeForAllComponents || needResize) {
       super.onGameResize(size);
       needResize = false;
     }
@@ -569,7 +586,7 @@ mixin HasGridSupport on PositionComponent
   }) {
     final allHitboxes = ignoreHitboxes ?? <ShapeHitbox>[];
     children.query<BoundingHitbox>().forEach(allHitboxes.add);
-    return sgGame.collisionDetection.raycast(
+    return game.collisionDetection.raycast(
       ray,
       maxDistance: maxDistance,
       ignoreHitboxes: allHitboxes,
@@ -686,6 +703,7 @@ mixin HasGridSupport on PositionComponent
     return results;
   }
 
+  @override
   void onScheduledAction(
     double dt,
     ScheduledActionType type,

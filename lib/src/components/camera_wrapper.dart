@@ -17,7 +17,7 @@ import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 /// camera API. Old camera does not supported, you need to control everything
 /// manually in cause you use old API.
 class SpatialGridCameraWrapper extends PositionComponent
-    with HasGridSupport, HasGameReference<HasSpatialGridFramework> {
+    with HasGridSupport {
   SpatialGridCameraWrapper(this.cameraComponent) {
     // ignore: invalid_use_of_internal_member
     cameraComponent.viewfinder.transform.offset.addListener(onPositionChange);

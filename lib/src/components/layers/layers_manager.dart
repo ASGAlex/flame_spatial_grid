@@ -37,6 +37,7 @@ class LayersManager {
     if (cell == null) {
       throw 'layer must have a cell';
     }
+    layer.game = game;
     if (layers[cell] == null) {
       layers[cell] = HashMap<String, CellLayer>();
     }
@@ -154,6 +155,8 @@ class LayersManager {
         break;
     }
     layer.spatialGrid = game.spatialGrid;
+    layer.game = game;
+
 
     if (absolutePosition) {
       component.position

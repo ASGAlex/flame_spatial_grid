@@ -1,3 +1,7 @@
+# API DOCS ARE OUTDATED
+
+Hope I'll have a week of free time (or even two) to make them actual...
+
 # Overview
 
 This library is a framework and set of tools for working with infinite game fields, loading
