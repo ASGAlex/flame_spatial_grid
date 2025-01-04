@@ -181,7 +181,7 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   }
 
   void _updateHitboxesRecursive(
-    List<ShapeHitbox> children,
+    Iterable<ShapeHitbox> children,
     SpatialGridBroadphase broadphase, [
     Cell? previousCell,
     CellState? newCellState,

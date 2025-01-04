@@ -53,7 +53,7 @@ class CollisionOptimizer {
     final collisionsListByGroup = optimizedCollisionsByGroupBox[cell]!;
 
     final componentsForOptimization =
-        parentLayer.children.query<HasGridSupport>();
+        parentLayer.children.query<HasGridSupport>().toList();
     final toCheck = List<fb.BoundingHitboxObjectBuilder>.filled(
       componentsForOptimization.length,
       defaultBoundingHitboxObjectBuilder,

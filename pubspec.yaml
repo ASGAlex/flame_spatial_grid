@@ -7,14 +7,14 @@ environment:
   sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  flame: ^1.16.0
-  flame_tiled: ^1.20.0
+  flame: ^1.23.0
+  flame_tiled: ^1.21.2
   meta: ^1.11.0
-  isolate_manager: ^5.0.3
+  isolate_manager: ^5.7.1
   dart_bloom_filter: ^1.0.0
   flat_buffers: ^23.5.26
   vector_math: ^2.1.4
-  collection: ^1.18.0
+  collection: ^1.19.0
   tiled: ^0.10.2
   xml: ^6.5.0
   js: ^0.7.1

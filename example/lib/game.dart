@@ -411,6 +411,10 @@ class SpatialGridExample extends SpatialGridBaseGame<MyWorld>
         return false;
       }
     }
+    if(activeItemType == BoundingBoxPlayer &&
+        potentialItemType == BoundingBoxBullet) {
+      return false;
+    }
     return true;
   }
 }
@@ -726,8 +730,8 @@ class PlayerRaycast extends Component
   Paint rayPaint = Paint();
 
   final _colorTween = ColorTween(
-    begin: Colors.blue.withOpacity(0.8),
-    end: Colors.red.withOpacity(0.8),
+    begin: Colors.blue.withValues(alpha: 0.8),
+    end: Colors.red.withValues(alpha: 0.8),
   );
 
   var _timePassed = 0.0;
