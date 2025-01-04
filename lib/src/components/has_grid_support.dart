@@ -11,8 +11,6 @@ import 'package:flame/geometry.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/macro_object.dart';
 import 'package:flame_spatial_grid/src/components/utility/pure_type_check_interface.dart';
-import 'package:flame_spatial_grid/src/components/utility/scheduler/action_provider.dart';
-import 'package:flame_spatial_grid/src/components/utility/scheduler/scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -73,7 +71,10 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   static bool componentsWithLogicChanged = true;
 
   @override
-  late final ScheduledActionProvider scheduledActionProvider;
+  ScheduledActionProvider? _scheduledActionProvider;
+
+  ScheduledActionProvider get scheduledActionProvider =>
+      _scheduledActionProvider!;
 
   G? _game;
 
@@ -314,11 +315,19 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
       componentsWithLogic.add(this);
       componentsWithLogicChanged = true;
     }
-    scheduledActionProvider = ScheduledActionProvider(
+    initActionProvider(ScheduledActionProvider(
       scheduler: game.scheduler,
       actionFunction: onScheduledAction,
-    );
+    ));
     super.onMount();
+  }
+
+  @override
+  void initActionProvider(ScheduledActionProvider provider) {
+    if (_scheduledActionProvider != null) {
+      _scheduledActionProvider!.onDisposeActionProvider();
+    }
+    _scheduledActionProvider = provider;
   }
 
   void _onPositionChanged() {

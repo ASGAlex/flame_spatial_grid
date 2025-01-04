@@ -2,7 +2,17 @@ import 'package:flame_spatial_grid/src/components/utility/scheduler/action_provi
 import 'package:flame_spatial_grid/src/components/utility/scheduler/scheduler.dart';
 
 mixin WithActionProviderMixin {
-  late final ScheduledActionProvider scheduledActionProvider;
+  ScheduledActionProvider? _scheduledActionProvider;
+
+  ScheduledActionProvider get scheduledActionProvider =>
+      _scheduledActionProvider!;
+
+  void initActionProvider(ScheduledActionProvider provider) {
+    if (_scheduledActionProvider != null) {
+      _scheduledActionProvider!.onDisposeActionProvider();
+    }
+    _scheduledActionProvider = provider;
+  }
 
   void onScheduledAction(
     double dt,
