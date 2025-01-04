@@ -55,7 +55,7 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
     implements
         MacroObjectInterface,
         PureTypeCheckInterface,
-        HasGameReference,
+        HasGameReference<G>,
         WithActionProviderMixin {
   @internal
   static final componentHitboxes = HashMap<ShapeHitbox, HasGridSupport>();
@@ -89,13 +89,12 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   G _findGameAndCheck() {
     final game = findGame();
     assert(
-    game != null,
-    'Could not find Game instance: the component is detached from the '
-        'component tree',
+      game != null,
+      'Could not find Game instance: the component is detached from the '
+      'component tree',
     );
     return game!;
   }
-
 
   /// If component's cell state become [CellState.inactive], the component
   /// become inactive too. It also become disabled in collision detection
@@ -110,6 +109,7 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
 
   bool noVisibleChildren = false;
   bool noChildrenToUpdate = true;
+  bool noUpdateAutoCheck = true;
   bool noUpdate = false;
   bool noLogic = false;
   bool checkOutOfCellBounds = true;
@@ -272,7 +272,7 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
       update(0);
     } on UnimplementedError catch (_) {
       noUpdate = true;
-    } catch(error) {
+    } catch (error) {
       //suppress errors
     }
 
@@ -281,7 +281,7 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
       logic(0);
     } on UnimplementedError catch (_) {
       noLogic = true;
-    } catch(error) {
+    } catch (error) {
       //suppress errors
     }
 
@@ -405,7 +405,8 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   }
 
   @override
-  void update(double dt) => throw UnimplementedError();
+  void update(double dt) =>
+      noUpdateAutoCheck ? super.update(dt) : throw UnimplementedError();
 
   void logic(double dt) => throw UnimplementedError();
 

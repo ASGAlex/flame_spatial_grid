@@ -411,7 +411,7 @@ class SpatialGridExample extends SpatialGridBaseGame<MyWorld>
         return false;
       }
     }
-    if(activeItemType == BoundingBoxPlayer &&
+    if (activeItemType == BoundingBoxPlayer &&
         potentialItemType == BoundingBoxBullet) {
       return false;
     }
