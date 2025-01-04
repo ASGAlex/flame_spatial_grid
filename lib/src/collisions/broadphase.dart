@@ -15,13 +15,9 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 part 'broadphase/bloom_filter_provider.dart';
-
 part 'broadphase/collisions_cache.dart';
-
 part 'broadphase/comparator.dart';
-
 part 'broadphase/schedule_hitbox_operation.dart';
-
 part 'broadphase/typedef.dart';
 
 /// Performs Quad Tree broadphase check.
@@ -240,13 +236,10 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
     required bool isPotentialActive,
   }) {
     late final Map? potentials;
-    late final Map? cache;
     if (isPotentialActive) {
-      cache = collisionsCache.activeByCellUnmodifiable[cell];
-      potentials = cache ?? collisionsCache.activeCollisionsByCell[cell];
+      potentials = collisionsCache.activeCollisionsByCell[cell];
     } else {
-      cache = collisionsCache.passiveByCellUnmodifiable[cell];
-      potentials = cache ?? collisionsCache.passiveCollisionsByCell[cell];
+      potentials = collisionsCache.passiveCollisionsByCell[cell];
     }
     if (potentials != null) {
       final keys = potentials.keys;
@@ -258,9 +251,17 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
         );
 
         if (canToCollide) {
-          final hitboxes = potentials[type];
           late final List<ShapeHitbox> unmodifiableList;
+          late final List<ShapeHitbox>? cache;
+
+          if (isPotentialActive) {
+            cache = collisionsCache.activeByCellUnmodifiable[cell]?[type];
+          } else {
+            cache = collisionsCache.passiveByCellUnmodifiable[cell]?[type];
+          }
+
           if (cache == null) {
+            final hitboxes = potentials[type];
             unmodifiableList = collisionsCache.unmodifiableCacheStore(
               cell,
               type,
@@ -268,7 +269,7 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
               isActive: isPotentialActive,
             );
           } else {
-            unmodifiableList = hitboxes;
+            unmodifiableList = cache;
           }
 
           _compareItemWithPotentials(
