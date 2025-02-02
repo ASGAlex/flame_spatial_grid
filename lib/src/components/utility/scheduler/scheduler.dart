@@ -69,13 +69,17 @@ class ActionScheduler {
   void runActions(double dt, ScheduledActionType type) {
     final list = _getStorageByType(type, false);
     for (final item in list) {
+      item.runningAction = true;
       item.onScheduledAction(dt, type, false);
+      item.runningAction = false;
     }
     list.clear();
 
     final listPermanent = _getStorageByType(type, true);
     for (final item in listPermanent) {
+      item.runningAction = true;
       item.onScheduledAction(dt, type, true);
+      item.runningAction = false;
     }
   }
 

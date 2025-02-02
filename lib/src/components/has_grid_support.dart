@@ -239,9 +239,24 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
 
   /// This is the way to reset [onComponentTypeCheck] cache
   BoundingHitbox recreateBoundingHitbox(BoundingHitboxFactory? hitboxFactory) {
-    boundingBox.removeFromParent();
-    _boundingHitbox = hitboxFactory?.call() ?? boundingHitboxFactory.call();
-    add(_boundingHitbox!);
+    final oldHitbox = boundingBox;
+    final newHitbox = hitboxFactory?.call() ?? boundingHitboxFactory.call();
+
+    scheduledActionProvider.scheduleFunction(
+      ScheduledActionType.beforeUpdate,
+      (dt, type, permanent) {
+        add(newHitbox);
+        _boundingHitbox = newHitbox;
+        newHitbox.mounted.then((_) {
+          scheduledActionProvider.scheduleFunction(
+            ScheduledActionType.beforeUpdate,
+            (dt, type, permanent) {
+              oldHitbox.removeFromParent();
+            },
+          );
+        });
+      },
+    );
     return _boundingHitbox!;
   }
 

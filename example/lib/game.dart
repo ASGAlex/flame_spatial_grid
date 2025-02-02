@@ -174,16 +174,16 @@ class SpatialGridExample extends SpatialGridBaseGame<MyWorld>
     final playerDisplacement = Vector2.zero();
     for (final key in keysPressed) {
       if (key == LogicalKeyboardKey.keyW) {
-        playerDisplacement.setValues(0, -Player.stepSize);
+        playerDisplacement.add(Vector2(0, -Player.stepSize));
       }
       if (key == LogicalKeyboardKey.keyA) {
-        playerDisplacement.setValues(-Player.stepSize, 0);
+        playerDisplacement.add(Vector2(-Player.stepSize, 0));
       }
       if (key == LogicalKeyboardKey.keyS) {
-        playerDisplacement.setValues(0, Player.stepSize);
+        playerDisplacement.add(Vector2(0, Player.stepSize));
       }
       if (key == LogicalKeyboardKey.keyD) {
-        playerDisplacement.setValues(Player.stepSize, 0);
+        playerDisplacement.add(Vector2(Player.stepSize, 0));
       }
       if (key == LogicalKeyboardKey.shiftLeft) {
         _killWater = !_killWater;
@@ -693,6 +693,7 @@ class Player extends SpriteComponent
         }
         final newPos = Vector2(position.x + diffX / 3, position.y + diffY / 3);
         position.setFrom(newPos);
+        targetPosition.sub(Vector2(diffX, diffY));
       } else {
         final vector = positionNoCollision - position;
         position.setFrom(positionNoCollision);

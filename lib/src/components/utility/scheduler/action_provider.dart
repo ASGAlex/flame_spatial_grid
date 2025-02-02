@@ -17,6 +17,19 @@ class ScheduledActionProvider {
 
   final _scheduled = <ScheduledActionType, bool>{};
 
+  bool runningAction = false;
+
+  void scheduleFunction(
+    ScheduledActionType type,
+    ScheduledActionFunction actionFunctionCallback,
+  ) {
+    final actionProvider = ScheduledActionProvider(
+      scheduler: scheduler,
+      actionFunction: actionFunctionCallback,
+    );
+    actionProvider.scheduleAction(type, false);
+  }
+
   void scheduleAction(ScheduledActionType type, bool permanent) {
     if (!isScheduled(type, permanent)) {
       scheduler.add(this, type, permanent);
@@ -32,11 +45,7 @@ class ScheduledActionProvider {
   }
 
   bool isScheduled(ScheduledActionType type, bool permanent) {
-    final isPermanentSchedule = _scheduled[type];
-    if (isPermanentSchedule == null) {
-      return false;
-    }
-    return permanent ? isPermanentSchedule : !isPermanentSchedule;
+    return _scheduled.containsKey(type);
   }
 
   void onScheduledAction(
