@@ -382,9 +382,26 @@ class Cell {
     _cachedRects.clear();
   }
 
-  Cell _createCell(Direction direction) =>
-      _checkCell(direction) ??
-      Cell(spatialGrid: spatialGrid, rect: _createRectForDirection(direction));
+  Cell _createCell(Direction direction) {
+    final newCell = _checkCell(direction) ??
+        Cell(
+          spatialGrid: spatialGrid,
+          rect: _createRectForDirection(direction),
+        );
+    if (newCell.rawTop != null && newCell.rawTop!.rawBottom == null) {
+      newCell.rawTop!.rawBottom = newCell;
+    }
+    if (newCell.rawBottom != null && newCell.rawBottom!.rawTop == null) {
+      newCell.rawBottom!.rawTop = newCell;
+    }
+    if (newCell.rawLeft != null && newCell.rawLeft!.rawRight == null) {
+      newCell.rawLeft!.rawRight = newCell;
+    }
+    if (newCell.rawRight != null && newCell.rawRight!.rawLeft == null) {
+      newCell.rawRight!.rawLeft = newCell;
+    }
+    return newCell;
+  }
 
   Cell? _checkCell(Direction direction) {
     final cell = spatialGrid.cells[_createRectForDirection(direction)];
