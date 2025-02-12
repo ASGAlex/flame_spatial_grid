@@ -298,17 +298,22 @@ class SpatialGridCollisionDetection
     var finalResult = out?..reset();
     _updateRayAabb(ray, maxDistance);
     for (final item in items) {
+      var runtimeType = item.runtimeType;
+      if (runtimeType == GroupHitbox && item.parent != null) {
+        runtimeType = (item.parent! as CellLayer).primaryHitboxCollisionType ??
+            runtimeType;
+      }
       if (rayAsHitboxType != null) {
-        final canCollide = broadphase.comparator
-            .globalTypeCheck(rayAsHitboxType, item.runtimeType);
+        final canCollide =
+            broadphase.comparator.globalTypeCheck(rayAsHitboxType, runtimeType);
         if (!canCollide) {
           continue;
         }
       } else {
-        if (ignoreHitboxesTypes?.contains(item.runtimeType) ?? false) {
+        if (ignoreHitboxesTypes?.contains(runtimeType) ?? false) {
           continue;
         }
-        if (!(allowOnlyHitboxesTypes?.contains(item.runtimeType) ?? true)) {
+        if (!(allowOnlyHitboxesTypes?.contains(runtimeType) ?? true)) {
           continue;
         }
       }
