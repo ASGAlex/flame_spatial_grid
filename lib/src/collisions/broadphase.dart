@@ -656,19 +656,19 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
 
   bool get raytraceHitboxUpdated => _raytraceHitboxesUpdated;
   Rect? _activeCellRect;
-  final _raytraceHitboxes = <ShapeHitbox>{};
+  var _raytraceHitboxesList = <ShapeHitbox>[];
   RayTraceMode rayTraceMode = RayTraceMode.groupedHitboxes;
 
   @override
   List<ShapeHitbox> get items {
     final activeCell = spatialGrid.currentCell;
+    final raytraceHitboxes = <ShapeHitbox>[];
     if (activeCell == null) {
       return <ShapeHitbox>[];
     }
     if (_activeCellRect == activeCell.rect && _raytraceHitboxesUpdated) {
-      return _raytraceHitboxes.toList(growable: false);
+      return _raytraceHitboxesList;
     } else {
-      _raytraceHitboxes.clear();
       _activeCellRect = activeCell.rect;
       final cells = spatialGrid.activeRadiusCells;
       for (final cell in cells) {
@@ -689,17 +689,18 @@ class SpatialGridBroadphase extends Broadphase<ShapeHitbox> {
             if (hitbox is BoundingHitbox &&
                 hitbox.optimized &&
                 hitbox.group != null) {
-              _raytraceHitboxes.add(hitbox.group!);
+              raytraceHitboxes.add(hitbox.group!);
               continue;
             }
           }
-          _raytraceHitboxes.add(hitbox);
+          raytraceHitboxes.add(hitbox);
         }
       }
       _raytraceHitboxesUpdated = true;
+      _raytraceHitboxesList = raytraceHitboxes.toList(growable: false);
     }
 
-    return _raytraceHitboxes.toList(growable: false);
+    return _raytraceHitboxesList;
   }
 
   void dispose() {
