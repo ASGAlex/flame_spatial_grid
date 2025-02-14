@@ -5,7 +5,6 @@ import 'package:flame/extensions.dart';
 import 'package:flame/game.dart';
 import 'package:flame_spatial_grid/flame_spatial_grid.dart';
 import 'package:flame_spatial_grid/src/components/layers/scheduled_layer_operation.dart';
-import 'package:flame_spatial_grid/src/components/utility/scheduler/scheduler.dart';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
@@ -708,7 +707,9 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
         if (_logicUpdateDt >= logicUpdateInterval) {
           if (HasGridSupport.componentsWithLogicChanged) {
-            HasGridSupport.componentsWithLogic.sort(
+            HasGridSupport.componentsWithLogicList =
+                HasGridSupport.componentsWithLogic.toList(growable: false);
+            HasGridSupport.componentsWithLogicList.sort(
               (a, b) {
                 if (a.logicPriority == b.logicPriority) {
                   return 0;
@@ -738,7 +739,7 @@ mixin HasSpatialGridFramework<W extends World> on FlameGame<W>
 
   void logic(double dt) {
     scheduler.runActions(dt, ScheduledActionType.beforeLogic);
-    for (final component in HasGridSupport.componentsWithLogic) {
+    for (final component in HasGridSupport.componentsWithLogicList) {
       component.logic(dt);
     }
     scheduler.runActions(dt, ScheduledActionType.afterLogic);

@@ -67,7 +67,8 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   @internal
   static final shapeHitboxIndex = HashMap<ShapeHitbox, int>();
 
-  static final componentsWithLogic = <HasGridSupport>[];
+  static final componentsWithLogic = <HasGridSupport>{};
+  static List<HasGridSupport> componentsWithLogicList = [];
   static bool componentsWithLogicChanged = true;
 
   @override
@@ -111,8 +112,21 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   bool noVisibleChildren = false;
   bool noChildrenToUpdate = true;
   bool noUpdateAutoCheck = true;
-  bool noUpdate = false;
-  bool noLogic = false;
+
+  bool get noUpdate => _noUpdate;
+  set noUpdate(bool value) {
+    _noUpdate = value;
+  }
+
+  bool _noUpdate = false;
+
+  bool get noLogic => _noLogic;
+  set noLogic(bool value) {
+    _noLogic = value;
+  }
+
+  bool _noLogic = false;
+
   bool checkOutOfCellBounds = true;
   bool needResize = false;
 
@@ -283,6 +297,18 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
     position.addListener(_onPositionChanged);
     final result = super.onLoad();
 
+    checkNoUpdate();
+    checkNoLogic();
+
+    if (!noLogic && _logicPriority == 0) {
+      _logicPriority = parent!.ancestors(includeSelf: true).length;
+      componentsWithLogic.add(this);
+      componentsWithLogicChanged = true;
+    }
+    return result;
+  }
+
+  void checkNoUpdate() {
     noUpdate = false;
     try {
       update(0);
@@ -291,7 +317,9 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
     } catch (error) {
       //suppress errors
     }
+  }
 
+  void checkNoLogic() {
     noLogic = false;
     try {
       logic(0);
@@ -300,8 +328,6 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
     } catch (error) {
       //suppress errors
     }
-
-    return result;
   }
 
   int _logicPriority = 0;
@@ -325,15 +351,14 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
       }
     }
 
-    if (!noLogic && _logicPriority == 0) {
-      _logicPriority = parent!.ancestors(includeSelf: true).length;
-      componentsWithLogic.add(this);
-      componentsWithLogicChanged = true;
+    if (_scheduledActionProvider == null) {
+      initActionProvider(
+        ScheduledActionProvider(
+          scheduler: game.scheduler,
+          actionFunction: onScheduledAction,
+        ),
+      );
     }
-    initActionProvider(ScheduledActionProvider(
-      scheduler: game.scheduler,
-      actionFunction: onScheduledAction,
-    ));
     super.onMount();
   }
 
@@ -460,11 +485,21 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
 
   VoidCallback? onInactiveCallback;
 
-  void onInactive() {}
+  void onInactive() {
+    if (!noLogic) {
+      HasGridSupport.componentsWithLogic.remove(this);
+      HasGridSupport.componentsWithLogicChanged = true;
+    }
+  }
 
   VoidCallback? onActiveCallback;
 
-  void onActivate() {}
+  void onActivate() {
+    if (!noLogic) {
+      HasGridSupport.componentsWithLogic.add(this);
+      HasGridSupport.componentsWithLogicChanged = true;
+    }
+  }
 
   /// Called instead of [updateTree] when component is suspended.
   /// [dtElapsedWhileSuspended] accumulates all "dt" values since
@@ -473,7 +508,12 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
 
   /// Called when component state changes to "suspended". You should stop
   /// all undesired component's movements (for example) here
-  void onSuspend() {}
+  void onSuspend() {
+    if (!noLogic) {
+      HasGridSupport.componentsWithLogic.remove(this);
+      HasGridSupport.componentsWithLogicChanged = true;
+    }
+  }
 
   VoidCallback? onSuspendCallback;
 
@@ -481,7 +521,12 @@ mixin HasGridSupport<G extends HasSpatialGridFramework> on PositionComponent
   /// [dtElapsedWhileSuspended] accumulates all "dt" values since
   /// component suspension. Useful to calculate next animation step as if
   /// the component was never suspended.
-  void onResume(double dtElapsedWhileSuspended) {}
+  void onResume(double dtElapsedWhileSuspended) {
+    if (!noLogic) {
+      HasGridSupport.componentsWithLogic.add(this);
+      HasGridSupport.componentsWithLogicChanged = true;
+    }
+  }
 
   Function(double dtElapsedWhileSuspended)? onResumeCallback;
 
